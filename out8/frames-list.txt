@@ -1,13 +1,22 @@
-total 3216
-drwxr-xr-x 2 runner runner   4096 Oct 13 08:27 .
-drwxr-xr-x 3 runner runner   4096 Oct 13 08:27 ..
--rw-r--r-- 1 runner runner 271810 Oct 13 08:27 01-title.jpg
--rw-r--r-- 1 runner runner 330814 Oct 13 08:27 02-watch.jpg
--rw-r--r-- 1 runner runner 348718 Oct 13 08:27 03-temples.jpg
--rw-r--r-- 1 runner runner 337851 Oct 13 08:27 04-button.jpg
--rw-r--r-- 1 runner runner 357912 Oct 13 08:27 05-sunset-walk.jpg
--rw-r--r-- 1 runner runner 259286 Oct 13 08:27 07-darkness.jpg
--rw-r--r-- 1 runner runner 345451 Oct 13 08:27 08-homegate.jpg
--rw-r--r-- 1 runner runner 310372 Oct 13 08:27 09-honour.jpg
--rw-r--r-- 1 runner runner 348998 Oct 13 08:27 10-love.jpg
--rw-r--r-- 1 runner runner 350969 Oct 13 08:27 11-solo.jpg
+total 6084
+drwxr-xr-x 2 runner runner   4096 Oct 13 08:38 .
+drwxr-xr-x 3 runner runner   4096 Oct 13 08:38 ..
+-rw-r--r-- 1 runner runner 271810 Oct 13 08:38 01-title.jpg
+-rw-r--r-- 1 runner runner 330814 Oct 13 08:38 02-watch.jpg
+-rw-r--r-- 1 runner runner 348718 Oct 13 08:38 03-temples.jpg
+-rw-r--r-- 1 runner runner 337851 Oct 13 08:38 04-button.jpg
+-rw-r--r-- 1 runner runner 357912 Oct 13 08:38 05-sunset-walk.jpg
+-rw-r--r-- 1 runner runner 363254 Oct 13 08:38 06-trench.jpg
+-rw-r--r-- 1 runner runner 259286 Oct 13 08:38 07-darkness.jpg
+-rw-r--r-- 1 runner runner 345451 Oct 13 08:38 08-homegate.jpg
+-rw-r--r-- 1 runner runner 310372 Oct 13 08:38 09-honour.jpg
+-rw-r--r-- 1 runner runner 348998 Oct 13 08:38 10-love.jpg
+-rw-r--r-- 1 runner runner 350969 Oct 13 08:38 11-solo.jpg
+-rw-r--r-- 1 runner runner 384341 Oct 13 08:38 12-bread.jpg
+-rw-r--r-- 1 runner runner 342285 Oct 13 08:38 13-father.jpg
+-rw-r--r-- 1 runner runner 371116 Oct 13 08:38 14-road-home.jpg
+-rw-r--r-- 1 runner runner 239300 Oct 13 08:38 15-night-flag.jpg
+-rw-r--r-- 1 runner runner 240998 Oct 13 08:38 17-fog.jpg
+-rw-r--r-- 1 runner runner 319488 Oct 13 08:38 18-oath.jpg
+-rw-r--r-- 1 runner runner 391128 Oct 13 08:38 19-dawn-boots.jpg
+-rw-r--r-- 1 runner runner 271598 Oct 13 08:38 20-hero.jpg

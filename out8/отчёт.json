@@ -21,21 +21,11 @@
     "19-dawn-boots.jpg",
     "20-hero.jpg"
   ],
-  "missing": [
-    "12-bread.jpg",
-    "13-father.jpg",
-    "14-road-home.jpg",
-    "15-night-flag.jpg",
-    "17-fog.jpg",
-    "06-trench.jpg",
-    "18-oath.jpg",
-    "19-dawn-boots.jpg",
-    "20-hero.jpg"
-  ],
+  "missing": [],
   "scenes": [],
   "warnings": [],
   "errors": [],
-  "track_info": "загрузка-1791880101629-track.mp3 · 4:16 · 136 BPM · ударов: 294",
+  "track_info": "загрузка-1791880741813-track.mp3 · 4:16 · 136 BPM · ударов: 294",
   "frames_loaded": [
     {
       "file": "01-title.jpg",
@@ -128,6 +118,56 @@
       ]
     },
     {
+      "file": "12-bread.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 384341,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "13-father.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 342285,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "14-road-home.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 371116,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "15-night-flag.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 239300,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "17-fog.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 240998,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
       "file": "08-homegate.jpg",
       "ok": true,
       "mime": "image/jpeg",
@@ -136,22 +176,62 @@
         1080,
         1935
       ]
+    },
+    {
+      "file": "06-trench.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 363254,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "18-oath.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 319488,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "19-dawn-boots.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 391128,
+      "canvas": [
+        1080,
+        1935
+      ]
+    },
+    {
+      "file": "20-hero.jpg",
+      "ok": true,
+      "mime": "image/jpeg",
+      "size": 271598,
+      "canvas": [
+        1080,
+        1935
+      ]
     }
   ],
-  "export_info": "готово: клип-color-42.mp4 (243.9 МБ) — скачано в загрузкиклип-color-42.mp4",
+  "export_info": "готово: клип-color-42.mp4 (137.8 МБ) — скачано в загрузкиклип-color-42.mp4",
   "raw": "клип-color-42.mp4",
-  "raw_bytes": 255749784,
-  "bytes": 56308557,
+  "raw_bytes": 144536683,
+  "bytes": 57331924,
   "probe": {
     "programs": [],
     "streams": [
       {
         "codec_name": "h264",
-        "duration": "256.512194"
+        "duration": "256.514675"
       },
       {
         "codec_name": "aac",
-        "duration": "256.381854"
+        "duration": "256.380812"
       }
     ]
   },
