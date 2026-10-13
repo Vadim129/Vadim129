@@ -14,14 +14,18 @@ ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
 git config user.email "ci@local"
 git config user.name "ci"
 
-push_safe() {   # повторяем push: ветка бывает занята чужим коммитом
+push_safe() {   # повторяем push и записываем причину отказа (её видно в аннотации прогона)
   cd "$WORKSPACE"
+  local err=""
   for i in 1 2 3 4 5; do
     git pull --rebase --no-edit -q || true
-    if git push; then echo "push ок (попытка $i)"; return 0; fi
-    echo "push не прошёл — попытка $i"; sleep 8
+    err=$(git push 2>&1)
+    if [ $? -eq 0 ]; then echo "push ок (попытка $i)"; rm -f "$OUT/ошибка-push.txt"; return 0; fi
+    echo "push не прошёл — попытка $i: $err"
+    sleep 8
   done
-  echo "push так и не прошёл"
+  printf '%s\n' "$err" > "$OUT/ошибка-push.txt"
+  echo "push так и не прошёл: $err"
   return 1
 }
 

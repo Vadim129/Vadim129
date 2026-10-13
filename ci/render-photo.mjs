@@ -103,45 +103,62 @@ try {
     await sleep(400);
   }
 
-  // 2) кадры — в canvases страницы
-  const loaded = await page.evaluate(async ({ files }) => {
-    window.__FRAMES = {};
-    const info = [];
-    for (const f of files) {
-      try {
-        const r = await fetch('/.frames/' + encodeURIComponent(f.file));
-        const blob = await r.blob();
-        const rec = { file: f.file, ok: r.ok, status: r.status, type: blob.type, size: blob.size };
-        let img = null;
+  // 2) кадры — читаем тут, отдаём в страницу готовыми байтами (никаких сетевых сюрпризов)
+  const payload = [];
+  for (const f of files) {
+    if (missing.includes(f.file)) continue;
+    const buf = await readFile(join(framesDir, f.file));
+    const magic = buf.subarray(0, 4).toString('hex');
+    const mime = buf[0] === 0xff && buf[1] === 0xd8 ? 'image/jpeg'
+      : magic.startsWith('89504e47') ? 'image/png'
+      : buf.subarray(8, 12).toString('ascii') === 'WEBP' ? 'image/webp' : 'application/octet-stream';
+    payload.push({ key: f.key, file: f.file, mime, b64: buf.toString('base64'), size: buf.length });
+  }
+  log('кадры прочитаны:', payload.length, 'шт,', (payload.reduce((a, f) => a + f.size, 0) / 1048576).toFixed(1), 'МБ');
+  const loaded = await Promise.race([
+    page.evaluate(async ({ payload }) => {
+      window.__FRAMES = {};
+      const info = [];
+      const decode = (f) => new Promise((res, rej) => {
         try {
-          img = await createImageBitmap(blob);
-          rec.how = 'bitmap';
-        } catch (e1) {
-          rec.bitmapError = String(e1 && e1.message).slice(0, 90);
+          const bin = atob(f.b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          const blob = new Blob([bytes], { type: f.mime });
           const url = URL.createObjectURL(blob);
-          const el = new Image();
-          await new Promise((res, rej) => { el.onload = res; el.onerror = () => rej(new Error('img не прочитал картинку')); el.src = url; });
-          img = el;
-          rec.how = 'img';
-          URL.revokeObjectURL(url);
+          const img = new Image();
+          const to = setTimeout(() => { URL.revokeObjectURL(url); rej(new Error('не открылась за 25 с')); }, 25000);
+          img.onload = () => {
+            clearTimeout(to);
+            try {
+              const c = document.createElement('canvas');
+              c.width = 1080; c.height = Math.round(img.height * 1080 / img.width);
+              const g = c.getContext('2d');
+              g.imageSmoothingQuality = 'high';
+              g.drawImage(img, 0, 0, c.width, c.height);
+              res(c);
+            } catch (e) { rej(e); } finally { URL.revokeObjectURL(url); }
+          };
+          img.onerror = () => { clearTimeout(to); URL.revokeObjectURL(url); rej(new Error('картинка не читается')); };
+          img.src = url;
+        } catch (e) { rej(e); }
+      });
+      for (const f of payload) {
+        try {
+          const c = await decode(f);
+          window.__FRAMES[f.key] = c;
+          info.push({ file: f.file, ok: true, mime: f.mime, size: f.size, canvas: [c.width, c.height] });
+        } catch (e) {
+          info.push({ file: f.file, ok: false, mime: f.mime, size: f.size, error: String(e && e.message ? e.message : e).slice(0, 120) });
         }
-        const c = document.createElement('canvas');
-        c.width = 1080; c.height = Math.round(img.height * 1080 / img.width);
-        const g = c.getContext('2d');
-        g.imageSmoothingQuality = 'high';
-        g.drawImage(img, 0, 0, c.width, c.height);
-        window.__FRAMES[f.key] = c;
-        rec.canvas = [c.width, c.height];
-        info.push(rec);
-      } catch (e) {
-        info.push({ file: f.file, error: String(e && e.message ? e.message : e).slice(0, 120) });
       }
-    }
-    return info;
-  }, { files });
-  const good = loaded.filter(r => r.canvas).length;
-  log('кадры загружены в страницу:', good, 'из', files.length);
-  for (const r of loaded) log('  ', r.file, r.error ? ('⛔ ' + r.error) : `${r.status} ${r.type} ${(r.size / 1024) | 0}КБ → ${r.canvas} (${r.how})${r.bitmapError ? ' [' + r.bitmapError + ']' : ''}`);
+      return info;
+    }, { payload }),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('загрузка кадров в страницу не закончилась за 4 минуты')), 240000)),
+  ]);
+  const good = loaded.filter(r => r.ok).length;
+  log('кадры загружены в страницу:', good, 'из', payload.length);
+  for (const r of loaded) log('  ', r.file, r.ok ? `✓ ${r.mime} ${(r.size / 1024) | 0}КБ → ${r.canvas}` : ('⛔ ' + r.error));
   report.frames_loaded = loaded;
   if (!good) throw new Error('ни один кадр не загрузился');
 

@@ -16,6 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: stage
         run: bash ci/$(cat ci/stage.txt).sh || echo "stage script exit=$?"
+      - name: diagnostics (annotations)
+        if: always()
+        run: |
+          if [ -f out8/ошибка-push.txt ]; then echo "::error title=push-diag::$(head -c 600 out8/ошибка-push.txt | tr '\n' ' ')"; fi
+          if [ -f out6/ошибка-push.txt ]; then echo "::error title=push-diag-6::$(head -c 600 out6/ошибка-push.txt | tr '\n' ' ')"; fi
+      - name: artifact с результатом
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clip-results
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            out8/**
+            out6/**
+            out5/**
       - name: commit payload
         if: always()
         run: |
