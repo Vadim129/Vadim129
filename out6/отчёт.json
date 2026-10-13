@@ -93,7 +93,7 @@
   ],
   "warnings": [],
   "out": "/tmp/pkg/клипы/готовые/клип.mp4",
-  "track_info": "загрузка-1791875576553-трек.mp3 · 4:16 · 136 BPM · ударов: 294",
+  "track_info": "загрузка-1791876055174-трек.mp3 · 4:16 · 136 BPM · ударов: 294",
   "duration": 256.37,
   "materials": {
     "profile": "color",
@@ -101,11 +101,11 @@
     "palette": "warm",
     "mood": "day"
   },
-  "bytes": 53204455,
+  "bytes": 53162144,
   "cover": "/tmp/pkg/клипы/готовые/клип-обложка.png",
   "codec_in": "vp9/opus",
   "codec_out": "h264",
-  "duration_out": 256.66,
+  "duration_out": 256.53,
   "page_errors": [],
   "external_requests": []
 }

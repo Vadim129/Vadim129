@@ -174,3 +174,183 @@ drwxr-xr-x 9 runner runner     4096 Oct 13 07:11 ..
 -rw-r--r-- 1 runner runner     1948 Oct 13 07:18 отчёт.json
 -rw-r--r-- 1 runner runner  2937485 Oct 13 07:18 раскадровка.png
 + set +x
++ export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ WORKSPACE=/home/runner/work/Vadim129/Vadim129
++ TRACK_ID=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
++ ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
++ get_drive 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR /tmp/track.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR -O /tmp/track.mp3
++ tail -2
+To: /tmp/track.mp3
+  0%|          | 0.00/10.3M [00:00<?, ?B/s] 25%|██▌       | 2.62M/10.3M [00:00<00:00, 24.8MB/s] 66%|██████▋   | 6.82M/10.3M [00:00<00:00, 11.0MB/s]100%|██████████| 10.3M/10.3M [00:00<00:00, 17.2MB/s]
++ ls -la /tmp/track.mp3
+-rw------- 1 runner runner 10287703 Oct 13 04:49 /tmp/track.mp3
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /tmp/track.mp3
++ grep -E 'Duration|Stream'
++ head -4
++ true
++ cat /home/runner/work/Vadim129/Vadim129/out6/track-info.txt
+  Duration: 00:04:16.42, start: 0.023021, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 48000 Hz, stereo, fltp, 320 kb/s
+  Stream #0:1: Video: mjpeg (Baseline), yuvj420p(pc, bt470bg/unknown/unknown), 587x596 [SAR 596:595 DAR 587:595], 90k tbr, 90k tbn (attached pic)
++ get_drive 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy /tmp/package.zip
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy -O /tmp/package.zip
++ tail -2
+To: /tmp/package.zip
+  0%|          | 0.00/68.8M [00:00<?, ?B/s] 17%|█▋        | 11.5M/68.8M [00:00<00:00, 113MB/s] 43%|████▎     | 29.9M/68.8M [00:00<00:00, 154MB/s] 69%|██████▊   | 47.2M/68.8M [00:00<00:00, 161MB/s] 94%|█████████▎| 64.5M/68.8M [00:00<00:00, 166MB/s]100%|██████████| 68.8M/68.8M [00:00<00:00, 163MB/s]
++ ls -la /tmp/package.zip
+-rw------- 1 runner runner 68815684 Oct 13 04:45 /tmp/package.zip
++ rm -rf /tmp/pkg
++ mkdir -p /tmp/pkg
++ unzip -q -o /tmp/package.zip -d /tmp/pkg
++ PKG=/tmp/pkg/клипы
++ python3 /home/runner/work/Vadim129/Vadim129/ci/patch_scenes.py /tmp/pkg/клипы /home/runner/work/Vadim129/Vadim129
+=== сцены в patched app.js ===
+  import { SCENES_D } from './scenes4.js';
+  const SCENES = [...SCENES_A, ...SCENES_B, ...SCENES_C, ...SCENES_D];
+=== синонимы солдата/письма/дома/огня ===
+  soldier: ['солдат', 'военный', 'боец', 'soldier'],
+  letter: ['письмо', 'конверт', 'письмо домой', 'letter'],
+  home: ['возвращение', 'возвращение домой', 'домой', 'дома', 'home'],
+  flame: ['память', 'вечный огонь', 'вечныйогонь', 'огонь памяти', 'flame'],
+=== надписи сцен ===
+  scenes1.js: "p.text('мне сегодня', 540, 1320" → "p.text('дождись меня', 540, 1320"
+  scenes1.js: "p.text('можно', 540, 1490" → "p.text('вернусь', 540, 1490"
+  scenes2.js: "const txt1 = 'мне сегодня', txt2 = 'можно';" → "const txt1 = 'я вернусь', txt2 = 'домой';"
+scenes patched ok
++ cp /tmp/track.mp3 /tmp/pkg/клипы/трек.mp3
++ export INKCLIP_DIR=/tmp/pkg/клипы/движок PUPPETEER_DIR=/tmp/pkg/клипы FFMPEG
++ INKCLIP_DIR=/tmp/pkg/клипы/движок
++ PUPPETEER_DIR=/tmp/pkg/клипы
++ python3 /home/runner/work/Vadim129/Vadim129/ci/make_config.py /tmp/pkg/клипы /home/runner/work/Vadim129/Vadim129/ci/scene-script.txt /home/runner/work/Vadim129/Vadim129/out6
+конфиг собран: /tmp/pkg/клипы/конфиг.json
++ cat /tmp/pkg/клипы/конфиг.json
+{
+  "engine": "движок",
+  "track": "трек.mp3",
+  "profile": "color",
+  "paper": "grid",
+  "palette": "warm",
+  "mood": "day",
+  "dens": 1.1,
+  "seed": 8,
+  "quality": "720x1280",
+  "compress": "auto",
+  "crf": 23,
+  "preset": "veryfast",
+  "whisper": false,
+  "cover_at": 8,
+  "script_text": "стиль: цветные\nбумага: клетка\nпалитра: тёплая\nнастроение: день\nплотность: 1.1\nвариант: 8\n\nсолдат 0:00-0:22\nдождь 0:22-0:36\nписьмо 0:36-0:50\nвозвращение 0:50-1:04\nсолдат 1:04-1:18\nпамять 1:18-1:32\nснег 1:32-1:46\nдорога 1:46-2:01\nкостёр 2:01-2:15\nзвёзды 2:15-2:29\nсердце 2:29-2:43\nгород 2:43-2:57\nвозвращение 2:57-3:11\nцветы 3:11-3:25\nпамять 3:25-3:39\nдорога 3:39-3:53\nфинал 3:53-4:16\n",
+  "out": "готовые/клип.mp4"
+}+ cd /tmp/pkg/клипы
++ node tools/make-clip.mjs --проверить
++ tail -14
+
+Проверка окружения:
+
+  ✅  node                               v22.23.3
+  ✅  движок (inkclip)                   /tmp/pkg/клипы/движок
+  ✅    библиотека Whisper (vendor/)     на месте
+  ✅    модель Whisper (models/)         на месте
+  ✅  puppeteer + chrome                 найден в /tmp/pkg/клипы
+  ✅  ffmpeg                             есть
+
+++ date -u +%H:%M:%S
++ echo '=== полный рендер 07:20:53 ==='
+=== полный рендер 07:20:53 ===
++ timeout 5400 node tools/make-clip.mjs конфиг.json
++ tail -80
+07:20:53 движок: /tmp/pkg/клипы/движок
+07:20:53 поднимаю приложение…
+07:20:53 приложение открыто на http://127.0.0.1:45301/
+07:20:55 загружаю трек: /tmp/pkg/клипы/трек.mp3
+07:20:55 трек: отдал 9.8 МБ
+07:21:04 трек принят: загрузка-1791876055174-трек.mp3 · 4:16 · 136 BPM · ударов: 294
+07:21:04 план клипа: 256.4 с, сцен: 17
+07:21:04    0:00–0:22  soldier
+07:21:04    0:22–0:35  window_rain
+07:21:04    0:35–0:49  letter
+07:21:04    0:49–1:04  home
+07:21:04    1:04–1:18  soldier
+07:21:04    1:18–1:31  flame
+07:21:04    1:31–1:45  snow
+07:21:04    1:45–2:00  road
+07:21:04    2:00–2:15  fire
+07:21:04    2:15–2:28  stars
+07:21:04    2:28–2:42  heart
+07:21:04    2:42–2:57  city_night
+07:21:04    2:57–3:11  home
+07:21:04    3:11–3:24  flowers
+07:21:04    3:24–3:38  flame
+07:21:04    3:38–3:53  road
+07:21:04    3:53–4:15  pillow
+07:21:04 рисую клип (реальное время: примерно 257 с — не закрывай процесс)…
+07:25:22 видео записано, выгружаю из браузера…
+  выгружено 4 / 91.1 МБ  выгружено 8 / 91.1 МБ  выгружено 12 / 91.1 МБ  выгружено 16 / 91.1 МБ  выгружено 20 / 91.1 МБ  выгружено 24 / 91.1 МБ  выгружено 28 / 91.1 МБ  выгружено 32 / 91.1 МБ  выгружено 36 / 91.1 МБ  выгружено 40 / 91.1 МБ  выгружено 44 / 91.1 МБ  выгружено 48 / 91.1 МБ  выгружено 52 / 91.1 МБ  выгружено 56 / 91.1 МБ  выгружено 60 / 91.1 МБ  выгружено 64 / 91.1 МБ  выгружено 68 / 91.1 МБ  выгружено 72 / 91.1 МБ  выгружено 76 / 91.1 МБ  выгружено 80 / 91.1 МБ  выгружено 84 / 91.1 МБ  выгружено 88 / 91.1 МБ  выгружено 91 / 91.1 МБ
+07:25:24 готово: /tmp/pkg/клипы/готовые/клип.mp4 — 91.1 МБ за 260 с
+07:25:24 обложка: /tmp/pkg/клипы/готовые/клип-обложка.png
+07:25:25 кодек из браузера: vp9/opus → перевожу в H.264/AAC (иначе телефон не проиграет)
+07:25:47 ffmpeg: перевёл в h264 → 50.7 МБ
+07:25:47 длина готового файла: 256.5 с
+07:25:47 чистота: ошибок страницы 0, внешних запросов 0
+
+отчёт: /tmp/pkg/клипы/готовые/клип-отчёт.json
++ ls -la готовые/
+total 53792
+drwxr-xr-x 2 runner runner     4096 Oct 13 07:25 .
+drwxr-xr-x 8 runner runner     4096 Oct 13 07:20 ..
+-rw-r--r-- 1 runner runner  1902033 Oct 13 07:25 клип-обложка.png
+-rw-r--r-- 1 runner runner     1948 Oct 13 07:25 клип-отчёт.json
+-rw-r--r-- 1 runner runner 53162144 Oct 13 07:25 клип.mp4
++ '[' '!' -f готовые/клип-раскадровка.png ']'
++ echo '=== раскадровка отдельно ==='
+=== раскадровка отдельно ===
++ timeout 1800 node tools/make-frame.mjs конфиг.json
++ tail -20
+07:25:48 трек отдан
+07:25:57 трек принят: загрузка-1791876348397-трек.mp3 · 4:16 · 136 BPM · ударов: 294
+07:25:57 план: 256.4 с, сцен 17
+07:25:57 сцены: soldier → window_rain → letter → home → soldier → flame → snow → road → fire → stars → heart → city_night → home → flowers → flame → road → pillow
+  кадр 1/9 (14.2 с — soldier)        кадр 2/9 (42.7 с — letter)        кадр 3/9 (71.2 с — soldier)        кадр 4/9 (99.7 с — snow)        кадр 5/9 (128.2 с — fire)        кадр 6/9 (156.7 с — heart)        кадр 7/9 (185.2 с — home)        кадр 8/9 (213.6 с — flame)        кадр 9/9 (242.1 с — pillow)      
+07:26:00 раскадровка: /tmp/pkg/клипы/готовые/клип-раскадровка.png
++ cp -f готовые/клип.mp4 /home/runner/work/Vadim129/Vadim129/out6/клип.mp4
++ cp -f готовые/клип-обложка.png /home/runner/work/Vadim129/Vadim129/out6/обложка.png
++ cp -f готовые/клип-раскадровка.png /home/runner/work/Vadim129/Vadim129/out6/раскадровка.png
++ cp -f готовые/клип-отчёт.json /home/runner/work/Vadim129/Vadim129/out6/отчёт.json
++ cp -f готовые/клип-раскадровка.png /home/runner/work/Vadim129/Vadim129/out6/
++ cp -f 'готовые/клип-кадры/*.png' /home/runner/work/Vadim129/Vadim129/out6/
+++ stat -c%s /home/runner/work/Vadim129/Vadim129/out6/клип.mp4
++ SZ=53162144
++ echo 'размер клипа: 53162144 байт'
+размер клипа: 53162144 байт
++ '[' 53162144 -gt 94371840 ']'
++ echo '=== итог ==='
+=== итог ===
++ ls -la /home/runner/work/Vadim129/Vadim129/out6
+total 59564
+drwxr-xr-x  2 runner runner     4096 Oct 13 07:20 .
+drwxr-xr-x 10 runner runner     4096 Oct 13 07:20 ..
+-rw-r--r--  1 runner runner    21503 Oct 13 07:26 logs.txt
+-rw-r--r--  1 runner runner      266 Oct 13 07:20 track-info.txt
+-rw-r--r--  1 runner runner  2939913 Oct 13 07:26 клип-раскадровка.png
+-rw-r--r--  1 runner runner 53162144 Oct 13 07:26 клип.mp4
+-rw-r--r--  1 runner runner  1902033 Oct 13 07:26 обложка.png
+-rw-r--r--  1 runner runner     1948 Oct 13 07:26 отчёт.json
+-rw-r--r--  1 runner runner  2939913 Oct 13 07:26 раскадровка.png
++ set +x
