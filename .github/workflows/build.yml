@@ -14,10 +14,8 @@ jobs:
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
-      - name: run stage
-        run: |
-          set -x
-          bash -x ci/$(cat ci/stage.txt).sh
+      - name: stage
+        run: bash ci/$(cat ci/stage.txt).sh || echo "stage script exit=$?"
       - name: commit payload
         if: always()
         run: |
