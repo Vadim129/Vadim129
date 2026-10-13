@@ -11,19 +11,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
-      - name: run
+      - name: run stage
         run: |
           set -x
-          bash ci/run.sh
-          ls -la payload || true
+          bash -x ci/$(cat ci/stage.txt).sh
       - name: commit payload
         if: always()
         run: |
           git config user.email "ci@local"
           git config user.name "ci"
-          git add -f payload out/logs.txt 2>/dev/null || git add -f payload
+          git add -f payload
           git commit -m "ci: payload $(date -u +%H%M%S)" || echo "nothing to commit"
           git push
