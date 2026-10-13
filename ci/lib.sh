@@ -14,6 +14,21 @@ get_drive() {   # $1 = id, $2 = имя файла
   gdown "$1" -O "$2" 2>&1 | tail -2 || curl -sL "https://drive.google.com/uc?export=download&id=$1" -o "$2"
   ls -la "$2"
 }
+ensure_ffmpeg() {   # ставит ffmpeg/ffprobe (apt → imageio-ffmpeg) и экспортирует FFMPEG/FFPROBE
+  if ! command -v ffmpeg >/dev/null 2>&1; then
+    (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg) >/dev/null 2>&1 || true
+  fi
+  if command -v ffmpeg >/dev/null 2>&1; then
+    export FFMPEG=ffmpeg
+    command -v ffprobe >/dev/null 2>&1 && export FFPROBE=ffprobe
+  else
+    python3 -m pip install --quiet --break-system-packages imageio-ffmpeg 2>/dev/null || pip install --quiet imageio-ffmpeg
+    export FFMPEG="$(python3 -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')"
+  fi
+  echo "ffmpeg: $FFMPEG"
+  "$FFMPEG" -hide_banner -version 2>&1 | head -1
+}
+
 get_ffmpeg() {
   python3 -m pip install --quiet --break-system-packages imageio-ffmpeg 2>/dev/null || pip install --quiet imageio-ffmpeg
   export FFMPEG="$(python3 -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')"
