@@ -1,0 +1,48 @@
+/home/runner/work/Vadim129/Vadim129/out7/engine/index.html:194:# сцены можно ставить по времени или подряд
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/script.js:21:  pillow: ['финал', 'сон', 'подушка', 'конец', 'pillow'],
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:212:    p.text('можно', 540, 1760, { size: 138, align: 'center', t0: 11.6, t1: 13.4, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:262:// 16 ── Финал: фраза-подушка ────────────────────────────────────────────────
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:264:  id: 'pillow', name: 'Финал: фраза-подушка', tags: ['финал', 'вечер', 'спокойное'], dur: 16,
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:276:    // фраза рукописью + облако вокруг
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:277:    const txt1 = 'мне сегодня', txt2 = 'можно';
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:292:    // голова на подушке
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/util.js:2:// Всё детерминировано по seed: любой кадр можно перерисовать с любого момента времени.
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/util.js:163:export function cloudPts(cx, cy, s, seed = 0, o = {}) {   // облако/подушка: замкнутый волнистый контур
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/whisper.js:194:export const HIT_WORDS = ['да', 'нет', 'не', 'я', 'ты', 'мы', 'всё', 'все', 'ещё', 'еще', 'можно', 'здесь', 'сейчас', 'one', 'two', 'go'];
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:403:    p.text('мне сегодня', 540, 1320, { size: 84, align: 'center', t0: 3.6, t1: 5 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:404:    p.text('можно', 540, 1490, { size: 140, align: 'center', t0: 4.4, t1: 6, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/timeline.js:95:  // финал: если осталось прилично времени и последняя сцена не финальная — ставим «подушку»
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/common.js:123:// Так можно посадить фигуру на велосипед, качели или уложить под одеяло.
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:44:    p.text('некуда спешить', 540, 330, { size: 104, align: 'center', t0: 5.4, t1: 7.2, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:87:    p.text('ветер в лицо', 540, 320, { size: 100, align: 'center', t0: 5.8, t1: 7.6, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:124:    p.text('расти', 540, 330, { size: 118, align: 'center', t0: 7, t1: 8.8, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:151:    p.text('громче', 540, 300, { size: 112, align: 'center', t0: 5.4, t1: 7, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:168:    p.text('танцуй', 540, 300, { size: 118, align: 'center', t0: 4.4, t1: 6.2, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:177:    p.text('дела', x0, 520, { size: 118, t0: .2, t1: 1.3, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:211:    p.text('ничего не надо', 540, 1600, { size: 84, align: 'center', t0: 10.8, t1: 12.6 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:212:    p.text('можно', 540, 1760, { size: 138, align: 'center', t0: 11.6, t1: 13.4, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:258:    p.text('с днём', 540, 500, { size: 150, align: 'center', t0: 6, t1: 7.8, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:278:    p.text(txt1, 520, 760, { size: 96, align: 'center', t0: 1.2, t1: 3.4 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:282:    p.text(txt2, 520, 940, { size: 132, align: 'center', t0: 4.4, t1: 6.2, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:306:      p.text('z', hx + 120, hy - 180 - ph * 130, { size: 58 + ph * 18, role: 'accent', alpha: .95 * (1 - ph), t0: 8, t1: 8.1, align: 'center' });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes2.js:307:      if (ph > .4) p.text('z', hx + 172, hy - 110 - ph * 90, { size: 38 + ph * 14, role: 'accent', alpha: .75 * (1 - ph), t0: 8, t1: 8.1, align: 'center' });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:64:    p.text('дождь за окном', 540, 1860, { size: 84, align: 'center', t0: 5, t1: 6.4, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:121:      p.text('z', hx + 150, hy - 200 - ph * 150, { size: 62 + ph * 20, role: 'accent', alpha: .95 * (1 - ph), t0: 3.4, t1: 3.5, align: 'center' });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:122:      if (ph > .35) p.text('z', hx + 196, hy - 140 - ph * 110, { size: 40 + ph * 14, role: 'accent', alpha: .8 * (1 - ph), t0: 3.4, t1: 3.5, align: 'center' });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:124:    p.text('тихо', 540, 1770, { size: 84, align: 'center', t0: 5, t1: 6.4, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:169:    p.text('город', 540, 320, { size: 112, align: 'center', t0: 3.6, t1: 5.2, underline: true, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:219:    p.text('звёзды', 540, 1770, { size: 104, align: 'center', t0: 5, t1: 6.6, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:253:    p.text('доброе утро', 540, 380, { size: 118, align: 'center', t0: 5.4, t1: 7, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:314:    p.text('поехали', 540, 300, { size: 108, align: 'center', t0: 5.8, t1: 7.4, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:374:    p.text('качели', 540, 1790, { size: 96, align: 'center', t0: 7, t1: 8.6, underline: true, halo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:401:      p.text('♥', hx, y0 - 40, { size: 26, role: 'accent', align: 'center', t0: 0, t1: .001 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:403:    p.text('мне сегодня', 540, 1320, { size: 84, align: 'center', t0: 3.6, t1: 5 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes1.js:404:    p.text('можно', 540, 1490, { size: 140, align: 'center', t0: 4.4, t1: 6, underline: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:31:      p.text(cap, cx, photo.y + photo.h + 78, { size: 60, align: 'center', t0: 2.6, t1: 4.4, underline: false });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:39:      if (note) p.text(note, cx, 1740, { size: 58, align: 'center', role: 'accent', t0: 5.4, t1: 7 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:72:      if (note) p.text(note, 540, 1740, { size: 66, align: 'center', t0: 12, t1: 13.6 });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:130:    p.text('снег', 540, 300, { size: 112, align: 'center', t0: 7.4, t1: 9, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:191:    p.text('тепло', 540, 340, { size: 104, align: 'center', t0: 7, t1: 8.6, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:245:    p.text('поехали', 540, 380, { size: 108, align: 'center', t0: 6, t1: 7.8, underline: true, halo: false, noHalo: true });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:284:      p.text('а', head[0] + 90, head[1] - 60 - ph * 90, { size: 46 + ph * 14, role: 'accent', alpha: .9 * (1 - ph), t0: 5.8, t1: 5.9, align: 'center' });
+/home/runner/work/Vadim129/Vadim129/out7/engine/src/scenes3.js:291:    p.text('доброе утро', 470, 820, { size: 104, align: 'center', t0: 8.4, t1: 10, underline: true });
