@@ -1,0 +1,247 @@
+== node/npm/python ==
+v22.23.3
+10.9.9
+Python 3.12.3
+/usr/bin/google-chrome
+/usr/bin/google-chrome-stable
+/usr/bin/chromium
+== pip gdown ==
+== download package zip ==
+Downloading...
+From (original): https://drive.google.com/uc?id=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
+From (redirected): https://drive.google.com/uc?id=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy&confirm=t&uuid=16f3361e-cc74-4220-8589-4179d0cd0a0b
+To: /tmp/package.zip
+  0%|          | 0.00/68.8M [00:00<?, ?B/s]  1%|          | 524k/68.8M [00:00<00:17, 3.92MB/s]  5%|▍         | 3.15M/68.8M [00:00<00:04, 14.5MB/s] 19%|█▉        | 13.1M/68.8M [00:00<00:01, 45.4MB/s] 31%|███       | 21.5M/68.8M [00:00<00:00, 56.3MB/s] 43%|████▎     | 29.9M/68.8M [00:00<00:00, 63.5MB/s] 62%|██████▏   | 42.5M/68.8M [00:00<00:00, 78.9MB/s] 80%|███████▉  | 55.1M/68.8M [00:00<00:00, 89.2MB/s] 98%|█████████▊| 67.1M/68.8M [00:00<00:00, 98.2MB/s]100%|██████████| 68.8M/68.8M [00:00<00:00, 72.2MB/s]
+-rw------- 1 runner runner 68815684 Oct 13 04:45 package.zip
+== download track ==
+Using cookies from /home/runner/.cache/gdown/cookies.txt
+Downloading...
+From: https://drive.google.com/uc?id=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
+To: /tmp/track.mp3
+  0%|          | 0.00/10.3M [00:00<?, ?B/s] 10%|█         | 1.05M/10.3M [00:00<00:01, 7.91MB/s] 66%|██████▋   | 6.82M/10.3M [00:00<00:00, 26.3MB/s]100%|██████████| 10.3M/10.3M [00:00<00:00, 29.8MB/s]
+-rw------- 1 runner runner 10287703 Oct 13 04:49 track.mp3
+ci/run.sh: line 26: ffprobe: command not found
+== unzip ==
+/tmp/pkg
+/tmp/pkg/клипы
+/tmp/pkg/клипы/движок
+/tmp/pkg/клипы/движок/manifest.json
+/tmp/pkg/клипы/движок/server.mjs
+/tmp/pkg/клипы/движок/package-lock.json
+/tmp/pkg/клипы/движок/test120.wav
+/tmp/pkg/клипы/движок/tools
+/tmp/pkg/клипы/движок/vendor
+/tmp/pkg/клипы/движок/icon-192-maskable.png
+/tmp/pkg/клипы/движок/samples
+/tmp/pkg/клипы/движок/icon-512-maskable.png
+/tmp/pkg/клипы/движок/capacitor-native.js
+/tmp/pkg/клипы/движок/models
+/tmp/pkg/клипы/движок/index.html
+/tmp/pkg/клипы/движок/favicon.ico
+/tmp/pkg/клипы/движок/android
+/tmp/pkg/клипы/движок/build-www.mjs
+/tmp/pkg/клипы/движок/capacitor.config.json
+/tmp/pkg/клипы/движок/sw.js
+/tmp/pkg/клипы/движок/icon-512.png
+/tmp/pkg/клипы/движок/src
+/tmp/pkg/клипы/движок/icon-192.png
+/tmp/pkg/клипы/движок/README.md
+/tmp/pkg/клипы/движок/package.json
+/tmp/pkg/клипы/движок/docs
+/tmp/pkg/клипы/05-РАСПОЗНАВАНИЕ-РЕЧИ.md
+/tmp/pkg/клипы/tools
+/tmp/pkg/клипы/tools/сделать-клип.sh
+/tmp/pkg/клипы/tools/example-config.json
+/tmp/pkg/клипы/tools/whisper-words.mjs
+/tmp/pkg/клипы/tools/make-clip.mjs
+/tmp/pkg/клипы/tools/make-frame.mjs
+/tmp/pkg/клипы/03-СЦЕНЫ-И-МАТЕРИАЛЫ.md
+/tmp/pkg/клипы/02-ИНСТРУКЦИЯ.md
+/tmp/pkg/клипы/примеры
+/tmp/pkg/клипы/примеры/образец-клип-отчёт.json
+/tmp/pkg/клипы/примеры/образец-клип-обложка.png
+/tmp/pkg/клипы/примеры/образец-клип-раскадровка.png
+/tmp/pkg/клипы/примеры/образец-клип.mp4
+/tmp/pkg/клипы/примеры/пример-расшифровка-речи.txt
+/tmp/pkg/клипы/примеры/образец-конфиг.json
+/tmp/pkg/клипы/примеры/пример-слова-с-временем.json
+/tmp/pkg/клипы/00-ЧИТАТЬ-ПЕРВЫМ.md
+/tmp/pkg/клипы/07-ЕСЛИ-ЧТО-ТО-НЕ-ТАК.md
+/tmp/pkg/клипы/04-КАРТИНКИ-И-РИСУНКИ.md
+/tmp/pkg/клипы/08-ШПАРГАЛКА-ДЛЯ-ЧЕЛОВЕКА.md
+/tmp/pkg/клипы/README.md
+/tmp/pkg/клипы/готовые-клипы
+/tmp/pkg/клипы/готовые-клипы/README.txt
+/tmp/pkg/клипы/01-ЗАДАНИЕ-ДЛЯ-АГЕНТА.md
+/tmp/pkg/клипы/06-ПРИМЕРЫ-СЦЕНАРИЕВ.md
+== tree with sizes (top 200) ==
+      4391  ./клипы/00-ЧИТАТЬ-ПЕРВЫМ.md
+      4378  ./клипы/01-ЗАДАНИЕ-ДЛЯ-АГЕНТА.md
+     10163  ./клипы/02-ИНСТРУКЦИЯ.md
+      7223  ./клипы/03-СЦЕНЫ-И-МАТЕРИАЛЫ.md
+      4294  ./клипы/04-КАРТИНКИ-И-РИСУНКИ.md
+      5489  ./клипы/05-РАСПОЗНАВАНИЕ-РЕЧИ.md
+      3674  ./клипы/06-ПРИМЕРЫ-СЦЕНАРИЕВ.md
+      6140  ./клипы/07-ЕСЛИ-ЧТО-ТО-НЕ-ТАК.md
+      3572  ./клипы/08-ШПАРГАЛКА-ДЛЯ-ЧЕЛОВЕКА.md
+      2726  ./клипы/README.md
+       651  ./клипы/tools/example-config.json
+     23093  ./клипы/tools/make-clip.mjs
+      9898  ./клипы/tools/make-frame.mjs
+      7229  ./клипы/tools/whisper-words.mjs
+      6516  ./клипы/tools/сделать-клип.sh
+       600  ./клипы/готовые-клипы/README.txt
+     25566  ./клипы/движок/README.md
+      1824  ./клипы/движок/android/.gitignore
+        26  ./клипы/движок/android/app/.gitignore
+      2120  ./клипы/движок/android/app/build.gradle
+       468  ./клипы/движок/android/app/capacitor.build.gradle
+       751  ./клипы/движок/android/app/proguard-rules.pro
+       774  ./клипы/движок/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+      1518  ./клипы/движок/android/app/src/main/AndroidManifest.xml
+       118  ./клипы/движок/android/app/src/main/java/ru/inkclip/app/MainActivity.java
+      7705  ./клипы/движок/android/app/src/main/res/drawable-land-hdpi/splash.png
+      4040  ./клипы/движок/android/app/src/main/res/drawable-land-mdpi/splash.png
+      9251  ./клипы/движок/android/app/src/main/res/drawable-land-xhdpi/splash.png
+     13984  ./клипы/движок/android/app/src/main/res/drawable-land-xxhdpi/splash.png
+     17683  ./клипы/движок/android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+      7934  ./клипы/движок/android/app/src/main/res/drawable-port-hdpi/splash.png
+      4096  ./клипы/движок/android/app/src/main/res/drawable-port-mdpi/splash.png
+      9875  ./клипы/движок/android/app/src/main/res/drawable-port-xhdpi/splash.png
+     13346  ./клипы/движок/android/app/src/main/res/drawable-port-xxhdpi/splash.png
+     17489  ./клипы/движок/android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+      1880  ./клипы/движок/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+      5606  ./клипы/движок/android/app/src/main/res/drawable/ic_launcher_background.xml
+      4040  ./клипы/движок/android/app/src/main/res/drawable/splash.png
+       535  ./клипы/движок/android/app/src/main/res/layout/activity_main.xml
+       265  ./клипы/движок/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+       265  ./клипы/движок/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+      2786  ./клипы/движок/android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+      3450  ./клипы/движок/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+      4341  ./клипы/движок/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+      1869  ./клипы/движок/android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+      2110  ./клипы/движок/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+      2725  ./клипы/движок/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+      3981  ./клипы/движок/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+      5036  ./клипы/движок/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+      6593  ./клипы/движок/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+      6644  ./клипы/движок/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+      9793  ./клипы/движок/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+     10455  ./клипы/движок/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+      9441  ./клипы/движок/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+     15529  ./клипы/движок/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+     15916  ./клипы/движок/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+       120  ./клипы/движок/android/app/src/main/res/values/ic_launcher_background.xml
+       326  ./клипы/движок/android/app/src/main/res/values/strings.xml
+       823  ./клипы/движок/android/app/src/main/res/values/styles.xml
+       185  ./клипы/движок/android/app/src/main/res/xml/config.xml
+       213  ./клипы/движок/android/app/src/main/res/xml/file_paths.xml
+       402  ./клипы/движок/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+       636  ./клипы/движок/android/build.gradle
+      1661  ./клипы/движок/android/capacitor-cordova-android-plugins/build.gradle
+       312  ./клипы/движок/android/capacitor-cordova-android-plugins/cordova.variables.gradle
+       210  ./клипы/движок/android/capacitor-cordova-android-plugins/src/main/AndroidManifest.xml
+         0  ./клипы/движок/android/capacitor-cordova-android-plugins/src/main/java/.gitkeep
+         1  ./клипы/движок/android/capacitor-cordova-android-plugins/src/main/res/.gitkeep
+       466  ./клипы/движок/android/capacitor.settings.gradle
+       377  ./клипы/движок/android/gradle.properties
+     63375  ./клипы/движок/android/gradle/wrapper/gradle-wrapper.jar
+       252  ./клипы/движок/android/gradle/wrapper/gradle-wrapper.properties
+      8527  ./клипы/движок/android/gradlew
+      2868  ./клипы/движок/android/gradlew.bat
+        25  ./клипы/движок/android/local.properties
+       208  ./клипы/движок/android/settings.gradle
+       496  ./клипы/движок/android/variables.gradle
+      1338  ./клипы/движок/build-www.mjs
+       444  ./клипы/движок/capacitor-native.js
+       222  ./клипы/движок/capacitor.config.json
+      3715  ./клипы/движок/docs/ANDROID.md
+      5241  ./клипы/движок/docs/ROADMAP.md
+    735434  ./клипы/движок/docs/app-screenshot.png
+    526427  ./клипы/движок/docs/download-button.png
+   1038867  ./клипы/движок/docs/materials.png
+     42102  ./клипы/движок/docs/save-ready.png
+   3253497  ./клипы/движок/docs/scenes-color.png
+   3191004  ./клипы/движок/docs/scenes-pencil.png
+   2551740  ./клипы/движок/docs/showcase.png
+     37363  ./клипы/движок/docs/whisper-panel.png
+    502802  ./клипы/движок/docs/word-scenes.png
+     10783  ./клипы/движок/favicon.ico
+     10812  ./клипы/движок/icon-192-maskable.png
+     10783  ./клипы/движок/icon-192.png
+     69661  ./клипы/движок/icon-512-maskable.png
+     69853  ./клипы/движок/icon-512.png
+     14690  ./клипы/движок/index.html
+       846  ./клипы/движок/manifest.json
+     34604  ./клипы/движок/models/whisper-tiny/added_tokens.json
+      2243  ./клипы/движок/models/whisper-tiny/config.json
+      3772  ./клипы/движок/models/whisper-tiny/generation_config.json
+    493869  ./клипы/движок/models/whisper-tiny/merges.txt
+     52666  ./клипы/движок/models/whisper-tiny/normalizer.json
+  30730264  ./клипы/движок/models/whisper-tiny/onnx/decoder_model_merged_quantized.onnx
+  10097109  ./клипы/движок/models/whisper-tiny/onnx/encoder_model_quantized.onnx
+       339  ./клипы/движок/models/whisper-tiny/preprocessor_config.json
+     10126  ./клипы/движок/models/whisper-tiny/quantize_config.json
+      2194  ./клипы/движок/models/whisper-tiny/special_tokens_map.json
+   2480466  ./клипы/движок/models/whisper-tiny/tokenizer.json
+    282683  ./клипы/движок/models/whisper-tiny/tokenizer_config.json
+   1036584  ./клипы/движок/models/whisper-tiny/vocab.json
+     44806  ./клипы/движок/package-lock.json
+       858  ./клипы/движок/package.json
+      7303  ./клипы/движок/samples/my-drawing.png
+     20300  ./клипы/движок/samples/my-photo.jpg
+     55433  ./клипы/движок/samples/test-drawing.png
+      2523  ./клипы/движок/server.mjs
+     24679  ./клипы/движок/src/api.js
+     28891  ./клипы/движок/src/app.js
+      5918  ./клипы/движок/src/audio.js
+     11312  ./клипы/движок/src/common.js
+      2666  ./клипы/движок/src/export.js
+     15515  ./клипы/движок/src/image.js
+     15205  ./клипы/движок/src/materials.js
+      1301  ./клипы/движок/src/native.js
+      5151  ./клипы/движок/src/paper.js
+      6884  ./клипы/движок/src/render.js
+     26979  ./клипы/движок/src/scenes1.js
+     21321  ./клипы/движок/src/scenes2.js
+     18773  ./клипы/движок/src/scenes3.js
+      8349  ./клипы/движок/src/script.js
+      5825  ./клипы/движок/src/timeline.js
+     11009  ./клипы/движок/src/util.js
+      1178  ./клипы/движок/src/whisper-worker.js
+     13979  ./клипы/движок/src/whisper.js
+      1842  ./клипы/движок/sw.js
+   1058444  ./клипы/движок/test120.wav
+      4815  ./клипы/движок/tools/fetch-whisper-assets.sh
+      2625  ./клипы/движок/tools/setup-rigs.sh
+      2938  ./клипы/движок/vendor/node/async_hooks.mjs
+     28845  ./клипы/движок/vendor/node/buffer.mjs
+     12118  ./клипы/движок/vendor/node/events.mjs
+      7853  ./клипы/движок/vendor/node/process.mjs
+       685  ./клипы/движок/vendor/node/tty.mjs
+     49241  ./клипы/движок/vendor/ort/ort-wasm-simd-threaded.jsep.mjs
+  23013109  ./клипы/движок/vendor/ort/ort-wasm-simd-threaded.jsep.wasm
+    836799  ./клипы/движок/vendor/transformers/transformers.bundle.mjs
+       158  ./клипы/движок/vendor/transformers/transformers.js
+   1858729  ./клипы/примеры/образец-клип-обложка.png
+      1497  ./клипы/примеры/образец-клип-отчёт.json
+   2681383  ./клипы/примеры/образец-клип-раскадровка.png
+  16350789  ./клипы/примеры/образец-клип.mp4
+       703  ./клипы/примеры/образец-конфиг.json
+       107  ./клипы/примеры/пример-расшифровка-речи.txt
+      1599  ./клипы/примеры/пример-слова-с-временем.json
+--- total files: 155
+--- dirs:
+.
+./клипы
+./клипы/движок
+./клипы/tools
+./клипы/примеры
+./клипы/готовые-клипы
+2.0M	/home/runner/work/Vadim129/Vadim129/out/engine-src
+== encrypt ==
+total 1180
+drwxr-xr-x 2 runner runner    4096 Oct 13 04:56 .
+drwxr-xr-x 7 runner runner    4096 Oct 13 04:55 ..
+-rw-r--r-- 1 runner runner     512 Oct 13 04:56 aes.key.enc
+-rw-r--r-- 1 runner runner 1195264 Oct 13 04:56 payload.enc
