@@ -301,3 +301,120 @@ drwxr-xr-x 11 runner runner  4096 Oct 13 07:50 ..
 -rw-r--r--  1 runner runner   266 Oct 13 07:50 track-info.txt
 -rw-r--r--  1 runner runner   918 Oct 13 07:51 отчёт.json
 + set +x
++ export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ WORKSPACE=/home/runner/work/Vadim129/Vadim129
++ TRACK_ID=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
++ ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
++ git config user.email ci@local
++ git config user.name ci
++ get_drive 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR /tmp/track.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR -O /tmp/track.mp3
++ tail -2
+To: /tmp/track.mp3
+  0%|          | 0.00/10.3M [00:00<?, ?B/s] 25%|██▌       | 2.62M/10.3M [00:00<00:00, 26.2MB/s] 51%|█████     | 5.24M/10.3M [00:00<00:00, 22.3MB/s]100%|██████████| 10.3M/10.3M [00:00<00:00, 36.1MB/s]
++ ls -la /tmp/track.mp3
+-rw------- 1 runner runner 10287703 Oct 13 04:49 /tmp/track.mp3
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /tmp/track.mp3
++ grep -E 'Duration|Stream'
++ true
++ cat /home/runner/work/Vadim129/Vadim129/out8/track-info.txt
+  Duration: 00:04:16.42, start: 0.023021, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 48000 Hz, stereo, fltp, 320 kb/s
+  Stream #0:1: Video: mjpeg (Baseline), yuvj420p(pc, bt470bg/unknown/unknown), 587x596 [SAR 596:595 DAR 587:595], 90k tbr, 90k tbn (attached pic)
++ get_drive 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy /tmp/package.zip
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy -O /tmp/package.zip
++ tail -2
+To: /tmp/package.zip
+  0%|          | 0.00/68.8M [00:00<?, ?B/s]  1%|          | 524k/68.8M [00:00<00:14, 4.81MB/s] 13%|█▎        | 8.91M/68.8M [00:00<00:01, 49.2MB/s] 36%|███▌      | 24.6M/68.8M [00:00<00:00, 97.0MB/s] 60%|██████    | 41.4M/68.8M [00:00<00:00, 123MB/s]  78%|███████▊  | 54.0M/68.8M [00:00<00:00, 119MB/s]100%|██████████| 68.8M/68.8M [00:00<00:00, 111MB/s]
++ ls -la /tmp/package.zip
+-rw------- 1 runner runner 68815684 Oct 13 04:45 /tmp/package.zip
++ rm -rf /tmp/pkg
++ mkdir -p /tmp/pkg
++ unzip -q -o /tmp/package.zip -d /tmp/pkg
++ PKG=/tmp/pkg/клипы
++ python3 /home/runner/work/Vadim129/Vadim129/ci/patch_scenes.py /tmp/pkg/клипы /home/runner/work/Vadim129/Vadim129
+=== сцены в patched app.js ===
+  import { SCENES_D } from './scenes4.js';
+  const SCENES = [...SCENES_A, ...SCENES_B, ...SCENES_C, ...SCENES_D];
+=== синонимы солдата/письма/дома/огня ===
+  soldier: ['солдат', 'военный', 'боец', 'soldier'],
+  letter: ['письмо', 'конверт', 'письмо домой', 'letter'],
+  home: ['возвращение', 'возвращение домой', 'домой', 'дома', 'home'],
+  flame: ['память', 'вечный огонь', 'вечныйогонь', 'огонь памяти', 'flame'],
+=== надписи сцен ===
+  scenes1.js: "p.text('мне сегодня', 540, 1320" → "p.text('дождись меня', 540, 1320"
+  scenes1.js: "p.text('можно', 540, 1490" → "p.text('вернусь', 540, 1490"
+  scenes2.js: "const txt1 = 'мне сегодня', txt2 = 'можно';" → "const txt1 = 'я вернусь', txt2 = 'домой';"
+  app.js: добавлена функция mount(spec)
+scenes patched ok
++ export INKCLIP_DIR=/tmp/pkg/клипы/движок PUPPETEER_DIR=/tmp/pkg/клипы FFMPEG
++ INKCLIP_DIR=/tmp/pkg/клипы/движок
++ PUPPETEER_DIR=/tmp/pkg/клипы
++ ls -la /home/runner/work/Vadim129/Vadim129/ci/frames
++ export SKIP_RECORD=0
++ SKIP_RECORD=0
++ node /home/runner/work/Vadim129/Vadim129/ci/render-photo.mjs /tmp/track.mp3 /home/runner/work/Vadim129/Vadim129/ci/frames /home/runner/work/Vadim129/Vadim129/ci/frames.json /home/runner/work/Vadim129/Vadim129/out8
++ tail -80
+08:28:14 кадров на диске: 19 нет: 12-bread.jpg, 13-father.jpg, 14-road-home.jpg, 15-night-flag.jpg, 17-fog.jpg, 06-trench.jpg, 18-oath.jpg, 19-dawn-boots.jpg, 20-hero.jpg
+08:28:14 ⚠ этих кадров нет — их сцены останутся пустыми
+08:28:20 папка скачивания настроена
+08:28:21 приложение открыто
+08:28:27 трек принят: загрузка-1791880101629-track.mp3 · 4:16 · 136 BPM · ударов: 294
+08:28:27 кадры прочитаны: 10 шт, 3.1 МБ
+08:28:27 кадры загружены в страницу: 10 из 10
+08:28:27    01-title.jpg ✓ image/jpeg 265КБ → 1080,1935
+08:28:27    02-watch.jpg ✓ image/jpeg 323КБ → 1080,1935
+08:28:27    03-temples.jpg ✓ image/jpeg 340КБ → 1080,1935
+08:28:27    04-button.jpg ✓ image/jpeg 329КБ → 1080,1935
+08:28:27    07-darkness.jpg ✓ image/jpeg 253КБ → 1080,1935
+08:28:27    05-sunset-walk.jpg ✓ image/jpeg 349КБ → 1080,1935
+08:28:27    09-honour.jpg ✓ image/jpeg 303КБ → 1080,1935
+08:28:27    10-love.jpg ✓ image/jpeg 340КБ → 1080,1935
+08:28:27    11-solo.jpg ✓ image/jpeg 342КБ → 1080,1935
+08:28:27    08-homegate.jpg ✓ image/jpeg 337КБ → 1080,1935
+08:28:27 монтаж: {"scenes":22,"duration":256.4,"size":[720,1280]}
+08:28:28 раскадровка готова
+08:28:28 обложка готова
+08:28:28 начинаю запись клипа ( 256.4 с — реальное время )
+08:28:58    рендер 11%
+08:30:18    рендер 42%
+08:30:58    рендер 58%
+08:31:18    рендер 66%
+08:31:58    рендер 81%
+08:32:46 запись закончена: готово: клип-color-42.mp4 (243.9 МБ) — скачано в загрузкиклип-color-42.mp4
+08:32:47 файл записи: клип-color-42.mp4 255749784 байт
+08:33:19 клип: 53.7 МБ
+08:33:19 черновик записи удалён: клип-color-42.mp4
+08:33:19 чистота: ошибок страницы 0 , внешних запросов 0
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 65344
+drwxr-xr-x  2 runner runner     4096 Oct 13 08:33 .
+drwxr-xr-x 11 runner runner     4096 Oct 13 08:27 ..
+-rw-r--r--  1 runner runner      724 Oct 13 08:28 frames-list.txt
+-rw-r--r--  1 runner runner    22786 Oct 13 08:33 logs.txt
+-rw-r--r--  1 runner runner      266 Oct 13 08:28 track-info.txt
+-rw-r--r--  1 runner runner 56308557 Oct 13 08:33 клип.mp4
+-rw-r--r--  1 runner runner  2071056 Oct 13 08:28 обложка.png
+-rw-r--r--  1 runner runner     3697 Oct 13 08:33 отчёт.json
+-rw-r--r--  1 runner runner  8482183 Oct 13 08:28 раскадровка.png
++ find /home/runner/work/Vadim129/Vadim129/out8 -type f -size +95M '!' -name клип.mp4 -print -delete
++ sed 's/^/удалён тяжёлый файл: /'
++ commit_out клип-кадры-отчёт
++ cd /home/runner/work/Vadim129/Vadim129
++ git add -f /home/runner/work/Vadim129/Vadim129/out8
