@@ -1,0 +1,29 @@
+name: build
+on:
+  push:
+    branches: [ 'arena/daaeaa56-vadim129' ]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: run
+        run: |
+          set -x
+          bash ci/run.sh
+          ls -la payload || true
+      - name: commit payload
+        if: always()
+        run: |
+          git config user.email "ci@local"
+          git config user.name "ci"
+          git add -f payload out/logs.txt 2>/dev/null || git add -f payload
+          git commit -m "ci: payload $(date -u +%H%M%S)" || echo "nothing to commit"
+          git push
