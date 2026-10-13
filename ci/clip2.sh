@@ -11,6 +11,26 @@ export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
 WORKSPACE="$PWD"
 TRACK_ID=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
 ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
+git config user.email "ci@local"
+git config user.name "ci"
+
+push_safe() {   # повторяем push: ветка бывает занята чужим коммитом
+  cd "$WORKSPACE"
+  for i in 1 2 3 4 5; do
+    git pull --rebase --no-edit -q || true
+    if git push; then echo "push ок (попытка $i)"; return 0; fi
+    echo "push не прошёл — попытка $i"; sleep 8
+  done
+  echo "push так и не прошёл"
+  return 1
+}
+
+commit_out() {   # $1 = сообщение
+  cd "$WORKSPACE"
+  git add -f "$OUT" || true
+  git commit -q -m "ci: $1 $(date -u +%H%M%S)" || echo "нечего коммитить"
+  push_safe || true
+}
 
 get_drive "$TRACK_ID" /tmp/track.mp3
 ensure_ffmpeg
@@ -28,6 +48,7 @@ export SKIP_RECORD="${SKIP_RECORD:-0}"   # 1 — только проверка �
 
 node "$WORKSPACE/ci/render-photo.mjs" /tmp/track.mp3 "$WORKSPACE/ci/frames" "$WORKSPACE/ci/frames.json" "$OUT" 2>&1 | tail -80 || echo "render-photo exit=$?"
 ls -la "$OUT"
+commit_out "клип-кадры-отчёт"          # логи и отчёт пушим сразу — чтобы они не потерялись
 
 # страховка по размеру: Диск принимает до 100 МБ
 SZ=$(stat -c%s "$OUT/клип.mp4" 2>/dev/null || echo 0)
@@ -39,7 +60,4 @@ fi
 echo "=== итог ==="
 ls -la "$OUT"
 set +x
-cd "$WORKSPACE"
-git add -f "$OUT"
-git -c user.email=ci@local -c user.name=ci commit -m "ci: клип из кадров $(date -u +%H%M%S)" || echo "нечего коммитить"
-git push || echo "push не прошёл"
+commit_out "клип из кадров"

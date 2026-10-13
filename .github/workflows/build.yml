@@ -23,4 +23,4 @@ jobs:
           git config user.name "ci"
           git add -f payload
           git commit -m "ci: payload $(date -u +%H%M%S)" || echo "nothing to commit"
-          git push
+          git push || echo "payload push не прошёл"   # это не про клип, не валим задачу
