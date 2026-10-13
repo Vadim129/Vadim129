@@ -19,7 +19,10 @@ ls -la "$PKG/движок/models/whisper-tiny/onnx" 2>/dev/null
 echo "=== puppeteer ==="
 (cd "$PKG" && npm init -y >/dev/null 2>&1 && npm i puppeteer --no-audit --no-fund) 2>&1 | tail -3
 echo "=== распознавание (whisper) ==="
-(cd "$PKG" && timeout 2400 node tools/whisper-words.mjs /tmp/track.mp3 "$OUT") 2>&1 | tail -60
+export INKCLIP_DIR="$PKG/движок"
+export FFMPEG
+export PUPPETEER_DIR="$PKG"
+(cd "$PKG" && timeout 2400 node tools/whisper-words.mjs /tmp/track.mp3 "$OUT") 2>&1 | tail -80
 echo "=== результат ==="
 ls -la "$OUT"
 for f in "$OUT"/*.txt "$OUT"/*.json; do echo "----- $f"; head -c 6000 "$f"; echo; done
