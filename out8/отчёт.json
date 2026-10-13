@@ -35,6 +35,7 @@
   "scenes": [],
   "warnings": [],
   "errors": [
-    "Protocol error (Page.setDownloadBehavior): 'Page.setDownloadBehavior' wasn't found"
-  ]
+    "InvalidStateError: The source image could not be decoded."
+  ],
+  "track_info": "загрузка-1791877856288-track.mp3 · 4:16 · 136 BPM · ударов: 294"
 }

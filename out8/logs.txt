@@ -201,3 +201,103 @@ drwxr-xr-x 11 runner runner  4096 Oct 13 07:48 ..
 -rw-r--r--  1 runner runner   266 Oct 13 07:49 track-info.txt
 -rw-r--r--  1 runner runner   843 Oct 13 07:49 отчёт.json
 + set +x
++ export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ WORKSPACE=/home/runner/work/Vadim129/Vadim129
++ TRACK_ID=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
++ ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
++ get_drive 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR /tmp/track.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR -O /tmp/track.mp3
++ tail -2
+To: /tmp/track.mp3
+  0%|          | 0.00/10.3M [00:00<?, ?B/s] 56%|█████▌    | 5.77M/10.3M [00:00<00:00, 56.2MB/s]100%|██████████| 10.3M/10.3M [00:00<00:00, 47.6MB/s]
++ ls -la /tmp/track.mp3
+-rw------- 1 runner runner 10287703 Oct 13 04:49 /tmp/track.mp3
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /tmp/track.mp3
++ grep -E 'Duration|Stream'
++ true
++ cat /home/runner/work/Vadim129/Vadim129/out8/track-info.txt
+  Duration: 00:04:16.42, start: 0.023021, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 48000 Hz, stereo, fltp, 320 kb/s
+  Stream #0:1: Video: mjpeg (Baseline), yuvj420p(pc, bt470bg/unknown/unknown), 587x596 [SAR 596:595 DAR 587:595], 90k tbr, 90k tbn (attached pic)
++ get_drive 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy /tmp/package.zip
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy -O /tmp/package.zip
++ tail -2
+To: /tmp/package.zip
+  0%|          | 0.00/68.8M [00:00<?, ?B/s]  2%|▏         | 1.05M/68.8M [00:00<00:06, 10.0MB/s] 18%|█▊        | 12.6M/68.8M [00:00<00:00, 70.3MB/s] 40%|███▉      | 27.3M/68.8M [00:00<00:00, 104MB/s]  60%|██████    | 41.4M/68.8M [00:00<00:00, 116MB/s] 79%|███████▉  | 54.5M/68.8M [00:00<00:00, 121MB/s] 98%|█████████▊| 67.6M/68.8M [00:00<00:00, 123MB/s]100%|██████████| 68.8M/68.8M [00:00<00:00, 110MB/s]
++ ls -la /tmp/package.zip
+-rw------- 1 runner runner 68815684 Oct 13 04:45 /tmp/package.zip
++ rm -rf /tmp/pkg
++ mkdir -p /tmp/pkg
++ unzip -q -o /tmp/package.zip -d /tmp/pkg
++ PKG=/tmp/pkg/клипы
++ python3 /home/runner/work/Vadim129/Vadim129/ci/patch_scenes.py /tmp/pkg/клипы /home/runner/work/Vadim129/Vadim129
+=== сцены в patched app.js ===
+  import { SCENES_D } from './scenes4.js';
+  const SCENES = [...SCENES_A, ...SCENES_B, ...SCENES_C, ...SCENES_D];
+=== синонимы солдата/письма/дома/огня ===
+  soldier: ['солдат', 'военный', 'боец', 'soldier'],
+  letter: ['письмо', 'конверт', 'письмо домой', 'letter'],
+  home: ['возвращение', 'возвращение домой', 'домой', 'дома', 'home'],
+  flame: ['память', 'вечный огонь', 'вечныйогонь', 'огонь памяти', 'flame'],
+=== надписи сцен ===
+  scenes1.js: "p.text('мне сегодня', 540, 1320" → "p.text('дождись меня', 540, 1320"
+  scenes1.js: "p.text('можно', 540, 1490" → "p.text('вернусь', 540, 1490"
+  scenes2.js: "const txt1 = 'мне сегодня', txt2 = 'можно';" → "const txt1 = 'я вернусь', txt2 = 'домой';"
+  app.js: добавлена функция mount(spec)
+scenes patched ok
++ export INKCLIP_DIR=/tmp/pkg/клипы/движок PUPPETEER_DIR=/tmp/pkg/клипы FFMPEG
++ INKCLIP_DIR=/tmp/pkg/клипы/движок
++ PUPPETEER_DIR=/tmp/pkg/клипы
++ ls -la /home/runner/work/Vadim129/Vadim129/ci/frames
++ node /home/runner/work/Vadim129/Vadim129/ci/render-photo.mjs /tmp/track.mp3 /home/runner/work/Vadim129/Vadim129/ci/frames /home/runner/work/Vadim129/Vadim129/ci/frames.json /home/runner/work/Vadim129/Vadim129/out8
++ tail -80
+07:50:46 кадров на диске: 19 нет: 12-bread.jpg, 13-father.jpg, 14-road-home.jpg, 15-night-flag.jpg, 17-fog.jpg, 06-trench.jpg, 18-oath.jpg, 19-dawn-boots.jpg, 20-hero.jpg
+07:50:46 ⚠ этих кадров нет — их сцены останутся пустыми
+07:50:54 папка скачивания настроена
+07:50:56 приложение открыто
+07:51:05 трек принят: загрузка-1791877856288-track.mp3 · 4:16 · 136 BPM · ударов: 294
+
+⛔ InvalidStateError: The source image could not be decoded.
++ echo 'render-photo exit=1'
+render-photo exit=1
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 36
+drwxr-xr-x  2 runner runner  4096 Oct 13 07:50 .
+drwxr-xr-x 11 runner runner  4096 Oct 13 07:50 ..
+-rw-r--r--  1 runner runner   724 Oct 13 07:50 frames-list.txt
+-rw-r--r--  1 runner runner 15606 Oct 13 07:51 logs.txt
+-rw-r--r--  1 runner runner   266 Oct 13 07:50 track-info.txt
+-rw-r--r--  1 runner runner   918 Oct 13 07:51 отчёт.json
+++ stat -c%s /home/runner/work/Vadim129/Vadim129/out8/клип.mp4
+++ echo 0
++ SZ=0
++ echo 'размер клипа: 0 байт'
+размер клипа: 0 байт
++ '[' 0 -gt 94371840 ']'
++ echo '=== итог ==='
+=== итог ===
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 36
+drwxr-xr-x  2 runner runner  4096 Oct 13 07:50 .
+drwxr-xr-x 11 runner runner  4096 Oct 13 07:50 ..
+-rw-r--r--  1 runner runner   724 Oct 13 07:50 frames-list.txt
+-rw-r--r--  1 runner runner 16241 Oct 13 07:51 logs.txt
+-rw-r--r--  1 runner runner   266 Oct 13 07:50 track-info.txt
+-rw-r--r--  1 runner runner   918 Oct 13 07:51 отчёт.json
++ set +x
