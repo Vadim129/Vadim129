@@ -32,9 +32,15 @@ const framesHost = join(engineDir, '.frames');
 await rm(framesHost, { recursive: true, force: true });
 await mkdir(framesHost, { recursive: true });
 const files = [];
+const missing = [];
 for (const s of plan.scenes) if (!files.some(f => f.key === s.key)) files.push({ key: s.key, file: s.file });
-for (const f of files) await copyFile(join(framesDir, f.file), join(framesHost, f.file));
-log('кадров на диске:', files.length);
+for (const f of files) {
+  const src = join(framesDir, f.file);
+  if (!existsSync(src)) { missing.push(f.file); continue; }
+  await copyFile(src, join(framesHost, f.file));
+}
+log('кадров на диске:', files.length, missing.length ? ('нет: ' + missing.join(', ')) : '');
+if (missing.length) log('⚠ этих кадров нет — их сцены останутся пустыми');
 
 const port = await freePort();
 const srv = spawn(process.execPath, ['server.mjs', String(port)], { cwd: engineDir, stdio: 'ignore' });
@@ -47,7 +53,7 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required',
          '--disable-features=AudioServiceOutOfProcess', '--font-render-hinting=none'],
 });
-const report = { plan: planPath, frames: files.map(f => f.file), scenes: [], warnings: [], errors: [] };
+const report = { plan: planPath, frames: files.map(f => f.file), missing, scenes: [], warnings: [], errors: [] };
 let code = 0;
 try {
   const client = await browser.target().createCDPSession();
@@ -100,7 +106,8 @@ try {
     }
     return Object.keys(window.__FRAMES);
   }, { files });
-  log('кадры загружены в страницу:', loaded.length);
+  log('кадры загружены в страницу:', loaded.length, 'из', files.length - missing.length);
+  report.frames_loaded = loaded;
 
   // 3) монтаж: раскладываем страницы по таймингу песни
   const scenes = plan.scenes.map((s, i) => {
