@@ -17,7 +17,13 @@ echo "=== whisper assets ==="
 du -sh "$PKG/движок/vendor" "$PKG/движок/models" 2>/dev/null
 ls -la "$PKG/движок/models/whisper-tiny/onnx" 2>/dev/null
 echo "=== puppeteer ==="
-(cd "$PKG" && npm init -y >/dev/null 2>&1 && npm i puppeteer --no-audit --no-fund) 2>&1 | tail -3
+(
+  cd "$PKG" || exit 9
+  npm init -y >/dev/null 2>&1; echo "npm init exit=$?"
+  npm i puppeteer --no-audit --no-fund 2>&1 | tail -12; echo "npm i exit=${PIPESTATUS[0]}"
+  ls node_modules | head -5
+  node -e "console.log('resolve:', require.resolve('puppeteer'))"
+) 2>&1 | tail -30
 echo "=== распознавание (whisper) ==="
 export INKCLIP_DIR="$PKG/движок"
 export FFMPEG
