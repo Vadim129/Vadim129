@@ -49,9 +49,38 @@ print('=== синонимы солдата/письма/дома/огня ===')
 for line in sc.read_text(encoding='utf-8').splitlines():
     if any(k in line for k in ('soldier:', 'letter:', 'home:', 'flame:')):
         print(' ', line.strip())
+
+# 5) надписи сцен: меняем «дневниковые» фразы на военные (по песне «Я вернусь к тебе домой»)
+def swap(path, pairs):
+    t = path.read_text(encoding='utf-8')
+    for old, new in pairs:
+        if new in t:
+            print(f'  уже заменено в {path.name}: {new!r}')
+            continue
+        if old not in t:
+            problems.append(f'{path.name}: не нашёл {old!r} — замена не сделана')
+            continue
+        t = t.replace(old, new, 1)
+        print(f'  {path.name}: {old!r} → {new!r}')
+    path.write_text(t, encoding='utf-8')
+
+print('=== надписи сцен ===')
+swap(eng / 'src' / 'scenes1.js', [
+    ("p.text('мне сегодня', 540, 1320", "p.text('дождись меня', 540, 1320"),
+    ("p.text('можно', 540, 1490", "p.text('вернусь', 540, 1490"),
+])
+swap(eng / 'src' / 'scenes2.js', [
+    ("const txt1 = 'мне сегодня', txt2 = 'можно';", "const txt1 = 'я вернусь', txt2 = 'домой';"),
+])
+for f, want in ((eng / 'src' / 'scenes1.js', 'дождись меня'), (eng / 'src' / 'scenes1.js', 'вернусь'),
+                (eng / 'src' / 'scenes2.js', "'я вернусь', txt2 = 'домой'")):
+    if want not in f.read_text(encoding='utf-8'):
+        problems.append(f'{f.name}: не вижу {want!r} после правки')
+
 if problems:
     print('\nПРОБЛЕМЫ:')
     for p in problems:
         print(' -', p)
     sys.exit(1)
 print('scenes patched ok')
+
