@@ -1,0 +1,16 @@
+name: bridge
+on:
+  push:
+    branches: [ 'arena/daaeaa56-vadim129' ]
+  workflow_dispatch:
+concurrency:
+  group: bridge-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: probe
+        run: bash ci/probe.sh

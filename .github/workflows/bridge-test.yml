@@ -1,7 +1,0 @@
-name: bridge-test
-on: workflow_dispatch
-jobs:
-  hello:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "hello from runner"; uname -a; curl -s -o /dev/null -w "drive:%{http_code}\n" -L "https://drive.google.com/uc?export=download&id=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR"
