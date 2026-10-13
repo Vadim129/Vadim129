@@ -578,3 +578,43 @@ drwxr-xr-x 11 runner runner     4096 Oct 13 08:38 ..
 + commit_out клип-кадры-отчёт
 + cd /home/runner/work/Vadim129/Vadim129
 + git add -f /home/runner/work/Vadim129/Vadim129/out8
+++ date -u +%H%M%S
++ git commit -q -m 'ci: клип-кадры-отчёт 084403'
++ push_safe
++ cd /home/runner/work/Vadim129/Vadim129
++ local err=
++ for i in 1 2 3 4 5
++ git pull --rebase --no-edit -q
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
++ true
+++ git push
++ err='remote: warning: See https://gh.io/lfs for more information.        
+remote: warning: File out8/клип.mp4 is 54.68 MB; this is larger than GitHub'\''s recommended maximum file size of 50.00 MB        
+remote: warning: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/Vadim129/Vadim129
+   e5782c9..5e614d7  arena/daaeaa56-vadim129 -> arena/daaeaa56-vadim129'
++ '[' 0 -eq 0 ']'
++ echo 'push ок (попытка 1)'
+push ок (попытка 1)
++ rm -f /home/runner/work/Vadim129/Vadim129/out8/ошибка-push.txt
++ return 0
+++ stat -c%s /home/runner/work/Vadim129/Vadim129/out8/клип.mp4
++ SZ=57331924
++ echo 'размер клипа: 57331924 байт'
+размер клипа: 57331924 байт
++ '[' 57331924 -gt 94371840 ']'
++ echo '=== итог ==='
+=== итог ===
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 67228
+drwxr-xr-x  2 runner runner     4096 Oct 13 08:44 .
+drwxr-xr-x 11 runner runner     4096 Oct 13 08:38 ..
+-rw-r--r--  1 runner runner     1276 Oct 13 08:38 frames-list.txt
+-rw-r--r--  1 runner runner    33996 Oct 13 08:44 logs.txt
+-rw-r--r--  1 runner runner      266 Oct 13 08:38 track-info.txt
+-rw-r--r--  1 runner runner 57331924 Oct 13 08:44 клип.mp4
+-rw-r--r--  1 runner runner  2071056 Oct 13 08:39 обложка.png
+-rw-r--r--  1 runner runner     4991 Oct 13 08:44 отчёт.json
+-rw-r--r--  1 runner runner  9370899 Oct 13 08:39 раскадровка.png
++ set +x
