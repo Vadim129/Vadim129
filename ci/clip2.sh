@@ -52,6 +52,8 @@ export SKIP_RECORD="${SKIP_RECORD:-0}"   # 1 — только проверка �
 
 node "$WORKSPACE/ci/render-photo.mjs" /tmp/track.mp3 "$WORKSPACE/ci/frames" "$WORKSPACE/ci/frames.json" "$OUT" 2>&1 | tail -80 || echo "render-photo exit=$?"
 ls -la "$OUT"
+# в git не должно попасть ничего тяжелее 95 МБ — иначе push отклонят
+find "$OUT" -type f -size +95M ! -name 'клип.mp4' -print -delete | sed 's/^/удалён тяжёлый файл: /'
 commit_out "клип-кадры-отчёт"          # логи и отчёт пушим сразу — чтобы они не потерялись
 
 # страховка по размеру: Диск принимает до 100 МБ

@@ -246,7 +246,8 @@ try {
   // ffprobe — кодек и длительность
   const probe = spawnSync(process.env.FFPROBE || 'ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_name,duration', '-of', 'json', mp4]);
   try { report.probe = JSON.parse(probe.stdout.toString()); } catch (e) {}
-  if (report.raw.endsWith('.webm')) await rm(file, { force: true });
+  // черновик записи (mp4/webm) больше не нужен — иначе он не влезает в push (лимит 100 МБ на файл)
+  if (resolve(file) !== resolve(mp4)) { await rm(file, { force: true }); log('черновик записи удалён:', basename(file)); }
 
   report.page_errors = pageErrors;
   report.external_requests = extRequests;
