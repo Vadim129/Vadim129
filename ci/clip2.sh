@@ -24,6 +24,7 @@ python3 "$WORKSPACE/ci/patch_scenes.py" "$PKG" "$WORKSPACE" || echo "патч д
 (cd "$PKG" && npm init -y >/dev/null 2>&1; npm i puppeteer --no-audit --no-fund) >/dev/null 2>&1
 export INKCLIP_DIR="$PKG/движок" PUPPETEER_DIR="$PKG" FFMPEG
 ls -la "$WORKSPACE/ci/frames" > "$OUT/frames-list.txt"
+export SKIP_RECORD="${SKIP_RECORD:-0}"   # 1 — только проверка кадров, без записи клипа
 
 node "$WORKSPACE/ci/render-photo.mjs" /tmp/track.mp3 "$WORKSPACE/ci/frames" "$WORKSPACE/ci/frames.json" "$OUT" 2>&1 | tail -80 || echo "render-photo exit=$?"
 ls -la "$OUT"

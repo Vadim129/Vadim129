@@ -106,21 +106,44 @@ try {
   // 2) кадры — в canvases страницы
   const loaded = await page.evaluate(async ({ files }) => {
     window.__FRAMES = {};
+    const info = [];
     for (const f of files) {
-      const r = await fetch('/.frames/' + encodeURIComponent(f.file));
-      const blob = await r.blob();
-      const bmp = await createImageBitmap(blob);
-      const c = document.createElement('canvas');
-      c.width = 1080; c.height = Math.round(bmp.height * 1080 / bmp.width);
-      const g = c.getContext('2d');
-      g.imageSmoothingQuality = 'high';
-      g.drawImage(bmp, 0, 0, c.width, c.height);
-      window.__FRAMES[f.key] = c;
+      try {
+        const r = await fetch('/.frames/' + encodeURIComponent(f.file));
+        const blob = await r.blob();
+        const rec = { file: f.file, ok: r.ok, status: r.status, type: blob.type, size: blob.size };
+        let img = null;
+        try {
+          img = await createImageBitmap(blob);
+          rec.how = 'bitmap';
+        } catch (e1) {
+          rec.bitmapError = String(e1 && e1.message).slice(0, 90);
+          const url = URL.createObjectURL(blob);
+          const el = new Image();
+          await new Promise((res, rej) => { el.onload = res; el.onerror = () => rej(new Error('img не прочитал картинку')); el.src = url; });
+          img = el;
+          rec.how = 'img';
+          URL.revokeObjectURL(url);
+        }
+        const c = document.createElement('canvas');
+        c.width = 1080; c.height = Math.round(img.height * 1080 / img.width);
+        const g = c.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(img, 0, 0, c.width, c.height);
+        window.__FRAMES[f.key] = c;
+        rec.canvas = [c.width, c.height];
+        info.push(rec);
+      } catch (e) {
+        info.push({ file: f.file, error: String(e && e.message ? e.message : e).slice(0, 120) });
+      }
     }
-    return Object.keys(window.__FRAMES);
+    return info;
   }, { files });
-  log('кадры загружены в страницу:', loaded.length, 'из', files.length - missing.length);
+  const good = loaded.filter(r => r.canvas).length;
+  log('кадры загружены в страницу:', good, 'из', files.length);
+  for (const r of loaded) log('  ', r.file, r.error ? ('⛔ ' + r.error) : `${r.status} ${r.type} ${(r.size / 1024) | 0}КБ → ${r.canvas} (${r.how})${r.bitmapError ? ' [' + r.bitmapError + ']' : ''}`);
   report.frames_loaded = loaded;
+  if (!good) throw new Error('ни один кадр не загрузился');
 
   // 3) монтаж: раскладываем страницы по таймингу песни
   const scenes = plan.scenes.map((s, i) => {
@@ -157,6 +180,12 @@ try {
   log('раскадровка готова');
   await save(await shot([plan.cover_at], 1, 720), 'обложка.png');
   log('обложка готова');
+
+  if (process.env.SKIP_RECORD === '1') {
+    log('SKIP_RECORD=1 — запись пропущена (проверка кадров и раскадровки)');
+    report.skipped_record = true;
+    throw { stop: true };
+  }
 
   // 5) запись клипа в реальном времени
   const before = new Set((await readdir(outDir)).map(f => f));
@@ -207,9 +236,13 @@ try {
   report.scene_list = plan.scenes.map(s => `${s.t0.toFixed(1)}–${s.t1.toFixed(1)} ${s.key}`);
   log('чистота: ошибок страницы', pageErrors.length, ', внешних запросов', extRequests.length);
 } catch (e) {
-  code = 1;
-  report.errors.push(String(e && e.message ? e.message : e));
-  console.error('\n⛔ ' + (e && e.message ? e.message : e));
+  if (e && e.stop) {
+    // это не ошибка — проверочный прогон без записи
+  } else {
+    code = 1;
+    report.errors.push(String(e && e.message ? e.message : e));
+    console.error('\n⛔ ' + (e && e.message ? e.message : e));
+  }
 } finally {
   await browser.close().catch(() => {});
   srv.kill('SIGTERM');
