@@ -1,0 +1,111 @@
+{
+  "engine": "/tmp/pkg/клипы/движок",
+  "track": "/tmp/pkg/клипы/трек.mp3",
+  "image": null,
+  "quality": "720x1280",
+  "whisper": null,
+  "segments": [
+    {
+      "id": "soldier",
+      "t0": 0.11,
+      "t1": 22.17
+    },
+    {
+      "id": "window_rain",
+      "t0": 22.17,
+      "t1": 35.85
+    },
+    {
+      "id": "letter",
+      "t0": 35.85,
+      "t1": 49.96
+    },
+    {
+      "id": "home",
+      "t0": 49.96,
+      "t1": 64.08
+    },
+    {
+      "id": "soldier",
+      "t0": 64.08,
+      "t1": 78.2
+    },
+    {
+      "id": "flame",
+      "t0": 78.2,
+      "t1": 91.88
+    },
+    {
+      "id": "snow",
+      "t0": 91.88,
+      "t1": 105.99
+    },
+    {
+      "id": "road",
+      "t0": 105.99,
+      "t1": 120.99
+    },
+    {
+      "id": "fire",
+      "t0": 120.99,
+      "t1": 135.11
+    },
+    {
+      "id": "stars",
+      "t0": 135.11,
+      "t1": 148.79
+    },
+    {
+      "id": "heart",
+      "t0": 148.79,
+      "t1": 162.91
+    },
+    {
+      "id": "city_night",
+      "t0": 162.91,
+      "t1": 177.02
+    },
+    {
+      "id": "home",
+      "t0": 177.02,
+      "t1": 191.14
+    },
+    {
+      "id": "flowers",
+      "t0": 191.14,
+      "t1": 204.82
+    },
+    {
+      "id": "flame",
+      "t0": 204.82,
+      "t1": 218.94
+    },
+    {
+      "id": "road",
+      "t0": 218.94,
+      "t1": 233.05
+    },
+    {
+      "id": "pillow",
+      "t0": 233.05,
+      "t1": 255.99
+    }
+  ],
+  "warnings": [],
+  "out": "/tmp/pkg/клипы/готовые/клип.mp4",
+  "track_info": "загрузка-1791875576553-трек.mp3 · 4:16 · 136 BPM · ударов: 294",
+  "duration": 256.37,
+  "materials": {
+    "profile": "color",
+    "paper": "grid",
+    "palette": "warm",
+    "mood": "day"
+  },
+  "bytes": 53204455,
+  "cover": "/tmp/pkg/клипы/готовые/клип-обложка.png",
+  "codec_in": "vp9/opus",
+  "codec_out": "h264",
+  "duration_out": 256.66,
+  "page_errors": [],
+  "external_requests": []
+}
