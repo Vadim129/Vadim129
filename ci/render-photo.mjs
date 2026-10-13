@@ -56,10 +56,23 @@ const browser = await puppeteer.launch({
 const report = { plan: planPath, frames: files.map(f => f.file), missing, scenes: [], warnings: [], errors: [] };
 let code = 0;
 try {
-  const client = await browser.target().createCDPSession();
-  await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: outDir });
-
   const page = await browser.newPage();
+  // скачивание файла записи прямо в папку вывода (без диалогов)
+  let dlOk = false;
+  try {
+    const client = await page.target().createCDPSession();
+    await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: outDir });
+    dlOk = true;
+  } catch (e) { log('Page.setDownloadBehavior не сработал:', String(e.message).slice(0, 80)); }
+  if (!dlOk) {
+    try {
+      const bclient = await browser.target().createCDPSession();
+      await bclient.send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: outDir, eventsEnabled: true });
+      dlOk = true;
+    } catch (e) { log('Browser.setDownloadBehavior не сработал:', String(e.message).slice(0, 80)); }
+  }
+  if (!dlOk) throw new Error('браузер не отдаёт файл: не удалось настроить папку скачивания');
+  log('папка скачивания настроена');
   await page.setViewport({ width: 900, height: 1600, deviceScaleFactor: 1 });
   const pageErrors = [];
   const extRequests = [];
