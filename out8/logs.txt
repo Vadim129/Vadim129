@@ -1,0 +1,106 @@
++ export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
++ WORKSPACE=/home/runner/work/Vadim129/Vadim129
++ TRACK_ID=1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR
++ ZIP_ID=1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy
++ get_drive 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR /tmp/track.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1eZRIngYXfQn7R8Yu9-IFOlQAhKUxSkfR -O /tmp/track.mp3
++ tail -2
+To: /tmp/track.mp3
+  0%|          | 0.00/10.3M [00:00<?, ?B/s] 25%|██▌       | 2.62M/10.3M [00:00<00:00, 22.1MB/s] 66%|██████▋   | 6.82M/10.3M [00:00<00:00, 24.7MB/s]100%|██████████| 10.3M/10.3M [00:00<00:00, 34.8MB/s]
++ ls -la /tmp/track.mp3
+-rw------- 1 runner runner 10287703 Oct 13 04:49 /tmp/track.mp3
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /tmp/track.mp3
++ grep -E 'Duration|Stream'
++ true
++ cat /home/runner/work/Vadim129/Vadim129/out8/track-info.txt
+  Duration: 00:04:16.42, start: 0.023021, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 48000 Hz, stereo, fltp, 320 kb/s
+  Stream #0:1: Video: mjpeg (Baseline), yuvj420p(pc, bt470bg/unknown/unknown), 587x596 [SAR 596:595 DAR 587:595], 90k tbr, 90k tbn (attached pic)
++ get_drive 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy /tmp/package.zip
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1a--SHk9H2qjD7VhupI-bzCnwOmL6CxKy -O /tmp/package.zip
++ tail -2
+To: /tmp/package.zip
+  0%|          | 0.00/68.8M [00:00<?, ?B/s]  2%|▏         | 1.05M/68.8M [00:00<00:06, 10.3MB/s] 16%|█▌        | 11.0M/68.8M [00:00<00:00, 62.1MB/s] 38%|███▊      | 26.2M/68.8M [00:00<00:00, 102MB/s]  56%|█████▌    | 38.3M/68.8M [00:00<00:00, 108MB/s] 77%|███████▋  | 53.0M/68.8M [00:00<00:00, 120MB/s] 98%|█████████▊| 67.6M/68.8M [00:00<00:00, 128MB/s]100%|██████████| 68.8M/68.8M [00:00<00:00, 111MB/s]
++ ls -la /tmp/package.zip
+-rw------- 1 runner runner 68815684 Oct 13 04:45 /tmp/package.zip
++ rm -rf /tmp/pkg
++ mkdir -p /tmp/pkg
++ unzip -q -o /tmp/package.zip -d /tmp/pkg
++ PKG=/tmp/pkg/клипы
++ python3 /home/runner/work/Vadim129/Vadim129/ci/patch_scenes.py /tmp/pkg/клипы /home/runner/work/Vadim129/Vadim129
+=== сцены в patched app.js ===
+  import { SCENES_D } from './scenes4.js';
+  const SCENES = [...SCENES_A, ...SCENES_B, ...SCENES_C, ...SCENES_D];
+=== синонимы солдата/письма/дома/огня ===
+  soldier: ['солдат', 'военный', 'боец', 'soldier'],
+  letter: ['письмо', 'конверт', 'письмо домой', 'letter'],
+  home: ['возвращение', 'возвращение домой', 'домой', 'дома', 'home'],
+  flame: ['память', 'вечный огонь', 'вечныйогонь', 'огонь памяти', 'flame'],
+=== надписи сцен ===
+  scenes1.js: "p.text('мне сегодня', 540, 1320" → "p.text('дождись меня', 540, 1320"
+  scenes1.js: "p.text('можно', 540, 1490" → "p.text('вернусь', 540, 1490"
+  scenes2.js: "const txt1 = 'мне сегодня', txt2 = 'можно';" → "const txt1 = 'я вернусь', txt2 = 'домой';"
+  app.js: добавлена функция mount(spec)
+scenes patched ok
++ export INKCLIP_DIR=/tmp/pkg/клипы/движок PUPPETEER_DIR=/tmp/pkg/клипы FFMPEG
++ INKCLIP_DIR=/tmp/pkg/клипы/движок
++ PUPPETEER_DIR=/tmp/pkg/клипы
++ ls -la /home/runner/work/Vadim129/Vadim129/ci/frames
++ node /home/runner/work/Vadim129/Vadim129/ci/render-photo.mjs /tmp/track.mp3 /home/runner/work/Vadim129/Vadim129/ci/frames /home/runner/work/Vadim129/Vadim129/ci/frames.json /home/runner/work/Vadim129/Vadim129/out8
++ tail -80
+node:internal/fs/promises:621
+  return await PromisePrototypeThen(
+         ^
+
+Error: ENOENT: no such file or directory, copyfile '/home/runner/work/Vadim129/Vadim129/ci/frames/12-bread.jpg' -> '/tmp/pkg/клипы/движок/.frames/12-bread.jpg'
+    at async copyFile (node:internal/fs/promises:621:10)
+    at async file:///home/runner/work/Vadim129/Vadim129/ci/render-photo.mjs:36:24 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'copyfile',
+  path: '/home/runner/work/Vadim129/Vadim129/ci/frames/12-bread.jpg',
+  dest: '/tmp/pkg/клипы/движок/.frames/12-bread.jpg'
+}
+
+Node.js v22.23.3
++ echo 'render-photo exit=1'
+render-photo exit=1
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 24
+drwxr-xr-x  2 runner runner 4096 Oct 13 07:48 .
+drwxr-xr-x 11 runner runner 4096 Oct 13 07:47 ..
+-rw-r--r--  1 runner runner  724 Oct 13 07:48 frames-list.txt
+-rw-r--r--  1 runner runner 4735 Oct 13 07:48 logs.txt
+-rw-r--r--  1 runner runner  266 Oct 13 07:48 track-info.txt
+++ stat -c%s /home/runner/work/Vadim129/Vadim129/out8/клип.mp4
+++ echo 0
++ SZ=0
++ echo 'размер клипа: 0 байт'
+размер клипа: 0 байт
++ '[' 0 -gt 94371840 ']'
++ echo '=== итог ==='
+=== итог ===
++ ls -la /home/runner/work/Vadim129/Vadim129/out8
+total 24
+drwxr-xr-x  2 runner runner 4096 Oct 13 07:48 .
+drwxr-xr-x 11 runner runner 4096 Oct 13 07:47 ..
+-rw-r--r--  1 runner runner  724 Oct 13 07:48 frames-list.txt
+-rw-r--r--  1 runner runner 5302 Oct 13 07:48 logs.txt
+-rw-r--r--  1 runner runner  266 Oct 13 07:48 track-info.txt
++ set +x

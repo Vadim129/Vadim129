@@ -1,0 +1,13 @@
+total 3216
+drwxr-xr-x 2 runner runner   4096 Oct 13 07:47 .
+drwxr-xr-x 3 runner runner   4096 Oct 13 07:47 ..
+-rw-r--r-- 1 runner runner 271810 Oct 13 07:47 01-title.jpg
+-rw-r--r-- 1 runner runner 330814 Oct 13 07:47 02-watch.jpg
+-rw-r--r-- 1 runner runner 348718 Oct 13 07:47 03-temples.jpg
+-rw-r--r-- 1 runner runner 337851 Oct 13 07:47 04-button.jpg
+-rw-r--r-- 1 runner runner 357912 Oct 13 07:47 05-sunset-walk.jpg
+-rw-r--r-- 1 runner runner 259286 Oct 13 07:47 07-darkness.jpg
+-rw-r--r-- 1 runner runner 345451 Oct 13 07:47 08-homegate.jpg
+-rw-r--r-- 1 runner runner 310372 Oct 13 07:47 09-honour.jpg
+-rw-r--r-- 1 runner runner 348998 Oct 13 07:47 10-love.jpg
+-rw-r--r-- 1 runner runner 350969 Oct 13 07:47 11-solo.jpg
