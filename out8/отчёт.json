@@ -1,0 +1,40 @@
+{
+  "plan": "/home/runner/work/Vadim129/Vadim129/ci/frames.json",
+  "frames": [
+    "01-title.jpg",
+    "02-watch.jpg",
+    "03-temples.jpg",
+    "04-button.jpg",
+    "07-darkness.jpg",
+    "05-sunset-walk.jpg",
+    "09-honour.jpg",
+    "10-love.jpg",
+    "11-solo.jpg",
+    "12-bread.jpg",
+    "13-father.jpg",
+    "14-road-home.jpg",
+    "15-night-flag.jpg",
+    "17-fog.jpg",
+    "08-homegate.jpg",
+    "06-trench.jpg",
+    "18-oath.jpg",
+    "19-dawn-boots.jpg",
+    "20-hero.jpg"
+  ],
+  "missing": [
+    "12-bread.jpg",
+    "13-father.jpg",
+    "14-road-home.jpg",
+    "15-night-flag.jpg",
+    "17-fog.jpg",
+    "06-trench.jpg",
+    "18-oath.jpg",
+    "19-dawn-boots.jpg",
+    "20-hero.jpg"
+  ],
+  "scenes": [],
+  "warnings": [],
+  "errors": [
+    "Protocol error (Page.setDownloadBehavior): 'Page.setDownloadBehavior' wasn't found"
+  ]
+}
