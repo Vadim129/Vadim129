@@ -1,0 +1,17 @@
+total 96
+drwxr-xr-x 6 runner runner  4096 Oct 13 04:30 .
+drwxr-xr-x 3 runner runner  4096 Oct 13 05:32 ..
+-rw-r--r-- 1 runner runner  4391 Oct 13 04:45 00-ЧИТАТЬ-ПЕРВЫМ.md
+-rw-r--r-- 1 runner runner  4378 Oct 13 04:26 01-ЗАДАНИЕ-ДЛЯ-АГЕНТА.md
+-rw-r--r-- 1 runner runner 10163 Oct 13 04:27 02-ИНСТРУКЦИЯ.md
+-rw-r--r-- 1 runner runner  7223 Oct 13 04:27 03-СЦЕНЫ-И-МАТЕРИАЛЫ.md
+-rw-r--r-- 1 runner runner  4294 Oct 13 04:27 04-КАРТИНКИ-И-РИСУНКИ.md
+-rw-r--r-- 1 runner runner  5489 Oct 13 04:29 05-РАСПОЗНАВАНИЕ-РЕЧИ.md
+-rw-r--r-- 1 runner runner  3674 Oct 13 04:27 06-ПРИМЕРЫ-СЦЕНАРИЕВ.md
+-rw-r--r-- 1 runner runner  6140 Oct 13 04:29 07-ЕСЛИ-ЧТО-ТО-НЕ-ТАК.md
+-rw-r--r-- 1 runner runner  3572 Oct 13 04:29 08-ШПАРГАЛКА-ДЛЯ-ЧЕЛОВЕКА.md
+-rw-r--r-- 1 runner runner  2726 Oct 13 04:30 README.md
+drwxr-xr-x 2 runner runner  4096 Oct 13 04:30 tools
+drwxr-xr-x 2 runner runner  4096 Oct 13 04:30 готовые-клипы
+drwxr-xr-x 9 runner runner  4096 Oct 13 04:29 движок
+drwxr-xr-x 2 runner runner  4096 Oct 13 04:30 примеры
