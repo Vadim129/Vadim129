@@ -12,6 +12,8 @@ for (const f of ['manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'icon
   if (existsSync(`${ROOT}/${f}`)) await cp(`${ROOT}/${f}`, `${OUT}/${f}`);
 }
 if (existsSync(`${ROOT}/samples`)) await cp(`${ROOT}/samples`, `${OUT}/samples`, { recursive: true });
+// рукописный шрифт клипа (иначе в APK буквы станут печатными)
+if (existsSync(`${ROOT}/assets/fonts`)) await cp(`${ROOT}/assets/fonts`, `${OUT}/assets/fonts`, { recursive: true });
 // Whisper целиком внутри приложения: библиотека + wasm + модель (работает офлайн)
 if (existsSync(`${ROOT}/vendor`)) await cp(`${ROOT}/vendor`, `${OUT}/vendor`, { recursive: true });
 if (existsSync(`${ROOT}/models`)) await cp(`${ROOT}/models`, `${OUT}/models`, { recursive: true });

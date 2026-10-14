@@ -36,12 +36,17 @@ globalThis.document = {
 };
 globalThis.DOMMatrix = NapiMatrix;
 
+const { registerFonts } = await import('./fonts.mjs');
+registerFonts();
+const { collectImgs, registerAssetScenes } = await import('./asset.mjs');
 const { silentAnalysis } = await import('../src/audio.js');
 const { Renderer } = await import('../src/render.js');
 const { SCENES_D } = await import('../src/scenes4.js');
 const byId = Object.fromEntries(SCENES_D.map(s => [s.id, s]));
+await registerAssetScenes(byId, collectImgs(process.argv));
 
-const sceneId = process.argv[2] || 'surf_stand';
+const rest = process.argv.slice(2).filter(a => a !== '--img' && !a.endsWith('.png') && !a.endsWith('.jpg') && !a.endsWith('.jpeg'));
+const sceneId = rest.find(a => !a.startsWith('--')) || 'surf_stand';
 const sc = byId[sceneId];
 const analysis = silentAnalysis(30, 94);
 const seg = {
