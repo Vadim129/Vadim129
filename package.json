@@ -1,0 +1,26 @@
+{
+  "name": "inkclip",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Чернильный клип — рисованные клипы из трека: материалы, сцены, свои картинки, экспорт mp4",
+  "scripts": {
+    "render:node": "node tools/render-node.mjs",
+    "start": "node server.mjs",
+    "build:www": "node build-www.mjs",
+    "android:add": "npm run build:www && npx cap add android",
+    "android:sync": "npm run build:www && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:apk": "npm run build:www && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/share": "^6.0.2",
+    "@napi-rs/canvas": "^1.0.11"
+  }
+}

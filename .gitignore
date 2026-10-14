@@ -83,3 +83,11 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# inkclip: локальное и тяжёлое
+node_modules/
+models/
+output/
+google_drive/
+preview_frames/
+*.apk
