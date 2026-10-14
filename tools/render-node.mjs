@@ -51,6 +51,37 @@ const { SCENES_D } = await import('../src/scenes4.js');
 const SCENES = [...SCENES_A, ...SCENES_B, ...SCENES_C, ...SCENES_D];
 const byId = Object.fromEntries(SCENES.map(s => [s.id, s]));
 
+// ── свои картинки: --img <файл> (первая — полароид, вторая — обводка) ──────
+const { makePhotoScene, makeTraceScene } = await import('../src/scenes3.js');
+const { traceImage, shadingStrokes } = await import('../src/image.js');
+const { loadImage } = await import('@napi-rs/canvas');
+function collectImgs(argv) {
+  const out = [];
+  for (let i = 0; i < argv.length - 1; i++) if (argv[i] === '--img') out.push(resolve(argv[i + 1]));
+  return out;
+}
+async function canvasFromFile(path, maxSide) {
+  const img = await loadImage(readFileSync(path));
+  const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const w = Math.max(8, Math.round(img.width * k)), h = Math.max(8, Math.round(img.height * k));
+  const c = createCanvas(w, h);
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  return c;
+}
+async function registerAssetScenes(map, paths) {
+  if (!paths.length) return;
+  const photoSrc = paths[0], traceSrc = paths[1] || paths[0];
+  const photoCanvas = await canvasFromFile(photoSrc, 900);
+  const plain = { caption: () => '', note: () => '' };
+  map.my_photo = makePhotoScene({ canvas: photoCanvas, ...plain });
+  const small = await canvasFromFile(traceSrc, 380);
+  const trace = traceImage(small, { keep: .42, mode: 'auto', minPath: 12, maxStrokes: 420, blur: 1.4 });
+  const shading = shadingStrokes(small, { block: 8, min: .44, angle: -.62 }).slice(0, 900);
+  const asset = { canvas: small, w: trace.w, h: trace.h, strokes: trace.strokes, shading, ...plain };
+  map.my_trace = makeTraceScene(asset);
+  console.log('картинки: полароид ←', photoSrc, '| обводка ←', traceSrc, `(штрихов: ${trace.count})`);
+}
+
 // ── аргументы ───────────────────────────────────────────────────────────────
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
