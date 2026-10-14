@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0d12">
+<link rel="icon" href="data:,">
+<title>Чернильный клип — рисованный клип из трека</title>
+<style>
+  :root{ --bg:#191a1f; --panel:#22242c; --panel2:#2a2d36; --line:#3a3e4a; --tx:#eef0f5; --dim:#9aa1b1; --acc:#6ea8ff; --acc2:#ffd166; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  a{color:var(--acc)}
+  .wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:18px;padding:18px;max-width:1500px;margin:0 auto;align-items:start}
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr} }
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:12px}
+  .stagebox{background:#0e0f13;border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px}
+  canvas{width:100%;height:auto;display:block;border-radius:8px;background:#0b0c10;cursor:pointer}
+  .bar{height:6px;background:#0e0f13;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .1s linear}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin:0 0 10px;font-weight:600}
+  button,select,textarea,input[type=file]{font:inherit;color:var(--tx);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;outline:none}
+  button{cursor:pointer}
+  button:hover{border-color:#4d5468}
+  .chip{padding:7px 11px;font-size:13px;border-radius:99px}
+  .chip.on,.chip.primary{background:var(--acc);border-color:var(--acc);color:#0b1220;font-weight:600}
+  .primary{padding:12px 16px;border-radius:12px;font-weight:600;background:var(--acc);border-color:var(--acc);color:#0b1220}
+  .ghost{background:transparent}
+  select{padding:8px 10px}
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
+  textarea{width:100%;min-height:150px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.5;resize:vertical}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .mono{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim);white-space:pre-wrap}
+  .hint{font-size:12px;color:var(--dim)}
+  .small{font-size:13px}
+  .warn{color:#ffb4b4;font-size:13px;min-height:18px}
+  .clock{font:13px/1 ui-monospace,Menlo,monospace;color:var(--dim)}
+  input[type=range]{width:100%}
+  .scenes{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto}
+  video{width:100%;border-radius:10px;background:#000}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="stagebox">
+      <canvas id="stage" width="540" height="960"></canvas>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="row" style="justify-content:space-between">
+        <span class="clock" id="clock">0:00 / 0:00</span>
+        <span class="hint" id="segInfo"></span>
+      </div>
+      <div class="row">
+        <button class="primary" id="btnPlay">▶</button>
+        <button class="ghost" id="btnStop">⏹</button>
+        <button class="ghost" id="btnFrame">кадр PNG</button>
+        <button class="ghost" id="btnClearPreview" style="display:none">выйти из сцены</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="btnSaveClip" style="flex:1;padding:12px 16px;font-size:15px">⬇ Скачать клип (mp4)</button>
+        <label class="f" style="flex:0 0 auto;margin:0">Качество<select id="selQualityTop"><option value="720x1280">720p</option><option value="1080x1920">1080p</option><option value="540x960">540p</option></select></label>
+      </div>
+      <div class="hint" id="saveHint" style="margin-top:6px">запись идёт в реальном времени: клип на 1 минуту пишется примерно минуту, вкладку не закрывай</div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h2>Готовый клип</h2>
+      <div class="row">
+        <button class="primary" id="btnExport">⬇ Скачать клип (mp4)</button>
+        <label class="f" style="flex:0 0 auto">Разрешение<select id="selQuality"><option value="720x1280">720×1280 (9:16)</option><option value="1080x1920">1080×1920</option><option value="540x960">540×960</option></select></label>
+        <span class="hint">рендер идёт в реальном времени: клип 1 минута ≈ 1 минута записи</span>
+      </div>
+      <div class="hint" id="exportInfo" style="margin-top:8px"></div>
+      <div id="saveBox" style="margin-top:10px"></div>
+      <div class="hint" id="platformNote" style="margin-top:6px"></div>
+      <div id="videoOut"></div>
+    </div>
+  </div>
+
+  <div>
+    <h1>🖊️ Чернильный клип</h1>
+    <div class="sub">Рисованный клип из твоего трека. Ни одного кадра видеогенерации: линия, нажим, зерно бумаги и всё остальное — код.</div>
+
+    <div class="panel">
+      <h2>Чем рисуем</h2>
+      <div class="row" id="profiles"></div>
+      <div class="grid3" style="margin-top:10px">
+        <label class="f">Бумага<select id="selPaper">
+          <option value="notebook">Тетрадь в линейку</option>
+          <option value="plain">Чистый лист</option>
+          <option value="grid">Клетка</option>
+          <option value="kraft">Крафт</option>
+          <option value="dark">Тёмный лист (мел)</option>
+        </select></label>
+        <label class="f">Палитра<select id="selPalette">
+          <option value="warm">Тёплая</option>
+          <option value="cool">Холодная</option>
+          <option value="bright">Яркая</option>
+          <option value="mute">Мягкая</option>
+          <option value="night">Ночная</option>
+        </select></label>
+        <label class="f">Настроение<select id="selMood">
+          <option value="morning">Утро</option>
+          <option value="day">День</option>
+          <option value="evening">Вечер</option>
+          <option value="night">Ночь</option>
+        </select></label>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <label class="f">Плотность деталей <span id="densVal" class="hint">1.00</span><input id="selDens" type="range" min="0.5" max="1.6" step="0.05" value="1"></label>
+        <label class="f">Переходы
+          <span class="row"><button class="chip on" data-trans="auto">Авто</button><button class="chip" data-trans="flip">Листать</button><button class="chip" data-trans="cut">Встык</button></span>
+        </label>
+        <label class="f">Вариант <span id="seedVal" class="hint">42</span>
+          <button class="chip" id="btnSeed">🎲 другой вариант</button>
+        </label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Музыка</h2>
+      <div class="row">
+        <input type="file" id="mrFile" accept="audio/*">
+      </div>
+      <div class="hint" id="mrInfo" style="margin-top:8px">трек не загружен — идёт ровная сетка 120 BPM. Свой трек: биты, удары и энергия считаются прямо на устройстве.</div>
+    </div>
+    <div class="panel">
+      <h2>Слова трека — Whisper</h2>
+      <div class="row">
+        <label class="f">Модель
+          <select id="whModel"><option value="tiny" selected>встроенная (44 МБ, уже в приложении)</option></select></label>
+        <label class="f">Язык
+          <select id="whLang">
+            <option value="auto">сам определит</option>
+            <option value="russian">русский</option>
+            <option value="english">английский</option>
+            <option value="ukrainian">украинский</option>
+            <option value="kazakh">казахский</option>
+          </select></label>
+        <button class="chip primary" id="btnWhisper">распознать слова</button>
+        <button class="chip" id="btnWhisperScript" disabled>сценарий по словам</button>
+        <label class="row hint" style="gap:6px;margin-left:6px"><input type="checkbox" id="whKeep"> держать модель в памяти (быстрее, но ест память)</label>
+      </div>
+      <div class="bar" style="margin-top:10px"><i id="whBar"></i></div>
+      <div class="hint" id="whStatus" style="margin-top:6px">Whisper считает прямо на устройстве: слова с точным временем. Всё внутри приложения — интернет не нужен, ничего не скачивается. Распознавание идёт в отдельном потоке: приложение не зависает, память после работы освобождается.</div>
+      <div id="whWords" style="max-height:130px;overflow:auto;margin-top:8px"></div>
+      <div class="hint" id="whInfo" style="margin-top:6px"></div>
+    </div>
+
+
+    <div class="panel">
+      <h2>Свои картинки</h2>
+      <div class="row">
+        <input type="file" id="imgFile" accept="image/*">
+        <label class="row hint" style="gap:6px"><input type="checkbox" id="imgShade" checked> тени штриховкой</label>
+      </div>
+      <div class="row" style="margin-top:10px;align-items:flex-start">
+        <div id="imgPreview"></div>
+        <div style="flex:1">
+          <div class="row">
+            <button class="chip" id="btnPhotoPreview" disabled>▶ полароид</button>
+            <button class="chip" id="btnTracePreview" disabled>▶ обводка</button>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <button class="chip" id="btnPhotoAdd" disabled title="добавить строку в сценарий">＋ в сценарий</button>
+            <button class="chip" id="btnTraceAdd" disabled>＋ обводку в сценарий</button>
+            <input id="imgCaption" class="small" style="max-width:180px" placeholder="подпись под фото" value="этот день">
+          </div>
+          <div class="row" style="margin-top:8px">
+            <label class="f" style="flex:1">Детализация обводки <span id="trKeepVal" class="hint">0.32</span>
+              <input id="trKeep" type="range" min="0.15" max="0.8" step="0.01" value="0.32"></label>
+            <label class="f">Как обводить
+              <select id="trMode"><option value="auto">авто</option><option value="lines">линии (рисунок)</option><option value="edges">края (фото)</option></select></label>
+          </div>
+          <div class="hint" id="imgInfo" style="margin-top:6px">Загрузи фото или рисунок: программа обведёт его штрихами — линии будут рисоваться на глазах. Или вставит фото в кадр полароидом.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Как собирать клип</h2>
+      <div class="row">
+        <button class="chip on" data-mode="auto">Автомат</button>
+        <button class="chip" data-mode="script">По сценарию</button>
+      </div>
+      <textarea id="scriptBox" style="display:none" spellcheck="false" placeholder="стиль: карандаш
+бумага: тетрадь
+настроение: вечер
+
+# сцены можно ставить по времени или подряд
+кот
+дождь 0:24
+шарик 0:40-0:55
+костёр 1:05
+обводка 1:20-1:36
+картинка: мой день
+торт свечей: 5
+финал"></textarea>
+      <div class="hint" style="margin-top:8px">Сценарий не обязателен: что не указано — автомат дозаполнит сам по битам и энергии трека.</div>
+      <div class="warn" id="warn"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Библиотека сцен — нажми, чтобы посмотреть</h2>
+      <div class="scenes" id="scenes"></div>
+    </div>
+
+    <div class="panel">
+      <h2>План клипа</h2>
+      <div class="mono" id="plan"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Названия для сценария</h2>
+      <div class="mono" id="legend"></div>
+    </div>
+  </div>
+</div>
+<script>
+  // офлайн-кэш для браузера; внутри Android-приложения не нужен
+  try {
+    if (!window.Capacitor && location.protocol !== 'file:' && navigator.serviceWorker) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  } catch (e) { /* во встроенных предпросмотрах сервис-воркер запрещён — не мешает работе */ }
+</script>
+<script src="capacitor-native.js"></script>
+<script type="module" src="src/app.js"></script>
+<script>
+  // кнопки материалов строим здесь, чтобы разметка оставалась короткой
+  const PROF = [['pencil','✏️ Простой карандаш'],['color','🌈 Цветные карандаши'],['crayon','🖍️ Восковые мелки'],
+    ['marker','🖌️ Маркеры'],['felt','🖊️ Цветные фломастеры'],['pen','🖋️ Ручка'],['mixed','🎨 Смешанная техника'],
+    ['gouache','🧴 Гуашь'],['chalk','🪶 Мел']];
+  const box = document.getElementById('profiles');
+  PROF.forEach(([id,label])=>{ const b=document.createElement('button'); b.className='chip'+(id==='pencil'?' on':''); b.dataset.profile=id; b.textContent=label; box.appendChild(b); });
+</script>
+</body>
+</html>
