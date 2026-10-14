@@ -94,6 +94,7 @@ const analysis = analyzeBuffer(fakeBuf);
 console.log(`темп: ${analysis.bpm.toFixed(1)} BPM, доля: ${analysis.beatLen.toFixed(3)} c, ударов: ${analysis.onsets.length}, длина: ${analysis.duration.toFixed(1)} c`);
 
 // ── сценарий и таймлайн ─────────────────────────────────────────────────────
+await registerAssetScenes(byId, collectImgs(process.argv));   // --img до разбора сценария
 const scriptText = readFileSync(args.script, 'utf8');
 const parsed = parseScript(scriptText, byId);
 for (const w of parsed.warnings) console.log('сценарий:', w);

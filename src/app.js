@@ -301,6 +301,8 @@ function onClipButton() {
 
 async function exportClip() {
   if (clipBusy) return;
+  // ждём рукописный шрифт, иначе первые кадры запишутся печатными буквами
+  try { await document.fonts.load('70px "Neucha"', 'кислота! Beauty'); await document.fonts.ready; } catch (e) { /* старый браузер — как получится */ }
   pause();
   clipBusy = true;
   const prev = { w: canvas.width, h: canvas.height };

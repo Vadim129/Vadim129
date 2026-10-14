@@ -114,7 +114,9 @@ export class Pen {
   }
   // ── текст ─────────────────────────────────────────────────────────────────
   font(size, o = {}) {
-    const fam = o.font || '"Comic Sans MS","Segoe Print","Bradley Hand","Comic Neue",cursive,sans-serif';
+    // Весь текст клипа — детским почерком Neucha (assets/fonts, OFL).
+    // Печатных букв в списке нет специально: fallback только рукописные.
+    const fam = o.font || '"Neucha","Comic Sans MS","Segoe Print","Bradley Hand","Comic Neue",cursive';
     return `${o.weight || 700} ${size}px ${fam}`;
   }
   text(str, x, y, o = {}) {

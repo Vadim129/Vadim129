@@ -125,7 +125,10 @@ export function parseScript(text, scenesById) {
     const pc = rest.match(/свеч[а-я]*\s*[:=]?\s*(\d+)/i);
     if (pc) { params.candles = +pc[1]; rest = rest.replace(pc[0], ' '); }
     const capM = line.match(/^[A-Za-zА-Яа-яЁё]+\s*[:=]\s*(.+)$/);
-    if (capM && (scene.id === 'my_photo' || scene.id === 'my_trace')) params.caption = capM[1].trim();
+    // подпись может стоять рядом со временем: «картинка: это Эйси! 0:12-0:22»
+    if (capM && (scene.id === 'my_photo' || scene.id === 'my_trace')) params.caption = capM[1]
+      .replace(/(\d+:\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:s|с|сек)?)\s*(?:-|—|–|до|\.\.)\s*(\d+:\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:s|с|сек)?)?/, ' ')
+      .replace(/\s{2,}/g, ' ').trim();
     const times = rest.match(/(\d+:\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:s|с|сек)?)\s*(?:-|—|–|до|\.\.)\s*(\d+:\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?(?:s|с|сек)?)?/);
     let t0 = null, t1 = null;
     if (times) {

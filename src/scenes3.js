@@ -10,26 +10,29 @@ export function makePhotoScene(asset) {
   return {
     id: 'my_photo', name: 'Моё фото (полароид)', tags: ['своё', 'фото'], dur: 12, dynamic: true,
     draw(p, t, S) {
-      const cx = 540, cy = 900;
+      // фото живёт весь кадр: покачивается и дышит вместе с рамкой и подписью
+      const dx = Math.sin(t * .7) * 16, dy = Math.sin(t * .9 + 1.2) * 12;
+      const cx = 540 + dx, cy = 900 + dy;
       const maxW = 700, maxH = 820;
       const k = Math.min(maxW / asset.canvas.width, maxH / asset.canvas.height);
       const w = asset.canvas.width * k, h = asset.canvas.height * k;
-      const rot = -.035, grow = U.ss(.1, 1.1, t);
-      const gg = .9 + grow * .1;
+      const rot = -.035 + Math.sin(t * .5) * .022, grow = U.ss(.1, 1.1, t);
+      const gg = .9 + grow * .1 + .008 * Math.sin(t * .8);
       const photo = { x: cx - w / 2 * gg, y: cy - h / 2 * gg, w: w * gg, h: h * gg };
-      // бумажная рамка полароида
-      p.rect(photo.x - 34, photo.y - 34, photo.w + 68, photo.h + 130, { r: 4, w: 1.6, t0: .3, t1: 1.4 });
-      p.shade(photo.x - 30, photo.y + photo.h + 4, photo.w + 60, 92, { angle: .35, spacing: 9, t0: 1.2, t1: 2.6, alpha: .5 });
+      // бумажная рамка полароида (чернила, а не красный маркер палитры)
+      const INKC = p.paper === 'dark' ? '#e8e4da' : '#26262e';
+      p.rect(photo.x - 34, photo.y - 34, photo.w + 68, photo.h + 130, { r: 4, w: 1.6, t0: .3, t1: 1.4, color: INKC });
+      p.shade(photo.x - 30, photo.y + photo.h + 4, photo.w + 60, 92, { angle: .35, spacing: 9, t0: 1.2, t1: 2.6, alpha: .5, c: 1 });
       // само фото (растр кладём на бумагу)
       p.raster(asset.canvas, photo.x, photo.y, photo.w, photo.h, { rot, t0: .5, t1: 1.6 });
       // скотч
       for (const [sx, sy, a] of [[photo.x - 20, photo.y - 26, -.5], [photo.x + photo.w - 66, photo.y - 26, .5]]) {
-        p.shape([[sx, sy], [sx + 96, sy + (a > 0 ? -8 : 8)], [sx + 100, sy + 30], [sx + 4, sy + 34]], { closeShape: true, fill: 'fill', stroke: 'main', w: .9, t0: 1.4 + (a > 0 ? .3 : 0), t1: 2.2, spacing: 12, angle: .4, alpha: .8 });
+        p.shape([[sx, sy], [sx + 96, sy + (a > 0 ? -8 : 8)], [sx + 100, sy + 30], [sx + 4, sy + 34]], { closeShape: true, fill: 'fill', c: 1, stroke: 'main', strokeColor: INKC, w: .9, t0: 1.4 + (a > 0 ? .3 : 0), t1: 2.2, spacing: 12, angle: .4, alpha: .8 });
       }
       // подпись от руки под фото (на паспарту, не на картинке)
       const cap = (S.params && S.params.caption) || (asset.caption && asset.caption()) || 'этот день';
-      p.text(cap, cx, photo.y + photo.h + 78, { size: 60, align: 'center', t0: 2.6, t1: 4.4, underline: false });
-      p.line(cx - 150, photo.y + photo.h + 100, cx + 150, photo.y + photo.h + 104, { w: 1.1, t0: 3.4, t1: 4.6, amp: 2.6 });
+      p.text(cap, cx, photo.y + photo.h + 78, { size: 60, align: 'center', t0: 2.6, t1: 4.4, underline: false, color: INKC });
+      p.line(cx - 150, photo.y + photo.h + 100, cx + 150, photo.y + photo.h + 104, { w: 1.1, t0: 3.4, t1: 4.6, amp: 2.6, color: INKC });
       // каракули вокруг
       p.heart(cx - 400, cy - 330, 40, { closeShape: true, w: 1.1, role: 'accent', t0: 4.2, t1: 5.2 });
       p.star(cx + 420, cy - 250, 44, { fill: 'fill', stroke: 'main', closeShape: true, t0: 4.6, t1: 5.6, c: 2 });
@@ -46,16 +49,19 @@ export function makeTraceScene(asset) {
   return {
     id: 'my_trace', name: 'Обводка рисунка', tags: ['своё', 'обводка'], dur: 16, dynamic: true,
     draw(p, t, S) {
-      const box = [130, 400, 950, 1500];
+      // обводка плывёт: весь рисунок целиком покачивается, а не висит статично
+      const dx = Math.sin(t * .55) * 12, dy = Math.cos(t * .42) * 12;
+      const box = [130 + dx, 400 + dy, 950 + dx, 1500 + dy];
       const rect = fitBox(asset.w, asset.h, box);
       const [bx, by, bw, bh] = rect;
       // тонкая рамка-«поле»
-      p.rect(bx - 26, by - 26, bw + 52, bh + 52, { r: 3, w: .9, alpha: .5, role: 'accent', t0: 0, t1: .6 });
+      const INKC = p.paper === 'dark' ? '#e8e4da' : '#26262e';
+      p.rect(bx - 26, by - 26, bw + 52, bh + 52, { r: 3, w: .8, alpha: .55, color: INKC, t0: 0, t1: .6 });
       // 1) штриховка (тени) — первой, как в карандашном рисунке
       const sh = asset.shading && asset.shading.length ? fitStrokes(asset.shading, [bx, by, bx + bw, by + bh]) : [];
       const tShade = Math.min(6.5, asset.strokes.length * .02);
       sh.forEach((s, i) => {
-        p.ink(s, { smooth: 0, w: .8, role: 'fill', alpha: .75, wob: .4, p: .6, ...p.seq(i, .4, Math.max(.004, tShade / Math.max(1, sh.length)), .3) });
+        p.ink(s, { smooth: 0, w: .8, color: INKC, alpha: .75, wob: .4, p: .6, ...p.seq(i, .4, Math.max(.004, tShade / Math.max(1, sh.length)), .3) });
       });
       // 2) контуры — сверху вниз, чтобы рисунок «проявлялся» как настоящий
       const strokes = fitStrokes(asset.strokes, [bx, by, bx + bw, by + bh]);
@@ -65,11 +71,11 @@ export function makeTraceScene(asset) {
       const tDraw = Math.min(11, asset.strokes.length * .05);
       const step = Math.max(.006, tDraw / Math.max(1, order.length));
       order.forEach((o, i) => {
-        p.ink(o.s, { smooth: .35, w: 1, wob: .45, p: .62, ...p.seq(i, 1.2 + (sh.length ? 1 : 0) * .3, step, Math.min(.7, step * 8)) });
+        p.ink(o.s, { smooth: .35, w: 1, color: INKC, wob: .45, p: .62, ...p.seq(i, 1.2 + (sh.length ? 1 : 0) * .3, step, Math.min(.7, step * 8)) });
       });
       // 3) подпись
       const note = (S.params && S.params.caption) || (asset.note && asset.note()) || '';
-      if (note) p.text(note, 540, 1740, { size: 66, align: 'center', t0: 12, t1: 13.6 });
+      if (note) p.text(note, 540 + dx, 1740, { size: 66, align: 'center', t0: 12, t1: 13.6 });
     },
   };
 }
