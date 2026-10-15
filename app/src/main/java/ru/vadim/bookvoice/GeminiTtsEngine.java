@@ -30,18 +30,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
- * Direct Gemini Developer API TTS client. It deliberately contains no embedded
- * API key. A small rolling prefetch queue hides network/model latency between
- * book fragments while a single AudioTrack keeps PCM output continuous.
+ * Direct Gemini Developer API TTS client. It uses the low-cost Flash-Lite TTS
+ * model, long book passages, a one-item rolling prefetch, and a continuous
+ * AudioTrack. One long request at startup avoids spending three daily requests
+ * before the listener has heard anything; the next request starts during the
+ * current passage's playback.
  */
 final class GeminiTtsEngine {
-    // Flash-Lite is the low-latency Gemini 3.8 TTS model for read-aloud use.
     static final String MODEL = "gemini-3.8-flash-lite-tts";
     static final int SAMPLE_RATE = 24_000;
-    private static final int PREFETCH_WINDOW = 3;
+    private static final int PREFETCH_WINDOW = 1;
     private static final int CONNECT_TIMEOUT_MS = 20_000;
-    private static final int READ_TIMEOUT_MS = 90_000;
-    private static final int MAX_RESPONSE_BYTES = 25 * 1024 * 1024;
+    private static final int READ_TIMEOUT_MS = 180_000;
+    private static final int MAX_RESPONSE_BYTES = 40 * 1024 * 1024;
 
     private final Object trackLock = new Object();
     private final Set<HttpURLConnection> activeConnections = Collections.newSetFromMap(
@@ -53,35 +54,62 @@ final class GeminiTtsEngine {
     }
 
     interface SegmentProgress {
-        void onSegmentCompleted(int index);
+        /** Fraction is relative to the complete source segment, including a resumed cached prefix. */
+        void onSegmentProgress(int index, float fraction);
+    }
+
+    /** A book range backed either by a local cache hit or a future Gemini request. */
+    static final class Segment {
+        final int start;
+        final int end;
+        final String text;
+        final int cachedOffsetBytes;
+        final byte[] initialPcm;
+
+        Segment(int start, int end, String text) {
+            this(start, end, text, 0, null);
+        }
+
+        Segment(int start, int end, String text, int cachedOffsetBytes, byte[] initialPcm) {
+            this.start = start;
+            this.end = end;
+            this.text = text;
+            this.cachedOffsetBytes = Math.max(0, cachedOffsetBytes) & ~1;
+            this.initialPcm = initialPcm;
+        }
     }
 
     /**
-     * Generates at most three upcoming phrases concurrently. They are played
-     * in their original order through one AudioTrack, so there is no teardown
-     * gap between fragments. Returns false only when cancelled.
+     * Generates one long upcoming segment at a time. The successor request is
+     * scheduled just before writing the current PCM, so it is generated while
+     * the listener hears the current passage. Cached passages skip Gemini
+     * completely and remain playable after the app restarts.
      */
-    boolean synthesizeAndPlayPrefetched(String apiKey, String voice, List<String> phrases,
-                                        float requestedSpeed, Cancellation cancellation,
-                                        SegmentProgress progress) throws IOException {
+    boolean synthesizeAndPlayPrefetched(String apiKey, String voice, List<Segment> segments,
+                                        float requestedSpeed, GeminiAudioCache cache,
+                                        Cancellation cancellation, SegmentProgress progress)
+            throws IOException {
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new IOException("Добавьте свой Gemini API-ключ в настройках");
         }
-        if (phrases == null || phrases.isEmpty()) return true;
-        ArrayList<String> cleanPhrases = new ArrayList<>();
-        for (String phrase : phrases) {
-            if (phrase != null && !phrase.trim().isEmpty()) cleanPhrases.add(phrase.trim());
+        if (segments == null || segments.isEmpty()) return true;
+        ArrayList<Segment> cleanSegments = new ArrayList<>();
+        for (Segment segment : segments) {
+            if (segment != null && segment.end > segment.start && segment.text != null
+                    && !segment.text.trim().isEmpty()) cleanSegments.add(segment);
         }
-        if (cleanPhrases.isEmpty()) return true;
+        if (cleanSegments.isEmpty()) return true;
 
-        int workers = Math.min(PREFETCH_WINDOW, cleanPhrases.size());
+        String selectedVoice = voice == null || voice.trim().isEmpty() ? "Kore" : voice.trim();
+        int workers = Math.min(PREFETCH_WINDOW, cleanSegments.size());
         ExecutorService prefetch = Executors.newFixedThreadPool(workers);
         Map<Integer, Future<byte[]>> pending = new HashMap<>();
         AudioTrack track = null;
         try {
             int nextToQueue = 0;
-            while (nextToQueue < cleanPhrases.size() && pending.size() < PREFETCH_WINDOW) {
-                queue(prefetch, pending, nextToQueue++, apiKey.trim(), voice, cleanPhrases, cancellation);
+            while (nextToQueue < cleanSegments.size() && pending.size() < PREFETCH_WINDOW) {
+                queue(prefetch, pending, nextToQueue++, apiKey.trim(), selectedVoice,
+                        cleanSegments, cache, cancellation);
             }
 
             track = createTrack(cancellation);
@@ -90,22 +118,23 @@ final class GeminiTtsEngine {
             track.setPlaybackRate(Math.round(SAMPLE_RATE * speed));
             track.play();
 
-            for (int index = 0; index < cleanPhrases.size(); index++) {
+            for (int index = 0; index < cleanSegments.size(); index++) {
                 if (cancellation.isCancelled()) return false;
+                Segment segment = cleanSegments.get(index);
                 Future<byte[]> future = pending.remove(index);
                 if (future == null) throw new IOException("Потерян фрагмент очереди Gemini");
                 byte[] pcm = await(future, cancellation);
                 if (cancellation.isCancelled()) return false;
 
-                // Refill before playback: the next request runs while this PCM is heard.
-                while (nextToQueue < cleanPhrases.size() && pending.size() < PREFETCH_WINDOW) {
-                    queue(prefetch, pending, nextToQueue++, apiKey.trim(), voice, cleanPhrases, cancellation);
+                // Queue the next long passage before current PCM is played.
+                while (nextToQueue < cleanSegments.size() && pending.size() < PREFETCH_WINDOW) {
+                    queue(prefetch, pending, nextToQueue++, apiKey.trim(), selectedVoice,
+                            cleanSegments, cache, cancellation);
                 }
-                if (!writePcm(track, pcm, cancellation)) {
+                if (!writePcm(track, pcm, segment.cachedOffsetBytes, cancellation, progress, index)) {
                     if (cancellation.isCancelled()) return false;
                     throw new IOException("Не удалось воспроизвести аудио Gemini");
                 }
-                if (progress != null && !cancellation.isCancelled()) progress.onSegmentCompleted(index);
             }
             waitForBufferedAudio(requestedSpeed, cancellation);
             return !cancellation.isCancelled();
@@ -137,12 +166,22 @@ final class GeminiTtsEngine {
     }
 
     private void queue(ExecutorService executor, Map<Integer, Future<byte[]>> pending, int index,
-                       String apiKey, String voice, List<String> phrases, Cancellation cancellation) {
-        final String phrase = phrases.get(index);
+                       String apiKey, String voice, List<Segment> segments, GeminiAudioCache cache,
+                       Cancellation cancellation) {
+        final Segment segment = segments.get(index);
         pending.put(index, executor.submit(new Callable<byte[]>() {
             @Override
             public byte[] call() throws Exception {
-                return requestPcm(apiKey, voice, phrase, cancellation);
+                if (segment.initialPcm != null && segment.initialPcm.length > 0) return segment.initialPcm;
+                if (cache != null) {
+                    byte[] cached = cache.read(segment.start, segment.end, voice, segment.text);
+                    if (cached != null) return cached;
+                }
+                byte[] pcm = requestPcm(apiKey, voice, segment.text, cancellation);
+                if (!cancellation.isCancelled() && cache != null && pcm.length > 0) {
+                    cache.store(segment.start, segment.end, voice, segment.text, pcm);
+                }
+                return pcm;
             }
         }));
     }
@@ -200,14 +239,21 @@ final class GeminiTtsEngine {
         }
     }
 
-    private static boolean writePcm(AudioTrack track, byte[] pcm, Cancellation cancellation) {
+    private static boolean writePcm(AudioTrack track, byte[] pcm, int cachedOffsetBytes,
+                                    Cancellation cancellation, SegmentProgress progress, int index) {
         try {
-            int position = 0;
+            int position = Math.min(Math.max(0, cachedOffsetBytes & ~1), Math.max(0, pcm.length - 2));
+            int nextProgressAt = position + SAMPLE_RATE * 2;
+            if (progress != null) progress.onSegmentProgress(index, position / (float) pcm.length);
             while (position < pcm.length && !cancellation.isCancelled()) {
                 int requested = Math.min(16 * 1024, pcm.length - position);
                 int written = track.write(pcm, position, requested, AudioTrack.WRITE_BLOCKING);
                 if (written <= 0) return false;
                 position += written;
+                if (progress != null && (position >= nextProgressAt || position >= pcm.length)) {
+                    progress.onSegmentProgress(index, Math.min(1f, position / (float) pcm.length));
+                    nextProgressAt = position + SAMPLE_RATE * 2;
+                }
             }
             return !cancellation.isCancelled();
         } catch (IllegalStateException ignored) {
@@ -278,7 +324,7 @@ final class GeminiTtsEngine {
             JSONObject responseFormat = new JSONObject();
             responseFormat.put("audio", responseAudio);
             JSONObject voiceConfig = new JSONObject();
-            voiceConfig.put("voice", voice == null || voice.isEmpty() ? "Kore" : voice);
+            voiceConfig.put("voice", voice);
             JSONObject speechConfig = new JSONObject();
             speechConfig.put("voiceConfig", voiceConfig);
             JSONObject generation = new JSONObject();

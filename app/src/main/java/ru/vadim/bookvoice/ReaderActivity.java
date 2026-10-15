@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -32,7 +33,9 @@ public final class ReaderActivity extends Activity {
     private static final String PREF_GEMINI_VOICE = "gemini_voice";
     private static final String PREF_RATE = "rate";
     private static final String SECRET_GEMINI_KEY = "gemini_api_key";
-    private static final int GEMINI_CHUNK_CHARS = 440;
+    // Long enough to reduce daily request count roughly tenfold, while remaining safe for phone RAM.
+    private static final int GEMINI_CHUNK_CHARS = 5_000;
+    private static final long PROGRESS_SAVE_INTERVAL_MS = 1_500L;
 
     private BookStore bookStore;
     private Book book;
@@ -41,9 +44,11 @@ public final class ReaderActivity extends Activity {
     private ExecutorService worker;
     private ExecutorService speechWorker;
     private GeminiTtsEngine gemini;
+    private GeminiAudioCache audioCache;
     private volatile boolean speaking;
     private volatile int speechSession;
     private boolean readerReady;
+    private long lastProgressSaveAt;
 
     private String fullText = "";
     private String parserNote = "";
@@ -83,6 +88,7 @@ public final class ReaderActivity extends Activity {
             finish();
             return;
         }
+        audioCache = new GeminiAudioCache(this, book.id);
         setContentView(createScreen());
         refreshTtsLabels();
         loadBook();
@@ -337,7 +343,7 @@ public final class ReaderActivity extends Activity {
         String voice = ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore");
         voiceSummary.setText(key.isEmpty()
                 ? "Gemini AI · добавьте личный API-ключ"
-                : "Gemini 3.8 Flash-Lite · " + voice + " · очередь 3 фразы");
+                : "Gemini 3.8 Flash-Lite · " + voice + " · длинные фрагменты + кэш");
         if (speedSummary != null) speedSummary.setText(formatRate(ttsPreferences.getFloat(PREF_RATE, 1f)));
     }
 
@@ -359,26 +365,34 @@ public final class ReaderActivity extends Activity {
         speechSession++;
         final int session = speechSession;
         final int start = clamp(readingPosition, 0, Math.max(0, fullText.length() - 1));
-        statusView.setText("Gemini готовит первые 3 фразы…");
+        lastProgressSaveAt = 0L;
+        statusView.setText("Gemini готовит длинный фрагмент и сохранит аудио…");
         updateControls();
         speechWorker.execute(() -> runGeminiSpeech(session, start));
     }
 
     private void runGeminiSpeech(final int session, int start) {
         try {
-            SpeechPlan plan = makeSpeechPlan(start);
-            if (plan.phrases.isEmpty()) {
+            final String voice = ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore");
+            final SpeechPlan plan = makeSpeechPlan(start, voice);
+            if (plan.segments.isEmpty()) {
                 finishGeminiSpeech(session, null, true);
                 return;
             }
             String apiKey = secretStore.get(SECRET_GEMINI_KEY);
             if (apiKey.isEmpty()) throw new IllegalStateException("Gemini API-ключ не найден");
-            boolean complete = gemini.synthesizeAndPlayPrefetched(apiKey,
-                    ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore"), plan.phrases,
-                    ttsPreferences.getFloat(PREF_RATE, 1f),
-                    () -> isSpeechCancelled(session), index -> {
-                        final int playedUntil = plan.ends.get(index);
-                        runOnUiThread(() -> saveGeminiChunk(session, playedUntil));
+            final long[] lastProgressPostedAt = new long[]{0L};
+            boolean complete = gemini.synthesizeAndPlayPrefetched(apiKey, voice, plan.segments,
+                    ttsPreferences.getFloat(PREF_RATE, 1f), audioCache,
+                    () -> isSpeechCancelled(session), (index, fraction) -> {
+                        GeminiTtsEngine.Segment segment = plan.segments.get(index);
+                        long now = SystemClock.elapsedRealtime();
+                        if (fraction < 0.999f && now - lastProgressPostedAt[0] < 700L) return;
+                        lastProgressPostedAt[0] = now;
+                        final int sourcePosition = segment.start + Math.round(
+                                (segment.end - segment.start) * Math.max(0f, Math.min(1f, fraction)));
+                        final boolean segmentFinished = fraction >= 0.999f;
+                        runOnUiThread(() -> saveGeminiProgress(session, sourcePosition, segmentFinished));
                     });
             if (!complete || isSpeechCancelled(session)) return;
             finishGeminiSpeech(session, null, true);
@@ -387,37 +401,58 @@ public final class ReaderActivity extends Activity {
         }
     }
 
-    private SpeechPlan makeSpeechPlan(int start) {
-        ArrayList<String> phrases = new ArrayList<>();
-        ArrayList<Integer> ends = new ArrayList<>();
-        int cursor = start;
-        while (cursor < fullText.length()) {
-            while (cursor < fullText.length() && Character.isWhitespace(fullText.charAt(cursor))) cursor++;
-            if (cursor >= fullText.length()) break;
-            int end = safeSpeechEnd(cursor, GEMINI_CHUNK_CHARS);
-            String phrase = fullText.substring(cursor, end).trim();
-            if (!phrase.isEmpty()) {
-                phrases.add(phrase);
-                ends.add(end);
+    private SpeechPlan makeSpeechPlan(int start, String voice) {
+        ArrayList<GeminiTtsEngine.Segment> segments = new ArrayList<>();
+        int cursor = skipWhitespace(start);
+        // A resume point inside a previously saved long passage starts directly from its local PCM.
+        if (audioCache != null && cursor < fullText.length()) {
+            GeminiAudioCache.Hit hit = audioCache.findCovering(voice, fullText, cursor);
+            if (hit != null && hit.end > cursor) {
+                String cachedText = fullText.substring(hit.start, hit.end);
+                segments.add(new GeminiTtsEngine.Segment(hit.start, hit.end, cachedText,
+                        hit.offsetBytes, hit.pcm));
+                cursor = hit.end;
             }
-            cursor = Math.max(end, cursor + 1);
         }
-        return new SpeechPlan(phrases, ends);
+        while (cursor < fullText.length()) {
+            cursor = skipWhitespace(cursor);
+            if (cursor >= fullText.length()) break;
+            int nextCursor = safeSpeechEnd(cursor, GEMINI_CHUNK_CHARS);
+            int end = nextCursor;
+            while (end > cursor && Character.isWhitespace(fullText.charAt(end - 1))) end--;
+            if (end > cursor) {
+                segments.add(new GeminiTtsEngine.Segment(cursor, end, fullText.substring(cursor, end)));
+            }
+            cursor = Math.max(nextCursor, cursor + 1);
+        }
+        return new SpeechPlan(segments);
+    }
+
+    private int skipWhitespace(int position) {
+        int cursor = clamp(position, 0, fullText.length());
+        while (cursor < fullText.length() && Character.isWhitespace(fullText.charAt(cursor))) cursor++;
+        return cursor;
     }
 
     private boolean isSpeechCancelled(int session) {
         return !speaking || session != speechSession || isFinishing() || isDestroyed();
     }
 
-    private void saveGeminiChunk(int session, int playedUntil) {
+    private void saveGeminiProgress(int session, int sourcePosition, boolean segmentFinished) {
         if (isSpeechCancelled(session)) return;
-        readingPosition = Math.min(Math.max(0, fullText.length() - 1),
-                clamp(playedUntil, 0, fullText.length()));
+        int bounded = Math.min(Math.max(0, fullText.length() - 1),
+                clamp(sourcePosition, 0, fullText.length()));
+        if (!segmentFinished && bounded < readingPosition) return;
+        readingPosition = bounded;
         int previousPage = currentPage;
         currentPage = pageForPosition(readingPosition);
         if (currentPage != previousPage) showPage(false);
-        statusView.setText("Озвучиваем · следующая фраза уже готовится…");
-        saveReadingPosition();
+        statusView.setText("Озвучиваем · длинный фрагмент сохранён, следующий готовится…");
+        long now = SystemClock.elapsedRealtime();
+        if (segmentFinished || now - lastProgressSaveAt >= PROGRESS_SAVE_INTERVAL_MS) {
+            lastProgressSaveAt = now;
+            saveReadingPosition();
+        }
     }
 
     private void finishGeminiSpeech(final int session, final Exception failure, final boolean complete) {
@@ -499,7 +534,7 @@ public final class ReaderActivity extends Activity {
         content.setPadding(padding, Ui.dp(this, 8), padding, 0);
 
         TextView note = Ui.text(this,
-                "Gemini озвучивает текст через ваш личный API-ключ. Только фрагменты, которые сейчас читаются, отправляются в Google.",
+                "Gemini озвучивает длинные фрагменты через ваш личный API-ключ. Готовое аудио сохраняется только в закрытом хранилище приложения, чтобы не запрашивать те же места повторно.",
                 14, Ui.INK);
         note.setLineSpacing(Ui.dp(this, 3), 1f);
         content.addView(note);
@@ -615,12 +650,10 @@ public final class ReaderActivity extends Activity {
     }
 
     private static final class SpeechPlan {
-        final ArrayList<String> phrases;
-        final ArrayList<Integer> ends;
+        final ArrayList<GeminiTtsEngine.Segment> segments;
 
-        SpeechPlan(ArrayList<String> phrases, ArrayList<Integer> ends) {
-            this.phrases = phrases;
-            this.ends = ends;
+        SpeechPlan(ArrayList<GeminiTtsEngine.Segment> segments) {
+            this.segments = segments;
         }
     }
 }

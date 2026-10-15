@@ -49,8 +49,8 @@ jobs:
       - name: Prepare named artifact
         run: |
           mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk artifacts/BookVoice-1.2.0.apk
-          (cd artifacts && sha256sum BookVoice-1.2.0.apk > BookVoice-1.2.0.apk.sha256)
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/BookVoice-1.3.0.apk
+          (cd artifacts && sha256sum BookVoice-1.3.0.apk > BookVoice-1.3.0.apk.sha256)
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -67,11 +67,11 @@ jobs:
         if: (github.event_name == 'workflow_dispatch' && inputs.stage_for_drive) || contains(github.event.head_commit.message, '[stage-drive]')
         run: |
           mkdir -p .delivery
-          rm -f .delivery/BookVoice-1.2.0.apk .delivery/BookVoice-1.2.0.apk.sha256
-          cp artifacts/BookVoice-1.2.0.apk .delivery/BookVoice-1.2.0.apk
-          cp artifacts/BookVoice-1.2.0.apk.sha256 .delivery/BookVoice-1.2.0.apk.sha256
+          rm -f .delivery/BookVoice-1.3.0.apk .delivery/BookVoice-1.3.0.apk.sha256
+          cp artifacts/BookVoice-1.3.0.apk .delivery/BookVoice-1.3.0.apk
+          cp artifacts/BookVoice-1.3.0.apk.sha256 .delivery/BookVoice-1.3.0.apk.sha256
           git config user.name "bookvoice-build[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .delivery/BookVoice-1.2.0.apk .delivery/BookVoice-1.2.0.apk.sha256
+          git add -f .delivery/BookVoice-1.3.0.apk .delivery/BookVoice-1.3.0.apk.sha256
           git commit -m "build: stage APK for Drive delivery [skip ci]"
           git push origin "HEAD:${GITHUB_REF_NAME}"
