@@ -86,8 +86,3 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
-
-# Downloaded, checksum-pinned neural TTS runtime and Piper models.
-/app/libs/sherpa-onnx-*.aar
-/app/src/main/assets/piper/*
-!/app/src/main/assets/piper/.gitkeep

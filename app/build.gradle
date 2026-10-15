@@ -10,13 +10,8 @@ android {
         applicationId 'ru.vadim.bookvoice'
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '1.1.1'
-
-        // Native Sherpa-ONNX runtime is packaged only for real Android phones.
-        ndk {
-            abiFilters 'arm64-v8a', 'armeabi-v7a'
-        }
+        versionCode 4
+        versionName '1.2.0'
     }
 
     buildTypes {
@@ -30,17 +25,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-
-    // Piper assets are compressed in the APK and unpacked to private app storage
-    // before Sherpa-ONNX opens them. This keeps the installable APK compact.
 }
 
 dependencies {
-    // Apache-2.0. PDFBox is used only on-device to extract PDF text for reading and TTS.
+    // Apache-2.0. PDFBox is used only on-device to extract PDF text for reading.
     implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
-
-    // The AAR is fetched with checksum verification by scripts/fetch-neural-tts-assets.sh
-    // (and by CI before compilation). It contains the Apache-2.0 Sherpa-ONNX runtime.
-    implementation files('libs/sherpa-onnx-1.13.8.aar')
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.7.20'
 }

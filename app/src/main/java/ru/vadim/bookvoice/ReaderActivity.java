@@ -3,13 +3,12 @@ package ru.vadim.bookvoice;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
-import android.speech.tts.TextToSpeech;
-import android.speech.tts.UtteranceProgressListener;
-import android.speech.tts.Voice;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,40 +21,29 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Reader with a system-TTS controller. Text never leaves the device. */
-public final class ReaderActivity extends Activity implements TextToSpeech.OnInitListener {
+/** Reader backed exclusively by the user's Gemini TTS configuration. */
+public final class ReaderActivity extends Activity {
     public static final String EXTRA_BOOK_ID = "book_id";
     private static final String TTS_PREFS = "bookvoice_tts";
-    private static final String PREF_PROVIDER = "provider";
-    private static final String PREF_ENGINE = "engine";
-    private static final String PREF_VOICE = "voice";
     private static final String PREF_GEMINI_VOICE = "gemini_voice";
     private static final String PREF_RATE = "rate";
-    private static final String PROVIDER_SYSTEM = "system";
-    private static final String PROVIDER_GEMINI = "gemini";
     private static final String SECRET_GEMINI_KEY = "gemini_api_key";
+    private static final int GEMINI_CHUNK_CHARS = 440;
 
     private BookStore bookStore;
     private Book book;
     private SharedPreferences ttsPreferences;
     private SecretStore secretStore;
     private ExecutorService worker;
-    private ExecutorService neuralWorker;
-    private TextToSpeech tts;
+    private ExecutorService speechWorker;
     private GeminiTtsEngine gemini;
-    private PiperTtsEngine piper;
-    private boolean ttsReady;
     private volatile boolean speaking;
     private volatile int speechSession;
-    private int speechCursor;
+    private boolean readerReady;
 
     private String fullText = "";
     private String parserNote = "";
@@ -86,9 +74,8 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         ttsPreferences = getSharedPreferences(TTS_PREFS, Context.MODE_PRIVATE);
         secretStore = new SecretStore(this);
         worker = Executors.newSingleThreadExecutor();
-        neuralWorker = Executors.newSingleThreadExecutor();
+        speechWorker = Executors.newSingleThreadExecutor();
         gemini = new GeminiTtsEngine();
-        piper = new PiperTtsEngine(this);
         String id = getIntent().getStringExtra(EXTRA_BOOK_ID);
         book = bookStore.getBook(id);
         if (book == null) {
@@ -97,7 +84,7 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
             return;
         }
         setContentView(createScreen());
-        initializeSelectedProvider();
+        refreshTtsLabels();
         loadBook();
     }
 
@@ -109,7 +96,6 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
 
     @Override
     protected void onStop() {
-        // Do not leave a second book talking if the user returns to the library or another app.
         stopSpeaking(false);
         super.onStop();
     }
@@ -117,11 +103,8 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
     @Override
     protected void onDestroy() {
         stopSpeaking(false);
-        shutdownSystemTts();
-        if (gemini != null) gemini.stop();
-        if (piper != null) piper.stop();
         if (worker != null) worker.shutdownNow();
-        if (neuralWorker != null) neuralWorker.shutdownNow();
+        if (speechWorker != null) speechWorker.shutdownNow();
         super.onDestroy();
     }
 
@@ -148,7 +131,8 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         TextView subtitle = Ui.text(this, book.format + " · место чтения сохранится автоматически", 12, Ui.MUTED);
         headerTexts.addView(titleView);
         headerTexts.addView(subtitle);
-        LinearLayout.LayoutParams headerTextParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams headerTextParams = new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         headerTextParams.leftMargin = Ui.dp(this, 10);
         header.addView(headerTexts, headerTextParams);
         root.addView(header);
@@ -163,7 +147,8 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         pageText.setTextIsSelectable(true);
         pageText.setLineSpacing(Ui.dp(this, 6), 1.05f);
         pageText.setPadding(Ui.dp(this, 22), Ui.dp(this, 18), Ui.dp(this, 22), Ui.dp(this, 28));
-        readerScroll.addView(pageText, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        readerScroll.addView(pageText, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(readerScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         LinearLayout controls = new LinearLayout(this);
@@ -211,24 +196,26 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         speakButton.setOnClickListener(view -> toggleSpeech());
         speakRow.addView(speakButton, new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1.35f));
         Button voiceButton = Ui.button(this, "Голос", Ui.MINT, Ui.FOREST_DARK);
-        voiceButton.setOnClickListener(view -> showVoicePicker());
+        voiceButton.setOnClickListener(view -> showGeminiVoicePicker());
         LinearLayout.LayoutParams voiceParams = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 0.8f);
         voiceParams.leftMargin = Ui.dp(this, 8);
         speakRow.addView(voiceButton, voiceParams);
-        Button engineButton = Ui.button(this, "Движок", Ui.SAND, Ui.FOREST_DARK);
-        engineButton.setOnClickListener(view -> showEnginePicker());
-        LinearLayout.LayoutParams engineParams = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 0.95f);
-        engineParams.leftMargin = Ui.dp(this, 8);
-        speakRow.addView(engineButton, engineParams);
+        Button settingsButton = Ui.button(this, "Ключ", Ui.SAND, Ui.FOREST_DARK);
+        settingsButton.setContentDescription("Настроить или удалить Gemini API ключ");
+        settingsButton.setOnClickListener(view -> showGeminiSetup());
+        LinearLayout.LayoutParams settingsParams = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 0.75f);
+        settingsParams.leftMargin = Ui.dp(this, 8);
+        speakRow.addView(settingsButton, settingsParams);
         LinearLayout.LayoutParams speakRowParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 48));
         speakRowParams.topMargin = Ui.dp(this, 6);
         controls.addView(speakRow, speakRowParams);
 
         LinearLayout ttsStatus = new LinearLayout(this);
         ttsStatus.setGravity(Gravity.CENTER_VERTICAL);
-        voiceSummary = Ui.text(this, "Голос загружается…", 12, Ui.MUTED);
+        voiceSummary = Ui.text(this, "Gemini AI загружается…", 12, Ui.MUTED);
         voiceSummary.setMaxLines(1);
         voiceSummary.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        voiceSummary.setOnClickListener(view -> showGeminiSetup());
         ttsStatus.addView(voiceSummary, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         speedSummary = Ui.text(this, "", 13, Ui.FOREST_DARK);
         speedSummary.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
@@ -237,8 +224,10 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         speedSummary.setBackground(Ui.round(Ui.MINT, 10));
         speedSummary.setOnClickListener(view -> showSpeedPicker());
         speedSummary.setContentDescription("Изменить скорость озвучки");
-        ttsStatus.addView(speedSummary, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        LinearLayout.LayoutParams ttsStatusParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ttsStatus.addView(speedSummary, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams ttsStatusParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
         ttsStatusParams.topMargin = Ui.dp(this, 9);
         controls.addView(ttsStatus, ttsStatusParams);
         root.addView(controls);
@@ -247,7 +236,7 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
     }
 
     private void loadBook() {
-        statusView.setText("Открываем книгу и подготавливаем озвучку…");
+        statusView.setText("Открываем книгу и подготавливаем Gemini AI…");
         worker.execute(() -> {
             try {
                 final BookParser.ParsedBook parsed = BookParser.parse(getApplicationContext(), book);
@@ -265,7 +254,7 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
                     }
                     readingPosition = clamp(book.position, 0, Math.max(0, fullText.length() - 1));
                     currentPage = pageForPosition(readingPosition);
-                    statusView.setText(parserNote + "  •  можно читать или слушать");
+                    statusView.setText(parserNote + "  •  можно читать или слушать Gemini AI");
                     setReaderEnabled(true);
                     showPage(false);
                     saveReadingPosition();
@@ -282,10 +271,10 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
     }
 
     private void setReaderEnabled(boolean enabled) {
+        readerReady = enabled;
         previousButton.setEnabled(enabled && currentPage > 1);
         nextButton.setEnabled(enabled && currentPage < totalPages);
         pageSeek.setEnabled(enabled);
-        speakButton.setEnabled(enabled);
         if (enabled) {
             adjustingSeek = true;
             pageSeek.setMax(Math.max(0, totalPages - 1));
@@ -329,185 +318,27 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         bookStore.saveReadingState(book, readingPosition, currentPage, totalPages);
     }
 
-    private String selectedProvider() {
-        String value = ttsPreferences.getString(PREF_PROVIDER, PiperTtsEngine.IRINA);
-        if (PROVIDER_SYSTEM.equals(value) || PROVIDER_GEMINI.equals(value)
-                || PiperTtsEngine.IRINA.equals(value) || PiperTtsEngine.DMITRI.equals(value)) {
-            return value;
-        }
-        return PiperTtsEngine.IRINA;
-    }
-
-    private boolean isSystemProvider() {
-        return PROVIDER_SYSTEM.equals(selectedProvider());
-    }
-
-    private boolean isGeminiProvider() {
-        return PROVIDER_GEMINI.equals(selectedProvider());
-    }
-
-    private boolean isPiperProvider() {
-        String provider = selectedProvider();
-        return PiperTtsEngine.IRINA.equals(provider) || PiperTtsEngine.DMITRI.equals(provider);
-    }
-
-    private void initializeSelectedProvider() {
-        if (isSystemProvider()) {
-            createTts(ttsPreferences.getString(PREF_ENGINE, ""));
-        } else {
-            shutdownSystemTts();
-            refreshTtsLabels();
-            updateControls();
-        }
-    }
-
-    private void chooseProvider(String provider) {
-        stopSpeaking(false);
-        ttsPreferences.edit().putString(PREF_PROVIDER, provider).apply();
-        if (PROVIDER_SYSTEM.equals(provider)) {
-            createTts(ttsPreferences.getString(PREF_ENGINE, ""));
-        } else {
-            shutdownSystemTts();
-            refreshTtsLabels();
-            updateControls();
-        }
-    }
-
-    private void shutdownSystemTts() {
-        ttsReady = false;
-        if (tts != null) {
-            try {
-                tts.stop();
-                tts.shutdown();
-            } catch (Exception ignored) {
-            }
-            tts = null;
-        }
-    }
-
-    private void createTts(String engine) {
-        stopSpeaking(false);
-        shutdownSystemTts();
-        try {
-            if (engine == null || engine.trim().isEmpty()) {
-                tts = new TextToSpeech(this, this);
-            } else {
-                tts = new TextToSpeech(this, this, engine);
-            }
-            voiceSummary.setText("Подключаем системный движок…");
-        } catch (Exception exception) {
-            voiceSummary.setText("Системная озвучка недоступна: " + errorMessage(exception));
-            updateControls();
-        }
-    }
-
-    @Override
-    public void onInit(int status) {
-        runOnUiThread(() -> {
-            if (!isSystemProvider()) return;
-            if (status != TextToSpeech.SUCCESS || tts == null) {
-                ttsReady = false;
-                voiceSummary.setText("Не удалось запустить системную озвучку");
-                updateControls();
-                return;
-            }
-            ttsReady = true;
-            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override
-                public void onStart(String utteranceId) {
-                    runOnUiThread(() -> {
-                        if (isCurrentUtterance(utteranceId)) {
-                            statusView.setText("Озвучиваем книгу…");
-                        }
-                    });
-                }
-
-                @Override
-                public void onDone(String utteranceId) {
-                    runOnUiThread(() -> finishUtterance(utteranceId, null));
-                }
-
-                @Override
-                public void onError(String utteranceId) {
-                    runOnUiThread(() -> finishUtterance(utteranceId, "Движок не смог озвучить этот фрагмент"));
-                }
-
-                @Override
-                public void onError(String utteranceId, int errorCode) {
-                    runOnUiThread(() -> finishUtterance(utteranceId, "Ошибка озвучки (" + errorCode + ")"));
-                }
-            });
-            applySavedTtsSettings();
-            updateControls();
-        });
-    }
-
-    private void applySavedTtsSettings() {
-        if (!ttsReady || tts == null) return;
-        float rate = ttsPreferences.getFloat(PREF_RATE, 1f);
-        tts.setSpeechRate(clamp(rate, 0.6f, 1.5f));
-        String savedVoice = ttsPreferences.getString(PREF_VOICE, "");
-        Voice matchingVoice = voiceNamed(savedVoice);
-        if (matchingVoice != null) {
-            tts.setVoice(matchingVoice);
-        } else if (savedVoice == null || savedVoice.isEmpty()) {
-            Voice automatic = bestInstalledVoice();
-            if (automatic != null && tts.setVoice(automatic) == TextToSpeech.SUCCESS) {
-                ttsPreferences.edit().putString(PREF_VOICE, automatic.getName()).apply();
-            }
-        }
-        refreshTtsLabels();
-    }
-
     private void updateControls() {
         if (speakButton == null) return;
-        boolean providerReady = !isSystemProvider() || ttsReady;
-        boolean canSpeak = !fullText.trim().isEmpty() && providerReady;
-        speakButton.setEnabled(canSpeak);
+        speakButton.setEnabled(readerReady && !fullText.trim().isEmpty());
         if (speaking) {
-            speakButton.setText("❚❚ Пауза");
+            speakButton.setText("■ Остановить");
             speakButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Ui.FOREST_DARK));
         } else {
             speakButton.setText("▶ Озвучить");
             speakButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Ui.FOREST));
         }
-        if (speedSummary != null) {
-            speedSummary.setText(formatRate(ttsPreferences == null ? 1f : ttsPreferences.getFloat(PREF_RATE, 1f)));
-        }
+        if (speedSummary != null) speedSummary.setText(formatRate(ttsPreferences.getFloat(PREF_RATE, 1f)));
     }
 
     private void refreshTtsLabels() {
         if (voiceSummary == null) return;
-        if (isGeminiProvider()) {
-            String key = secretStore == null ? "" : secretStore.get(SECRET_GEMINI_KEY);
-            String voice = ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore");
-            voiceSummary.setText(key.isEmpty()
-                    ? "Gemini AI · добавьте свой ключ · free quota Google"
-                    : "Gemini AI · " + voice + " · русский · облако");
-            return;
-        }
-        if (isPiperProvider()) {
-            voiceSummary.setText(PiperTtsEngine.displayName(selectedProvider())
-                    + " · русская нейросеть · офлайн · бесплатно");
-            return;
-        }
-        if (!ttsReady || tts == null) {
-            voiceSummary.setText("Системная озвучка загружается…");
-            return;
-        }
-        Voice voice = null;
-        try {
-            voice = tts.getVoice();
-        } catch (Exception ignored) {
-        }
-        String engineName = tts.getDefaultEngine();
-        if (voice == null) {
-            voiceSummary.setText("Системный голос" + (engineName == null ? "" : " · " + engineName));
-        } else {
-            String mode = voice.isNetworkConnectionRequired() ? "сеть" : "офлайн";
-            voiceSummary.setText(voice.getLocale().getDisplayName(new Locale("ru")) + " · " + qualityLabel(voice) + " · " + mode);
-        }
-        speedSummary.setText(formatRate(ttsPreferences.getFloat(PREF_RATE, 1f)));
+        String key = secretStore == null ? "" : secretStore.get(SECRET_GEMINI_KEY);
+        String voice = ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore");
+        voiceSummary.setText(key.isEmpty()
+                ? "Gemini AI · добавьте личный API-ключ"
+                : "Gemini 3.8 Flash-Lite · " + voice + " · очередь 3 фразы");
+        if (speedSummary != null) speedSummary.setText(formatRate(ttsPreferences.getFloat(PREF_RATE, 1f)));
     }
 
     private void toggleSpeech() {
@@ -515,94 +346,81 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
             stopSpeaking(true);
             return;
         }
-        if (fullText.trim().isEmpty()) return;
-        if (isSystemProvider()) {
-            if (!ttsReady || tts == null) {
-                Toast.makeText(this, "Системная озвучка ещё не готова", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            speaking = true;
-            speechSession++;
-            speechCursor = clamp(readingPosition, 0, Math.max(0, fullText.length() - 1));
-            speakNext(speechSession);
-        } else if (isGeminiProvider()) {
-            if (secretStore.get(SECRET_GEMINI_KEY).isEmpty()) {
-                showGeminiSetup();
-                return;
-            }
-            startNeuralSpeech();
-        } else {
-            startNeuralSpeech();
+        if (!readerReady || fullText.trim().isEmpty()) return;
+        if (secretStore.get(SECRET_GEMINI_KEY).isEmpty()) {
+            showGeminiSetup();
+            return;
         }
-        updateControls();
+        startGeminiSpeech();
     }
 
-    private void startNeuralSpeech() {
+    private void startGeminiSpeech() {
         speaking = true;
         speechSession++;
-        if (statusView != null) {
-            statusView.setText(isPiperProvider()
-                    ? "Piper готовит первую фразу…"
-                    : "Gemini готовит первую фразу…");
-        }
         final int session = speechSession;
         final int start = clamp(readingPosition, 0, Math.max(0, fullText.length() - 1));
-        speechCursor = start;
-        neuralWorker.execute(() -> runNeuralSpeech(session, start));
+        statusView.setText("Gemini готовит первые 3 фразы…");
+        updateControls();
+        speechWorker.execute(() -> runGeminiSpeech(session, start));
     }
 
-    private void runNeuralSpeech(final int session, int cursor) {
+    private void runGeminiSpeech(final int session, int start) {
         try {
-            while (!isNeuralCancelled(session)) {
-                while (cursor < fullText.length() && Character.isWhitespace(fullText.charAt(cursor))) cursor++;
-                if (cursor >= fullText.length()) {
-                    finishNeuralSpeech(session, null, true);
-                    return;
-                }
-                // Piper streams sentence batches, but keeping them short improves
-                // responsiveness and limits CPU/memory pressure on modest phones.
-                int maximum = isGeminiProvider() ? 950 : 360;
-                int end = safeSpeechEnd(cursor, maximum);
-                String phrase = fullText.substring(cursor, end).trim();
-                if (phrase.isEmpty()) {
-                    cursor = Math.min(fullText.length(), end + 1);
-                    continue;
-                }
-                float rate = ttsPreferences.getFloat(PREF_RATE, 1f);
-                boolean complete;
-                if (isGeminiProvider()) {
-                    complete = gemini.synthesizeAndPlay(secretStore.get(SECRET_GEMINI_KEY),
-                            ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore"), phrase, rate,
-                            () -> isNeuralCancelled(session));
-                } else {
-                    complete = piper.synthesizeAndPlay(selectedProvider(), phrase, rate,
-                            () -> isNeuralCancelled(session));
-                }
-                if (!complete || isNeuralCancelled(session)) return;
-                final int playedUntil = end;
-                cursor = end;
-                runOnUiThread(() -> saveNeuralChunk(session, playedUntil));
+            SpeechPlan plan = makeSpeechPlan(start);
+            if (plan.phrases.isEmpty()) {
+                finishGeminiSpeech(session, null, true);
+                return;
             }
+            String apiKey = secretStore.get(SECRET_GEMINI_KEY);
+            if (apiKey.isEmpty()) throw new IllegalStateException("Gemini API-ключ не найден");
+            boolean complete = gemini.synthesizeAndPlayPrefetched(apiKey,
+                    ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore"), plan.phrases,
+                    ttsPreferences.getFloat(PREF_RATE, 1f),
+                    () -> isSpeechCancelled(session), index -> {
+                        final int playedUntil = plan.ends.get(index);
+                        runOnUiThread(() -> saveGeminiChunk(session, playedUntil));
+                    });
+            if (!complete || isSpeechCancelled(session)) return;
+            finishGeminiSpeech(session, null, true);
         } catch (final Exception error) {
-            finishNeuralSpeech(session, error, false);
+            finishGeminiSpeech(session, error, false);
         }
     }
 
-    private boolean isNeuralCancelled(int session) {
+    private SpeechPlan makeSpeechPlan(int start) {
+        ArrayList<String> phrases = new ArrayList<>();
+        ArrayList<Integer> ends = new ArrayList<>();
+        int cursor = start;
+        while (cursor < fullText.length()) {
+            while (cursor < fullText.length() && Character.isWhitespace(fullText.charAt(cursor))) cursor++;
+            if (cursor >= fullText.length()) break;
+            int end = safeSpeechEnd(cursor, GEMINI_CHUNK_CHARS);
+            String phrase = fullText.substring(cursor, end).trim();
+            if (!phrase.isEmpty()) {
+                phrases.add(phrase);
+                ends.add(end);
+            }
+            cursor = Math.max(end, cursor + 1);
+        }
+        return new SpeechPlan(phrases, ends);
+    }
+
+    private boolean isSpeechCancelled(int session) {
         return !speaking || session != speechSession || isFinishing() || isDestroyed();
     }
 
-    private void saveNeuralChunk(int session, int playedUntil) {
-        if (isNeuralCancelled(session)) return;
-        speechCursor = clamp(playedUntil, 0, fullText.length());
-        readingPosition = Math.min(Math.max(0, fullText.length() - 1), speechCursor);
+    private void saveGeminiChunk(int session, int playedUntil) {
+        if (isSpeechCancelled(session)) return;
+        readingPosition = Math.min(Math.max(0, fullText.length() - 1),
+                clamp(playedUntil, 0, fullText.length()));
         int previousPage = currentPage;
         currentPage = pageForPosition(readingPosition);
         if (currentPage != previousPage) showPage(false);
+        statusView.setText("Озвучиваем · следующая фраза уже готовится…");
         saveReadingPosition();
     }
 
-    private void finishNeuralSpeech(final int session, final Exception failure, final boolean complete) {
+    private void finishGeminiSpeech(final int session, final Exception failure, final boolean complete) {
         runOnUiThread(() -> {
             if (session != speechSession) return;
             speaking = false;
@@ -622,47 +440,12 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         speechSession++;
         boolean wasSpeaking = speaking;
         speaking = false;
-        if (tts != null) {
-            try {
-                tts.stop();
-            } catch (Exception ignored) {
-            }
-        }
         if (gemini != null) gemini.stop();
-        if (piper != null) piper.stop();
-        if (wasSpeaking && announce && statusView != null) statusView.setText("Пауза · продолжим с сохранённого места");
+        if (wasSpeaking && announce && statusView != null) {
+            statusView.setText("Остановлено · продолжим с сохранённого места");
+        }
         updateControls();
         saveReadingPosition();
-    }
-
-    private void speakNext(int session) {
-        if (!speaking || session != speechSession || tts == null) return;
-        int length = fullText.length();
-        while (speechCursor < length && Character.isWhitespace(fullText.charAt(speechCursor))) speechCursor++;
-        if (speechCursor >= length) {
-            speaking = false;
-            readingPosition = Math.max(0, length - 1);
-            currentPage = pageForPosition(readingPosition);
-            saveReadingPosition();
-            statusView.setText("Книга озвучена до конца");
-            updateControls();
-            return;
-        }
-        int maximum = Math.min(3_000, Math.max(800, TextToSpeech.getMaxSpeechInputLength() - 100));
-        int end = safeSpeechEnd(speechCursor, maximum);
-        String phrase = fullText.substring(speechCursor, end).trim();
-        if (phrase.isEmpty()) {
-            speechCursor = Math.min(length, end + 1);
-            speakNext(session);
-            return;
-        }
-        String utteranceId = session + ":" + end;
-        Bundle params = new Bundle();
-        params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
-        int result = tts.speak(phrase, TextToSpeech.QUEUE_FLUSH, params, utteranceId);
-        if (result != TextToSpeech.SUCCESS) {
-            finishUtterance(utteranceId, "Движок отказался начать озвучку");
-        }
     }
 
     private int safeSpeechEnd(int start, int maximum) {
@@ -671,178 +454,13 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         int minimum = Math.min(target, start + Math.max(180, maximum / 3));
         for (int index = target; index > minimum; index--) {
             char character = fullText.charAt(index - 1);
-            if (character == '.' || character == '!' || character == '?' || character == ';' || character == ':' || character == '\n') {
-                return index;
-            }
+            if (character == '.' || character == '!' || character == '?' || character == ';'
+                    || character == ':' || character == '\n') return index;
         }
         for (int index = target; index > minimum; index--) {
             if (Character.isWhitespace(fullText.charAt(index - 1))) return index;
         }
         return target;
-    }
-
-    private void finishUtterance(String utteranceId, String failure) {
-        if (!isCurrentUtterance(utteranceId)) return;
-        int separator = utteranceId.lastIndexOf(':');
-        if (separator < 1) return;
-        int nextPosition;
-        try {
-            nextPosition = Integer.parseInt(utteranceId.substring(separator + 1));
-        } catch (NumberFormatException ignored) {
-            return;
-        }
-        speechCursor = clamp(nextPosition, 0, fullText.length());
-        readingPosition = Math.min(Math.max(0, fullText.length() - 1), speechCursor);
-        int previousPage = currentPage;
-        currentPage = pageForPosition(readingPosition);
-        if (currentPage != previousPage) showPage(false);
-        saveReadingPosition();
-        if (failure != null) {
-            speaking = false;
-            statusView.setText(failure + " · позиция сохранена");
-            updateControls();
-            return;
-        }
-        speakNext(speechSession);
-    }
-
-    private boolean isCurrentUtterance(String utteranceId) {
-        if (!speaking || utteranceId == null) return false;
-        int separator = utteranceId.indexOf(':');
-        if (separator < 1) return false;
-        try {
-            return Integer.parseInt(utteranceId.substring(0, separator)) == speechSession;
-        } catch (NumberFormatException ignored) {
-            return false;
-        }
-    }
-
-    private void showVoicePicker() {
-        if (isGeminiProvider()) {
-            showGeminiVoicePicker();
-            return;
-        }
-        if (isPiperProvider()) {
-            showPiperVoicePicker();
-            return;
-        }
-        if (!ttsReady || tts == null) {
-            Toast.makeText(this, "Системная озвучка ещё не готова", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final ArrayList<Voice> voices = installedVoices();
-        if (voices.isEmpty()) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Нет доступных голосов")
-                    .setMessage("Установите голосовые пакеты в системных настройках Android → Синтез речи, затем вернитесь в приложение.")
-                    .setNegativeButton("Отмена", null)
-                    .setPositiveButton("Настройки", (dialog, which) -> {
-                        try {
-                            startActivity(new android.content.Intent(android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));
-                        } catch (Exception ignored) {
-                            startActivity(new android.content.Intent(android.provider.Settings.ACTION_SETTINGS));
-                        }
-                    })
-                    .show();
-            return;
-        }
-        String[] labels = new String[voices.size()];
-        int checked = -1;
-        String saved = ttsPreferences.getString(PREF_VOICE, "");
-        for (int i = 0; i < voices.size(); i++) {
-            Voice voice = voices.get(i);
-            labels[i] = voice.getLocale().getDisplayName(new Locale("ru")) + " — " + qualityLabel(voice)
-                    + (voice.isNetworkConnectionRequired() ? " · сеть" : " · офлайн");
-            if (voice.getName().equals(saved)) checked = i;
-        }
-        final AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Выберите бесплатный системный голос")
-                .setSingleChoiceItems(labels, checked, null)
-                .setNegativeButton("Отмена", null)
-                .create();
-        dialog.setOnShowListener(ignored -> dialog.getListView().setOnItemClickListener((parent, view, position, id) -> {
-            Voice selected = voices.get(position);
-            stopSpeaking(false);
-            int result = tts.setVoice(selected);
-            if (result == TextToSpeech.SUCCESS) {
-                ttsPreferences.edit().putString(PREF_VOICE, selected.getName()).apply();
-                refreshTtsLabels();
-                Toast.makeText(this, "Голос выбран", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            } else {
-                Toast.makeText(this, "Этот голос пока недоступен", Toast.LENGTH_SHORT).show();
-            }
-        }));
-        dialog.show();
-    }
-
-    private void showEnginePicker() {
-        final ArrayList<EngineChoice> choices = new ArrayList<>();
-        choices.add(new EngineChoice(PiperTtsEngine.IRINA,
-                "Piper Ирина · русская AI-озвучка · офлайн · бесплатно", null));
-        choices.add(new EngineChoice(PiperTtsEngine.DMITRI,
-                "Piper Дмитрий · русская AI-озвучка · офлайн · бесплатно", null));
-        choices.add(new EngineChoice(PROVIDER_GEMINI,
-                "Gemini AI · русский нейроголос · свой ключ / free quota", null));
-        choices.add(new EngineChoice(PROVIDER_SYSTEM,
-                "Системная озвучка Android", null));
-        if (tts != null) {
-            try {
-                for (TextToSpeech.EngineInfo engine : tts.getEngines()) {
-                    String label = engine.label == null ? engine.name : engine.label.toString();
-                    choices.add(new EngineChoice(PROVIDER_SYSTEM, "Системный: " + label, engine.name));
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        String[] labels = new String[choices.size()];
-        int checked = 0;
-        String provider = selectedProvider();
-        String systemEngine = ttsPreferences.getString(PREF_ENGINE, "");
-        for (int index = 0; index < choices.size(); index++) {
-            EngineChoice choice = choices.get(index);
-            labels[index] = choice.label;
-            if (provider.equals(choice.provider)
-                    && (choice.systemEngine == null || choice.systemEngine.equals(systemEngine))) checked = index;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Выберите AI-движок")
-                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
-                    EngineChoice choice = choices.get(which);
-                    dialog.dismiss();
-                    if (PROVIDER_GEMINI.equals(choice.provider)) {
-                        if (secretStore.get(SECRET_GEMINI_KEY).isEmpty()) showGeminiSetup();
-                        else chooseProvider(PROVIDER_GEMINI);
-                    } else if (PROVIDER_SYSTEM.equals(choice.provider)) {
-                        if (choice.systemEngine != null) {
-                            ttsPreferences.edit().putString(PREF_ENGINE, choice.systemEngine)
-                                    .remove(PREF_VOICE).apply();
-                        }
-                        chooseProvider(PROVIDER_SYSTEM);
-                    } else {
-                        chooseProvider(choice.provider);
-                    }
-                })
-                .setNegativeButton("Отмена", null)
-                .show();
-    }
-
-    private void showPiperVoicePicker() {
-        final String[] ids = new String[]{PiperTtsEngine.IRINA, PiperTtsEngine.DMITRI};
-        String[] labels = new String[]{
-                "Ирина · русский нейроголос Piper · офлайн",
-                "Дмитрий · русский нейроголос Piper · офлайн"
-        };
-        int checked = PiperTtsEngine.DMITRI.equals(selectedProvider()) ? 1 : 0;
-        new AlertDialog.Builder(this)
-                .setTitle("Бесплатные офлайн-голоса Piper")
-                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
-                    dialog.dismiss();
-                    chooseProvider(ids[which]);
-                    Toast.makeText(this, "Голос Piper выбран", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Отмена", null)
-                .show();
     }
 
     private void showGeminiVoicePicker() {
@@ -859,12 +477,13 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         };
         String current = ttsPreferences.getString(PREF_GEMINI_VOICE, "Kore");
         int checked = 0;
-        for (int index = 0; index < voices.length; index++) if (voices[index].equals(current)) checked = index;
+        for (int index = 0; index < voices.length; index++) {
+            if (voices[index].equals(current)) checked = index;
+        }
         new AlertDialog.Builder(this)
                 .setTitle("Голос Gemini AI · русский текст")
                 .setSingleChoiceItems(voices, checked, (dialog, which) -> {
                     ttsPreferences.edit().putString(PREF_GEMINI_VOICE, voices[which]).apply();
-                    chooseProvider(PROVIDER_GEMINI);
                     refreshTtsLabels();
                     dialog.dismiss();
                 })
@@ -878,12 +497,29 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         content.setOrientation(LinearLayout.VERTICAL);
         int padding = Ui.dp(this, 22);
         content.setPadding(padding, Ui.dp(this, 8), padding, 0);
+
         TextView note = Ui.text(this,
-                "Gemini даёт более выразительную AI-озвучку на русском. Фрагменты книги будут отправляться в Google только во время озвучки. "
-                        + "Общий ключ в APK не хранится: вставьте свой ключ Google AI Studio с доступной бесплатной квотой.",
+                "Gemini озвучивает текст через ваш личный API-ключ. Только фрагменты, которые сейчас читаются, отправляются в Google.",
                 14, Ui.INK);
         note.setLineSpacing(Ui.dp(this, 3), 1f);
         content.addView(note);
+
+        TextView link = Ui.text(this, "Получить API-ключ: aistudio.google.com/apikey", 14, Ui.FOREST_DARK);
+        link.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        link.getPaint().setUnderlineText(true);
+        link.setContentDescription("Открыть Google AI Studio для получения API ключа");
+        LinearLayout.LayoutParams linkParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        linkParams.topMargin = Ui.dp(this, 12);
+        content.addView(link, linkParams);
+        link.setOnClickListener(view -> {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/apikey")));
+            } catch (Exception error) {
+                Toast.makeText(this, "Не удалось открыть aistudio.google.com", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         TextView caption = Ui.text(this, "Gemini API key", 13, Ui.MUTED);
         LinearLayout.LayoutParams captionParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -896,60 +532,53 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         keyField.setText(secretStore.get(SECRET_GEMINI_KEY));
         content.addView(keyField, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
+
         String storageHint = secretStore.usesPrivateFallback(SECRET_GEMINI_KEY)
-                ? "На этом устройстве Android Keystore недоступен: ключ сохранён в закрытом зашифрованном хранилище приложения и не отправляется разработчику."
-                : "Ключ шифруется Android Keystore и остаётся только на этом устройстве.";
-        TextView hint = Ui.text(this, "После сохранения выберите голос кнопкой «Голос». " + storageHint,
-                12, Ui.MUTED);
+                ? "Android Keystore недоступен: ключ сохранён в закрытом зашифрованном хранилище приложения."
+                : "Ключ хранится только на этом устройстве и шифруется Android Keystore.";
+        TextView hint = Ui.text(this, storageHint, 12, Ui.MUTED);
         hint.setPadding(0, Ui.dp(this, 8), 0, 0);
         content.addView(hint);
 
-        final AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Gemini AI TTS")
-                .setView(content)
-                .setNeutralButton("Удалить ключ", null)
-                .setNegativeButton("Отмена", null)
-                .setPositiveButton("Сохранить и включить", null)
-                .create();
-        dialog.setOnShowListener(ignored -> {
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
-                secretStore.remove(SECRET_GEMINI_KEY);
-                refreshTtsLabels();
-                Toast.makeText(this, "Ключ удалён с устройства", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            });
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
-                String key = keyField.getText().toString().trim();
-                if (key.length() < 12) {
-                    keyField.setError("Введите ваш API-ключ Google AI Studio");
-                    return;
-                }
-                try {
-                    boolean privateFallback = secretStore.put(SECRET_GEMINI_KEY, key);
-                    chooseProvider(PROVIDER_GEMINI);
-                    String message = privateFallback
-                            ? "Gemini AI включён · ключ сохранён в закрытом хранилище приложения"
-                            : "Gemini AI включён";
-                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                    dialog.dismiss();
-                } catch (Exception error) {
-                    keyField.setError("Не удалось сохранить ключ: " + errorMessage(error));
-                }
-            });
+        Button deleteKeyButton = Ui.button(this, "Удалить ключ с устройства", Ui.SAND, Ui.FOREST_DARK);
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                Ui.dp(this, 44));
+        deleteParams.topMargin = Ui.dp(this, 14);
+        content.addView(deleteKeyButton, deleteParams);
+        deleteKeyButton.setEnabled(!keyField.getText().toString().trim().isEmpty());
+        deleteKeyButton.setOnClickListener(view -> {
+            secretStore.remove(SECRET_GEMINI_KEY);
+            keyField.setText("");
+            deleteKeyButton.setEnabled(false);
+            refreshTtsLabels();
+            Toast.makeText(this, "Gemini API-ключ удалён с устройства", Toast.LENGTH_SHORT).show();
         });
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Gemini AI · ключ")
+                .setView(content)
+                .setNegativeButton("Закрыть", null)
+                .setPositiveButton("Сохранить ключ", null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String key = keyField.getText().toString().trim();
+            if (key.length() < 12) {
+                keyField.setError("Введите API-ключ из Google AI Studio");
+                return;
+            }
+            try {
+                boolean privateFallback = secretStore.put(SECRET_GEMINI_KEY, key);
+                deleteKeyButton.setEnabled(true);
+                refreshTtsLabels();
+                Toast.makeText(this, privateFallback
+                        ? "Ключ сохранён в закрытом хранилище приложения"
+                        : "Gemini API-ключ сохранён", Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+            } catch (Exception error) {
+                keyField.setError("Не удалось сохранить ключ: " + errorMessage(error));
+            }
+        }));
         dialog.show();
-    }
-
-    private static final class EngineChoice {
-        final String provider;
-        final String label;
-        final String systemEngine;
-
-        EngineChoice(String provider, String label, String systemEngine) {
-            this.provider = provider;
-            this.label = label;
-            this.systemEngine = systemEngine;
-        }
     }
 
     private void showSpeedPicker() {
@@ -964,67 +593,12 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         new AlertDialog.Builder(this)
                 .setTitle("Скорость озвучки")
                 .setSingleChoiceItems(labels, checked, (dialog, which) -> {
-                    float selected = speeds[which];
-                    ttsPreferences.edit().putFloat(PREF_RATE, selected).apply();
-                    if (ttsReady && tts != null) tts.setSpeechRate(selected);
+                    ttsPreferences.edit().putFloat(PREF_RATE, speeds[which]).apply();
                     refreshTtsLabels();
                     dialog.dismiss();
                 })
                 .setNegativeButton("Отмена", null)
                 .show();
-    }
-
-    private ArrayList<Voice> installedVoices() {
-        ArrayList<Voice> list = new ArrayList<>();
-        try {
-            Set<Voice> source = tts.getVoices();
-            if (source != null) {
-                for (Voice voice : source) {
-                    // getVoices() returns the voices currently exposed by the selected engine.
-                    if (voice != null) list.add(voice);
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        Collections.sort(list, new Comparator<Voice>() {
-            @Override
-            public int compare(Voice first, Voice second) {
-                boolean firstLocale = first.getLocale().getLanguage().equals(Locale.getDefault().getLanguage());
-                boolean secondLocale = second.getLocale().getLanguage().equals(Locale.getDefault().getLanguage());
-                if (firstLocale != secondLocale) return firstLocale ? -1 : 1;
-                int quality = Integer.compare(second.getQuality(), first.getQuality());
-                if (quality != 0) return quality;
-                if (first.isNetworkConnectionRequired() != second.isNetworkConnectionRequired()) {
-                    return first.isNetworkConnectionRequired() ? 1 : -1;
-                }
-                return first.getName().compareToIgnoreCase(second.getName());
-            }
-        });
-        return list;
-    }
-
-    private Voice bestInstalledVoice() {
-        ArrayList<Voice> voices = installedVoices();
-        return voices.isEmpty() ? null : voices.get(0);
-    }
-
-    private Voice voiceNamed(String name) {
-        if (name == null || name.isEmpty() || tts == null) return null;
-        try {
-            Set<Voice> voices = tts.getVoices();
-            if (voices != null) {
-                for (Voice voice : voices) if (name.equals(voice.getName())) return voice;
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    private static String qualityLabel(Voice voice) {
-        if (voice.getQuality() >= Voice.QUALITY_VERY_HIGH) return "очень высокое качество";
-        if (voice.getQuality() >= Voice.QUALITY_HIGH) return "высокое качество";
-        if (voice.getQuality() >= Voice.QUALITY_NORMAL) return "стандартное качество";
-        return "базовое качество";
     }
 
     private static String formatRate(float rate) {
@@ -1035,12 +609,18 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         return Math.max(lower, Math.min(upper, value));
     }
 
-    private static float clamp(float value, float lower, float upper) {
-        return Math.max(lower, Math.min(upper, value));
-    }
-
     private static String errorMessage(Exception exception) {
         String message = exception.getMessage();
         return message == null || message.trim().isEmpty() ? "неизвестная ошибка" : message;
+    }
+
+    private static final class SpeechPlan {
+        final ArrayList<String> phrases;
+        final ArrayList<Integer> ends;
+
+        SpeechPlan(ArrayList<String> phrases, ArrayList<Integer> ends) {
+            this.phrases = phrases;
+            this.ends = ends;
+        }
     }
 }

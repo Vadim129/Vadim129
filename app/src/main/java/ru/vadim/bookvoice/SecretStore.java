@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 final class SecretStore {
     private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "bookvoice_gemini_key_v2";
+    private static final String LEGACY_KEY_ALIAS = "bookvoice_gemini_key_v1";
     private static final String PREFS = "bookvoice_secrets";
     private static final String HARDWARE_PREFIX = "k";
     private static final String PRIVATE_PREFIX = "p";
@@ -195,6 +196,7 @@ final class SecretStore {
             KeyStore keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
             keyStore.load(null);
             if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS);
+            if (keyStore.containsAlias(LEGACY_KEY_ALIAS)) keyStore.deleteEntry(LEGACY_KEY_ALIAS);
         } catch (Exception ignored) {
         }
     }
