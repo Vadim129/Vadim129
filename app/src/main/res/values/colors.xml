@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#1C1B1F</color>
+    <color name="paper">#FFF9F2</color>
+    <color name="forest">#1E5B4A</color>
+    <color name="forest_dark">#123C31</color>
+    <color name="mint">#DDF3E8</color>
+    <color name="sand">#F4EDE4</color>
+    <color name="muted">#706A65</color>
+    <color name="line">#DED7D0</color>
+    <color name="danger">#9C4234</color>
+</resources>
