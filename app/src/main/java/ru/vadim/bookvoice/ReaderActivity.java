@@ -380,7 +380,7 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
         tts.setSpeechRate(clamp(rate, 0.6f, 1.5f));
         String savedVoice = ttsPreferences.getString(PREF_VOICE, "");
         Voice matchingVoice = voiceNamed(savedVoice);
-        if (matchingVoice != null && !matchingVoice.isNotInstalled()) {
+        if (matchingVoice != null) {
             tts.setVoice(matchingVoice);
         } else if (savedVoice == null || savedVoice.isEmpty()) {
             Voice automatic = bestInstalledVoice();
@@ -651,7 +651,8 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
             Set<Voice> source = tts.getVoices();
             if (source != null) {
                 for (Voice voice : source) {
-                    if (voice != null && !voice.isNotInstalled()) list.add(voice);
+                    // getVoices() returns the voices currently exposed by the selected engine.
+                    if (voice != null) list.add(voice);
                 }
             }
         } catch (Exception ignored) {
