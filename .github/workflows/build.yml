@@ -43,14 +43,17 @@ jobs:
       - name: Install Android build platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Fetch checked neural TTS runtime and Russian voices
+        run: bash scripts/fetch-neural-tts-assets.sh
+
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
       - name: Prepare named artifact
         run: |
           mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk artifacts/BookVoice-1.0.0.apk
-          sha256sum artifacts/BookVoice-1.0.0.apk > artifacts/BookVoice-1.0.0.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/BookVoice-1.1.1.apk
+          (cd artifacts && sha256sum BookVoice-1.1.1.apk > BookVoice-1.1.1.apk.sha256)
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -67,10 +70,15 @@ jobs:
         if: (github.event_name == 'workflow_dispatch' && inputs.stage_for_drive) || contains(github.event.head_commit.message, '[stage-drive]')
         run: |
           mkdir -p .delivery
-          cp artifacts/BookVoice-1.0.0.apk .delivery/BookVoice-1.0.0.apk
-          cp artifacts/BookVoice-1.0.0.apk.sha256 .delivery/BookVoice-1.0.0.apk.sha256
+          rm -f .delivery/BookVoice-1.1.1.apk .delivery/BookVoice-1.1.1.apk.part-* \
+            .delivery/BookVoice-1.1.1.apk.sha256
+          # The universal neural APK exceeds GitHub's single-file limit. Split it
+          # only for this short-lived authenticated Git delivery bridge.
+          split --bytes=30m --numeric-suffixes=1 --suffix-length=3 \
+            artifacts/BookVoice-1.1.1.apk .delivery/BookVoice-1.1.1.apk.part-
+          cp artifacts/BookVoice-1.1.1.apk.sha256 .delivery/BookVoice-1.1.1.apk.sha256
           git config user.name "bookvoice-build[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .delivery/BookVoice-1.0.0.apk .delivery/BookVoice-1.0.0.apk.sha256
-          git commit -m "build: stage APK for Drive delivery [skip ci]"
+          git add -f .delivery/BookVoice-1.1.1.apk.part-* .delivery/BookVoice-1.1.1.apk.sha256
+          git commit -m "build: stage split APK for Drive delivery [skip ci]"
           git push origin "HEAD:${GITHUB_REF_NAME}"
