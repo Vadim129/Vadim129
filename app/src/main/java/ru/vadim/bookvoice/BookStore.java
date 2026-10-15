@@ -16,12 +16,10 @@ import java.util.List;
 public final class BookStore {
     private static final String PREFS = "bookvoice_library";
     private static final String KEY_BOOKS = "books";
-    private final Context appContext;
     private final SharedPreferences preferences;
 
     public BookStore(Context context) {
-        appContext = context.getApplicationContext();
-        preferences = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        preferences = context.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     public synchronized List<Book> getBooks() {
@@ -93,8 +91,6 @@ public final class BookStore {
             if (data.exists()) data.delete();
         } catch (Exception ignored) {
         }
-        // The generated audio belongs to the book and should disappear with it.
-        GeminiAudioCache.deleteBookCache(appContext, book.id);
     }
 
     private void save(List<Book> books) {
