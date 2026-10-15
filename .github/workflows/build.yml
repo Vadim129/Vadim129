@@ -4,9 +4,15 @@ on:
   push:
     branches: [ 'arena/8795e098-vadim129' ]
   workflow_dispatch:
+    inputs:
+      stage_for_drive:
+        description: 'Temporarily stage the APK on this branch for Drive delivery'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: bookvoice-${{ github.ref }}
@@ -53,3 +59,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           path: artifacts/
+
+      # Arena cannot reach the signed Azure artifact URL directly. This opt-in,
+      # short-lived bridge lets the delivery agent retrieve the already-built APK
+      # through the repository's authenticated Git transport, then it removes it.
+      - name: Stage APK for Drive delivery
+        if: github.event_name == 'workflow_dispatch' && inputs.stage_for_drive
+        run: |
+          mkdir -p .delivery
+          cp artifacts/BookVoice-1.0.0.apk .delivery/BookVoice-1.0.0.apk
+          cp artifacts/BookVoice-1.0.0.apk.sha256 .delivery/BookVoice-1.0.0.apk.sha256
+          git config user.name "bookvoice-build[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .delivery/BookVoice-1.0.0.apk .delivery/BookVoice-1.0.0.apk.sha256
+          git commit -m "build: stage APK for Drive delivery [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

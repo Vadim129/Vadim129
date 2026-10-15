@@ -1,6 +1,9 @@
 # Built application files
 *.apk
 *.aar
+
+# A short-lived CI bridge used only to transfer a built APK to Google Drive.
+.delivery/
 *.ap_
 *.aab
 
