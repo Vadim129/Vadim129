@@ -64,7 +64,7 @@ jobs:
       # short-lived bridge lets the delivery agent retrieve the already-built APK
       # through the repository's authenticated Git transport, then it removes it.
       - name: Stage APK for Drive delivery
-        if: github.event_name == 'workflow_dispatch' && inputs.stage_for_drive
+        if: (github.event_name == 'workflow_dispatch' && inputs.stage_for_drive) || contains(github.event.head_commit.message, '[stage-drive]')
         run: |
           mkdir -p .delivery
           cp artifacts/BookVoice-1.0.0.apk .delivery/BookVoice-1.0.0.apk
