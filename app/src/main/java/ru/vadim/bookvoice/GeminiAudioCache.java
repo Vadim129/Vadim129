@@ -24,7 +24,7 @@ final class GeminiAudioCache {
     private static final String CACHE_DIRECTORY = "bookvoice-gemini-audio-v2";
     private static final String PCM_FORMAT = "s16le-24000-mono-v1";
     private static final long MAX_CACHE_BYTES = 768L * 1024L * 1024L;
-    private static final long MAX_ENTRY_BYTES = 32L * 1024L * 1024L;
+    private static final long MAX_ENTRY_BYTES = 40L * 1024L * 1024L;
     private static final int MIN_PCM_BYTES = 2;
 
     private final File rootDirectory;

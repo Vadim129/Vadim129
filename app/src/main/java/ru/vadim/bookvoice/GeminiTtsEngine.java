@@ -41,8 +41,8 @@ final class GeminiTtsEngine {
     static final int SAMPLE_RATE = 24_000;
     private static final int PREFETCH_WINDOW = 1;
     private static final int CONNECT_TIMEOUT_MS = 20_000;
-    private static final int READ_TIMEOUT_MS = 180_000;
-    private static final int MAX_RESPONSE_BYTES = 40 * 1024 * 1024;
+    private static final int READ_TIMEOUT_MS = 240_000;
+    private static final int MAX_RESPONSE_BYTES = 48 * 1024 * 1024;
 
     private final Object trackLock = new Object();
     private final Set<HttpURLConnection> activeConnections = Collections.newSetFromMap(
