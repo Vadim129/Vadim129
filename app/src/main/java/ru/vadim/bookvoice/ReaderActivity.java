@@ -966,7 +966,7 @@ public final class ReaderActivity extends Activity implements TextToSpeech.OnIni
 
     private void openSystemTtsSettings() {
         try {
-            startActivity(new Intent(android.provider.Settings.ACTION_TTS_SETTINGS));
+            startActivity(new Intent("com.android.settings.TTS_SETTINGS"));
         } catch (Exception ignored) {
             try {
                 startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));
