@@ -1,0 +1,22 @@
+{
+  "title": "Демо другого сценария и другой палитры",
+  "author": "ANNA",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "демо.mp4",
+  "palette": {"bg": "#0B0F0E", "ink": "#F2F5EF", "accent": "#00C2A8"},
+  "overlay": {"enabled": true, "label": "ANNA / CODE"},
+  "audio": {"enabled": true, "bpm": 126},
+  "scenes": [
+    {"type": "big_text", "duration": 2.0, "bg": "code", "effect": "slide",
+     "lines": [{"text": "ДЕЛАЮ"}, {"text": "ВИДЕО", "color": "accent"}, {"text": "КОДОМ"}]},
+    {"type": "particles_text", "duration": 2.0, "big": "9", "small": "СЕКУНД", "count": 2600,
+     "label": "01 — ЧАСТИЦЫ СОБИРАЮТ ТЕКСТ"},
+    {"type": "counter", "duration": 2.0, "to": 270, "suffix": "КАДРОВ",
+     "label": "02 — КАДР ЗА КАДРОМ", "meta": ["30 FPS", "1080×1920", "9.0 S"]},
+    {"type": "geometry", "duration": 1.6, "stickers": ["БЕЗ МОНТАЖА", "ТОЛЬКО КОД"]},
+    {"type": "finale", "duration": 1.4, "title": "ANNA",
+     "sub": "MOTION • CODE • SOUND", "extra": ["СДЕЛАНО ЗА 9 СЕКУНД"]}
+  ]
+}
