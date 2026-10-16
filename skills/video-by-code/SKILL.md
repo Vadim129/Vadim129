@@ -73,7 +73,7 @@ description: >-
 ## Состав
 
 - `scripts/render.py` — рендерер (12 сцен: hook_code, big_text, kinetic, cube,
-  particles_text, counter, geometry, showreel, finale + чат-сцены tg_intro,
+  particles_text, counter, geometry, showreel, finale, pop_stage + чат-сцены tg_intro,
   tg_chat, tg_outro для персонажа с фото) + синтез звука: бит/чиптюн,
   события ping/boom/hiss/click/…, подмешивание голосовых реплик (`audio.voice`).
 - `scripts/analyze.py` — probe, кадры, раскадровка, спектрограмма, склейки.

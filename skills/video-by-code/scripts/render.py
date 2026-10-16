@@ -860,6 +860,174 @@ def sc_tg_outro(s, frame, local, L, meta):
     return img
 
 
+def _shade(rgb, f):
+    return tuple(max(0, min(255, int(c * f))) for c in rgb)
+
+
+def _pop_title_line(d, cx, y, line, p):
+    txt = line["text"] if isinstance(line, dict) else str(line)
+    color_name = line.get("color", "ink") if isinstance(line, dict) else "ink"
+    size = int(line.get("size", 110)) if isinstance(line, dict) else 110
+    sc = pop(p / 0.35)
+    fnt = fit(d, txt, int(940 * sc), int(size * sc))
+    w, h, b = text_w(d, txt, fnt)
+    if isinstance(line, dict) and line.get("bg"):
+        pad_x, pad_y = 34, 16
+        rect = [cx - w / 2 - pad_x, y - pad_y, cx + w / 2 + pad_x, y + h + pad_y]
+        layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(layer).rounded_rectangle(rect, radius=26,
+                                                fill=hex2rgb(line["bg"]) + (255,))
+        return layer, (cx, y, txt, fnt, col(color_name) if color_name in PAL else hex2rgb(color_name), b, w, h)
+    d.text((cx - w / 2 - b[0], y - b[1]), txt, font=fnt,
+           fill=col(color_name) if color_name in PAL else hex2rgb(color_name))
+    return None, None
+
+
+def sc_pop_stage(s, frame, local, L, meta):
+    """Яркая поп-сцена: крупный персонаж, заголовки, стикеры, облако, подпись диктора."""
+    bg = hex2rgb(s.get("bg", "#FFC800"))
+    img = Image.new("RGB", (W, H), bg)
+    d = ImageDraw.Draw(img)
+    pattern = s.get("pattern", "sunburst")
+    cx0, cy0 = W // 2, 1020
+    if pattern == "sunburst":
+        dark = _shade(bg, 0.88)
+        ang0 = local * 0.7
+        for k in range(24):
+            if k % 2:
+                continue
+            a1 = math.radians(ang0 + k * 15)
+            a2 = math.radians(ang0 + (k + 1) * 15)
+            d.polygon([(cx0, cy0), (cx0 + 1500 * math.cos(a1), cy0 + 1500 * math.sin(a1)),
+                       (cx0 + 1500 * math.cos(a2), cy0 + 1500 * math.sin(a2))], fill=dark)
+    elif pattern == "halftone":
+        dot = _shade(bg, 0.82)
+        off = (local * 2) % 72
+        for gx in range(-72, W + 72, 72):
+            for gy in range(120, H, 72):
+                r = 7 + ((gx + gy) % 5)
+                d.ellipse([gx + off - r, gy - r, gx + off + r, gy + r], fill=dot)
+    elif pattern == "stripes":
+        dark = _shade(bg, 0.86)
+        off = (local * 6) % 160
+        for x in range(-H, W + 160, 160):
+            d.polygon([(x + off, 0), (x + 70 + off, 0), (x + 70 + off - H, H),
+                       (x + off - H, H)], fill=dark)
+    p = local / L
+    if s.get("badge") and p > 0.03:
+        bt = s["badge"]
+        fnt = mono(30, True)
+        w, _, b = text_w(d, bt, fnt)
+        bx, by = W // 2 - (w + 52) / 2, 64
+        d.rounded_rectangle([bx, by, bx + w + 52, by + 58], radius=29, fill=PAL["bg"])
+        d.text((bx + 26 - b[0], by + 12), bt, font=fnt, fill=(255, 255, 255))
+    title_y = int(s.get("title_y", 170))
+    layers = []
+    for i, line in enumerate(s.get("title") or []):
+        at = float(line.get("at", 0.04 + i * 0.08)) if isinstance(line, dict) else 0.04 + i * 0.08
+        if p < at:
+            continue
+        size = int(line.get("size", 110)) if isinstance(line, dict) else 110
+        layer, pending = _pop_title_line(d, W // 2, title_y, line, p - at)
+        if layer is not None:
+            layers.append((layer, pending))
+        title_y += int(size * 1.18)
+    for layer, _pending in layers:
+        img = Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB")
+    d = ImageDraw.Draw(img)
+    for _layer, pending in layers:
+        if pending:
+            cx, y, txt, fnt, fillc, b, w, h = pending
+            d.text((cx - w / 2 - b[0], y - b[1]), txt, font=fnt, fill=fillc)
+    photo = load_image(s["image"], meta["base_dir"]) if s.get("image") else None
+    if photo is not None:
+        size = int(s.get("image_size", 680))
+        cx = int(s.get("image_cx", W // 2))
+        cy = int(s.get("image_cy", 1100))
+        dx, dy, escale, angle = character_pose(s, local, L)
+        entr = pop(p / 0.2) if s.get("image_effect", "float") == "float" else 1.0
+        size2 = max(40, int(size * escale * entr))
+        shadow = Image.new("RGBA", (size2 + 60, size2 + 60), (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).rounded_rectangle([34, 40, 34 + size2, 40 + size2],
+                                                 radius=60, fill=(0, 0, 0, 110))
+        img.paste(shadow, (cx - size2 // 2 - 30 + dx, cy - size2 // 2 - 30 + dy), shadow)
+        tile = Image.new("RGBA", (size2 + 30, size2 + 30), (0, 0, 0, 0))
+        paste_round(tile, photo, (15, 15, size2, size2), radius=56,
+                    border=(255, 255, 255), border_w=14)
+        if angle:
+            tile = tile.rotate(angle, expand=True, resample=Image.BILINEAR)
+        img.paste(tile, (cx - tile.width // 2 + dx, cy - tile.height // 2 + dy), tile)
+        d = ImageDraw.Draw(img)
+    cloud = s.get("cloud")
+    if cloud and p >= float(cloud.get("at", 0.3)):
+        cp = pop((p - float(cloud.get("at", 0.3))) / 0.25)
+        meas = ImageDraw.Draw(img)
+        fnt = font("Montserrat_700Bold.ttf", int(54 * cp))
+        lines = wrap_text(meas, cloud["text"], fnt, 600)
+        line_h = int(fnt.size * 1.2)
+        tw = max(meas.textbbox((0, 0), ln, font=fnt)[2] for ln in lines)
+        bw, bh = tw + 64, line_h * len(lines) + 48
+        bx = int(cloud.get("x", W // 2 - bw // 2))
+        by = int(cloud.get("y", 300))
+        layer = Image.new("RGBA", (int(bw + 30), int(bh + 60)), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(layer)
+        ld.rounded_rectangle([8, 8, 8 + bw, 8 + bh], radius=48, fill=(255, 255, 255, 255),
+                             outline=(10, 10, 10, 255), width=7)
+        ld.polygon([(bw // 2 - 10, 8 + bh - 6), (bw // 2 + 52, 8 + bh - 6),
+                    (bw // 2 + 4, 8 + bh + 40)], fill=(255, 255, 255, 255),
+                   outline=(10, 10, 10, 255), width=6)
+        for i, ln in enumerate(lines):
+            ld.text((40, 30 + i * line_h), ln, font=fnt, fill=(10, 10, 10, 255))
+        img.paste(layer, (bx - 8, by - 8), layer)
+        d = ImageDraw.Draw(img)
+    for st in s.get("stickers") or []:
+        if p < float(st.get("at", 0.2)):
+            continue
+        sp = pop((p - float(st.get("at", 0.2))) / 0.3)
+        txt = st["text"]
+        fnt = fit(ImageDraw.Draw(img), txt, int(int(st.get("max_w", 520)) * sp),
+                  int(int(st.get("size", 52)) * sp), name="Montserrat_800ExtraBold.ttf")
+        meas = ImageDraw.Draw(img)
+        w, h, b = text_w(meas, txt, fnt)
+        bgc = hex2rgb(st.get("bg", "#FFFFFF"))
+        fgc = hex2rgb(st.get("color", "#0A0A0A"))
+        pad_x, pad_y = 30, 18
+        lw, lh = int(w + pad_x * 2), int(h + pad_y * 2)
+        layer = Image.new("RGBA", (lw + 16, lh + 16), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(layer)
+        if st.get("style") == "burst":
+            pts = []
+            for k in range(24):
+                rx = lw / 2 if k % 2 == 0 else lw / 3.4
+                ry = lh * 0.46 if k % 2 == 0 else lh * 0.30
+                a = math.pi * k / 12
+                pts.append((lw / 2 + 8 + rx * math.cos(a), lh / 2 + 8 + ry * math.sin(a)))
+            ld.polygon(pts, fill=bgc + (255,), outline=(10, 10, 10, 255), width=5)
+        else:
+            ld.rounded_rectangle([8, 8, 8 + lw, 8 + lh], radius=24, fill=bgc + (255,),
+                                 outline=(10, 10, 10, 255), width=5)
+        ld.text((8 + pad_x - b[0], 8 + pad_y - b[1]), txt, font=fnt, fill=fgc + (255,))
+        if st.get("rot"):
+            layer = layer.rotate(float(st["rot"]), expand=True, resample=Image.BILINEAR)
+        img.paste(layer, (int(st.get("x", 60)), int(st.get("y", 400))), layer)
+        d = ImageDraw.Draw(img)
+    cap = s.get("caption")
+    if cap and p >= float(cap.get("at", 0.05)):
+        txt = cap["text"] if isinstance(cap, dict) else str(cap)
+        meas = ImageDraw.Draw(img)
+        fnt = font("Montserrat_700Bold.ttf", 46)
+        lines = wrap_text(meas, txt, fnt, 880)
+        line_h = 56
+        bh = line_h * len(lines) + 42
+        by = H - 120 - bh
+        d.rounded_rectangle([44, by, W - 44, by + bh], radius=30, fill=(8, 8, 8))
+        d.rounded_rectangle([44, by, 196, by + 44], radius=22, fill=PAL["accent"])
+        d.text((66, by + 8), "ДИКТОР", font=mono(24, True), fill=(255, 255, 255))
+        for i, ln in enumerate(lines):
+            center_text(d, W // 2, by + 34 + i * line_h, ln, fnt, (255, 255, 255))
+    return img
+
+
 BUILDERS = {
     "hook_code": sc_hook_code,
     "big_text": sc_big_text,
@@ -873,6 +1041,7 @@ BUILDERS = {
     "tg_intro": sc_tg_intro,
     "tg_chat": sc_tg_chat,
     "tg_outro": sc_tg_outro,
+    "pop_stage": sc_pop_stage,
 }
 LIGHT_TYPES = {"showreel"}  # сцены со светлым фоном (тёмный оверлей)
 

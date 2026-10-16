@@ -35,6 +35,7 @@
 | `tg_intro` | заставка чата: самолёт, название, аватар | `title`, `sub`, `image`, `chat_bg` |
 | `tg_chat` | чат с персонажем-фото и пузырьками | `image`, `header{title,sub}`, `bubbles[]`, `image_effect`, `button`, `typing` |
 | `tg_outro` | финал чата: логотип + «смотри дальше» | `title`, `text`, `image` |
+| `pop_stage` | яркая поп-сцена без интерфейсов: санбёрст/точки/полосы, крупный персонаж, заголовки, стикеры, облако реплики, подпись диктора | `bg`, `pattern`, `title[]`, `image`, `cloud`, `stickers[]`, `caption`, `badge` |
 
 Строка в `lines` — либо `"ТЕКСТ"`, либо `{"text": "ТЕКСТ", "color": "accent"}`.
 Цвета: `ink` (основной), `accent`, `bg`. Шрифт подберётся под ширину кадра
