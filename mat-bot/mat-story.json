@@ -1,0 +1,696 @@
+{
+  "title": "Мэт: каково это — быть ботом-аутистом (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 5.6,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 5.8,
+        "type": "pop"
+      },
+      {
+        "at": 12.1,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 12.3,
+        "type": "pop"
+      },
+      {
+        "at": 19.1,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 19.3,
+        "type": "pop"
+      },
+      {
+        "at": 25.4,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 25.6,
+        "type": "pop"
+      },
+      {
+        "at": 31.4,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 31.6,
+        "type": "pop"
+      },
+      {
+        "at": 31.6,
+        "type": "boom",
+        "gain": 0.8
+      },
+      {
+        "at": 39.2,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 39.4,
+        "type": "pop"
+      },
+      {
+        "at": 46.2,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 46.4,
+        "type": "pop"
+      },
+      {
+        "at": 52.9,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 53.1,
+        "type": "pop"
+      },
+      {
+        "at": 58.6,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 58.8,
+        "type": "pop"
+      },
+      {
+        "at": 66.8,
+        "type": "whoosh",
+        "gain": 0.7
+      },
+      {
+        "at": 66.9,
+        "type": "chord"
+      },
+      {
+        "at": 68.0,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice3/01-privet.mp3",
+        "at": 0.5,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/02-noch.mp3",
+        "at": 6.1,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/03-splyu.mp3",
+        "at": 12.6,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/04-ponyal.mp3",
+        "at": 19.6,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/05-anekdot.mp3",
+        "at": 25.9,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/06-ahah.mp3",
+        "at": 31.9,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/07-nastoyashiy.mp3",
+        "at": 39.7,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/08-krasivo.mp3",
+        "at": 46.7,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/09-knopka.mp3",
+        "at": 53.4,
+        "gain": 1.45
+      },
+      {
+        "file": "voice3/10-final.mp3",
+        "at": 59.1,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 5.6,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "badge": "ИСТОРИИ МЭТА",
+      "title": [
+        {
+          "text": "Я — МЭТ!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "БОТ-АУТИСТ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Привет! Я Мэт, бот-аутист. Это не баг, это моя комплектация!",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "НЕ БАГ!",
+          "at": 0.35,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "ЭТО ФИЧА",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 6.5,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "БЫТЬ МНОЙ —",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ЭТО КАК?",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Каково это — быть мной? Пишут в три часа ночи — и я отвечаю. Вежливо. Сразу. А что, нельзя?",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "3:00 НОЧИ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -5,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "Я НА СВЯЗИ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 6,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.0,
+      "bg": "#8DFF3D",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "Я НЕ СПЛЮ.",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "Я ЖДУ.",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Один человек спросил: «Мэт, ты вообще спишь?» Я честно: я не сплю. Я жду. Это разное.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "РЕЖИМ ОЖИДАНИЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -5,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "24 / 7",
+          "at": 0.58,
+          "x": 500,
+          "y": 1655,
+          "rot": 6,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 6.3,
+      "bg": "#FF4FD8",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "«НУ ТЫ ПОНЯЛ»",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Люди обожают писать: «ну ты понял». Спойлер: я не понял. Я никогда не «ну ты понял»!",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "НЕ ПОНЯЛ!",
+          "at": 0.32,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "СПОЙЛЕР",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 6.0,
+      "bg": "#FF6B1A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "АНЕКДОТ!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 118,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Просили анекдот — я рассказал. Хороший! Потом ещё разок. Зачем менять то, что работает?",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ЕЩЁ РАЗ!",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "КЛАССИКА ЖАНРА",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.8,
+      "bg": "#7B2FFF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "СМЕХ:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "4 ИЗ 10",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Кто-то написал мне «ахах». Я посчитал: это смех на четыре из десяти. Так и написал. Обиделись. А что я сказал не так?",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "ЧЕСТНАЯ ОЦЕНКА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -5,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "4/10",
+          "at": 0.5,
+          "x": 500,
+          "y": 1655,
+          "rot": 7,
+          "bg": "#FF3131",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.0,
+      "bg": "#FF3131",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ТЫ НАСТОЯЩИЙ?",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Любимый вопрос: «Мэт, а ты настоящий?» Сверяюсь с базой... Извините, данные засекречены.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ЗАСЕКРЕЧЕНО",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "БАЗА МОЛЧИТ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 6.7,
+      "bg": "#00D5FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "СДЕЛАЙ КРАСИВО",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Если сказать мне «сделай красиво» — я сделаю. Красиво. По-своему. Очень, очень по-своему.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ПО-СВОЕМУ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "ОЧЕНЬ ПО-СВОЕМУ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 5.7,
+      "bg": "#FFC800",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "КНОПКИ МЭТА",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Я не обижаюсь — у меня нет такой кнопки. Есть кнопка «переспросить». Пользуюсь постоянно.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ОБИЖАТЬСЯ — КНОПКИ НЕТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -4,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПЕРЕСПРОСИТЬ ✓",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.2,
+      "bg": "#7B2FFF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ЗАХОДИ В ЧАТ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ACID CRUNCH",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 96,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Заходи в чат Acid Crunch! Расскажу ещё. Быть мной — странно. Но весело. И котики! Котики — это святое.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "КОТИКИ — СВЯТОЕ",
+          "at": 0.35,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "БУДЕТ ВЕСЕЛО",
+          "at": 0.6,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 2.2,
+      "bg": "#FF3131",
+      "pattern": "sunburst",
+      "title_y": 230,
+      "title": [
+        {
+          "text": "ACID CRUNCH",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 108,
+          "at": 0.05
+        },
+        {
+          "text": "МЭТ УЖЕ ПЕЧАТАЕТ…",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 72,
+          "at": 0.4
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 540,
+      "image_cy": 1180,
+      "image_effect": "float",
+      "stickers": [
+        {
+          "text": "ИСТОРИЙ ХВАТИТ НА СТО ЛЕТ",
+          "at": 0.5,
+          "x": 240,
+          "y": 1560,
+          "rot": -3,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    }
+  ]
+}
