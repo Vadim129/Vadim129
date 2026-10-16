@@ -1,0 +1,71 @@
+{
+  "title": "Мамайка и новая Тесла",
+  "video": "source.mp4",
+  "output": "клип.mp4",
+  "base_volume": 0.32,
+  "voice": [
+    {"file": "voice/01-privet-proc.mp3", "at": 0.6, "gain": 1.30},
+    {"file": "voice/02-smotri-proc.mp3", "at": 5.2, "gain": 1.30},
+    {"file": "voice/03-tesla-proc.mp3", "at": 11.5, "gain": 1.30},
+    {"file": "voice/04-predstav-proc.mp3", "at": 24.5, "gain": 1.30},
+    {"file": "voice/05-final-proc.mp3", "at": 38.0, "gain": 1.30}
+  ],
+  "sfx": [
+    {"at": 0.45, "type": "pop"},
+    {"at": 4.65, "type": "whoosh", "gain": 0.8},
+    {"at": 11.05, "type": "boom", "gain": 0.8},
+    {"at": 17.35, "type": "pop", "gain": 0.7},
+    {"at": 18.75, "type": "pop", "gain": 0.7},
+    {"at": 20.35, "type": "pop", "gain": 0.7},
+    {"at": 21.75, "type": "pop", "gain": 0.7},
+    {"at": 23.85, "type": "whoosh", "gain": 0.8},
+    {"at": 25.15, "type": "pop", "gain": 0.7},
+    {"at": 26.75, "type": "pop", "gain": 0.7},
+    {"at": 28.15, "type": "pop", "gain": 0.7},
+    {"at": 31.05, "type": "whoosh", "gain": 0.8},
+    {"at": 37.55, "type": "whoosh", "gain": 0.9},
+    {"at": 43.60, "type": "chord", "gain": 0.9},
+    {"at": 44.80, "type": "ping", "gain": 0.8}
+  ],
+  "cues": [
+    {"start": 0.0, "end": 45.67, "anim": "fade",
+     "badge": {"text": "ДЛЯ МАМАЙКИ", "x": 44, "y": 30, "bg": "#E82127"}},
+    {"start": 0.4, "end": 4.3, "y": 96,
+     "lines": [
+       {"text": "МАМАЙКА, ПРИВЕТ!", "size": 88, "color": "#FFD21F"},
+       {"text": "ТЫ НЕ ВЕРИЛА В ТЕХНОЛОГИИ?", "size": 52, "color": "#FFFFFF", "delay": 0.55}]},
+    {"start": 4.6, "end": 9.8, "y": 96,
+     "lines": [
+       {"text": "ПОСМОТРИ,", "size": 80, "color": "#FFFFFF"},
+       {"text": "КАК КРУТО ОНА ДВИГАЕТСЯ!", "size": 78, "color": "#FFD21F", "delay": 0.4}]},
+    {"start": 11.0, "end": 16.6, "y": 96,
+     "lines": [
+       {"text": "ЭТО НОВАЯ ТЕСЛА", "size": 84, "color": "#FFFFFF", "bg": "#E82127"},
+       {"text": "ЕДЕТ ДАЖЕ ПО ВЕРТИКАЛИ!", "size": 56, "color": "#FFD21F", "delay": 0.5}]},
+    {"start": 16.9, "end": 23.4, "y": 92, "items_x": 90,
+     "lines": [
+       {"text": "ПЛЮСЫ ТЕХНОЛОГИИ:", "size": 58, "color": "#FFFFFF", "bg": "#14532D"}],
+     "items": [
+       {"text": "ТИХО — БЕЗ РЁВА МОТОРА", "at": 17.4},
+       {"text": "ТОЧНО И ПЛАВНО, КАК ПО РЕЛЬСАМ", "at": 18.8},
+       {"text": "ДЫМ — ТОЛЬКО ДЛЯ ЭФФЕКТА", "at": 20.4},
+       {"text": "И НИ КАПЛИ БЕНЗИНА!", "at": 21.8}]},
+    {"start": 23.9, "end": 30.6, "y": 92, "items_x": 90,
+     "lines": [
+       {"text": "А ТЕПЕРЬ ПРЕДСТАВЬ…", "size": 72, "color": "#29D8FF"}],
+     "items": [
+       {"text": "ПРИЕДЕТ ПО ОДНОМУ ЗВОНКУ", "at": 25.2},
+       {"text": "ОТВЕЗЁТ ПО ДЕЛАМ — ХОТЬ К ВРАЧУ", "at": 26.8},
+       {"text": "ПРИПАРКУЕТСЯ САМА", "at": 28.2}]},
+    {"start": 31.1, "end": 37.2, "y": 100,
+     "lines": [
+       {"text": "А ТЫ В ЭТО ВРЕМЯ", "size": 66, "color": "#FFFFFF"},
+       {"text": "ПРОСТО ОТДЫХАЕШЬ", "size": 84, "color": "#7CFC9A", "delay": 0.5},
+       {"text": "ОНА НЕ УСТАЁТ. СОВСЕМ.", "size": 48, "color": "#FFD21F", "delay": 1.1}]},
+    {"start": 37.6, "end": 45.5, "y": 92,
+     "lines": [
+       {"text": "МАМАЙКА, ЭТО НЕ ФАНТАСТИКА", "size": 62, "color": "#FFFFFF"},
+       {"text": "ЭТО УЖЕ СЕГОДНЯ", "size": 76, "color": "#FFFFFF", "bg": "#E82127", "delay": 0.7},
+       {"text": "СКАЖИ ЧЕСТНО: КРУТО?", "size": 54, "color": "#29D8FF", "delay": 1.6}]}
+  ]
+}

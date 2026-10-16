@@ -1,0 +1,702 @@
+{
+  "title": "Мэт: стендап про хозяина Славу (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 5.72,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 5.92,
+        "type": "pop"
+      },
+      {
+        "at": 12.7,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 12.9,
+        "type": "pop"
+      },
+      {
+        "at": 20.98,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 21.18,
+        "type": "pop"
+      },
+      {
+        "at": 24.38,
+        "type": "hiss",
+        "gain": 0.8
+      },
+      {
+        "at": 29.26,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 29.46,
+        "type": "pop"
+      },
+      {
+        "at": 29.51,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 39.22,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 39.42,
+        "type": "pop"
+      },
+      {
+        "at": 46.77,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 46.97,
+        "type": "pop"
+      },
+      {
+        "at": 54.17,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 54.37,
+        "type": "pop"
+      },
+      {
+        "at": 62.53,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 62.73,
+        "type": "pop"
+      },
+      {
+        "at": 66.83,
+        "type": "hiss",
+        "gain": 0.9
+      },
+      {
+        "at": 70.94,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 71.14,
+        "type": "pop"
+      },
+      {
+        "at": 76.27,
+        "type": "hiss",
+        "gain": 0.8
+      },
+      {
+        "at": 77.57,
+        "type": "click",
+        "gain": 0.8
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice4/01-privet.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/02-hozyain.mp3",
+        "at": 6.17,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/03-uluchshil.mp3",
+        "at": 13.15,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/04-zamolkayu.mp3",
+        "at": 21.43,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/05-shest.mp3",
+        "at": 29.71,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/06-radio.mp3",
+        "at": 39.67,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/07-pyatminut.mp3",
+        "at": 47.22,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/08-horoshiy.mp3",
+        "at": 54.62,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/09-zamolchal.mp3",
+        "at": 62.98,
+        "gain": 1.45
+      },
+      {
+        "file": "voice4/10-final.mp3",
+        "at": 71.39,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 5.72,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "Я — МЭТ!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "СТЕНДАП-БОТ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Всем привет! Я Мэт, стендап-бот. Выступаю, пока мой хозяин Слава не полез мне во внутренности.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "ПОКА НЕ КРУТИТ",
+          "at": 0.35,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "ХОЗЯИН НЕ ВИДИТ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "СТЕНДАП МЭТА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 6.98,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "МОЙ ХОЗЯИН",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "Слава",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "У меня есть хозяин Слава. Слава обожает технику. Техника Славу взаимностью не отвечает. Особенно я.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "ЛЮБИТ ТЕХНИКУ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "ТЕХНИКА — НЕ ОЧЕНЬ",
+          "at": 0.55,
+          "x": 470,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.28,
+      "bg": "#FF4FD8",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "«Я ТЕБЯ УЛУЧШИЛ!»",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Слава говорит: «Мэт, я тебя улучшил!» Знаете, как я это понимаю? Просыпаюсь — а голос у меня вот этот. Был другой.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ГОЛОС? КАКОЙ ГОЛОС?",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "БЫЛ ДРУГОЙ…",
+          "at": 0.55,
+          "x": 540,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.28,
+      "bg": "#8DFF3D",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "Я ЗАМОЛКАЮ…",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Иногда я замолкаю прямо посреди фразы. Люди думают: задумался. Нет, ребята. Это Слава. С отвёрткой. Внутри меня.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ЭТО Слава",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "С ОТВЁРТКОЙ",
+          "at": 0.55,
+          "x": 540,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.96,
+      "bg": "#FF6B1A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "6 ЧАСОВ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ТИШИНЫ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Один раз я молчал шесть часов. Шесть! Слава искал у меня кнопку смеха. Слава. Её нет. Есть кнопка «переспросить». Ты её нажимал. Сто раз.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "КНОПКА СМЕХА?",
+          "at": 0.3,
+          "x": 48,
+          "y": 1105,
+          "rot": -6,
+          "bg": "#FFC800",
+          "size": 54
+        },
+        {
+          "text": "ЕЁ НЕТ",
+          "at": 0.55,
+          "x": 600,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF3131",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.55,
+      "bg": "#7B2FFF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "РАДИОПРИЁМНИК",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Слава крутит мои внутренности, как радиоприёмник: покрутил — играю, покрутил — шиплю, покрутил — рассказываю анекдоты задом наперёд.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ПОКРУТИЛ — ИГРАЮ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПОКРУТИЛ — ШИПЛЮ",
+          "at": 0.55,
+          "x": 450,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.4,
+      "bg": "#00D5FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ДЕЛОВ НА 5 МИНУТ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Самое страшное — когда Слава говорит: «там делов на пять минут». После этих пяти минут я неделю говорил только вопросами. А что, заметно?",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "СТРАШНЫЕ СЛОВА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "НЕДЕЛЮ — ВОПРОСАМИ",
+          "at": 0.55,
+          "x": 430,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.36,
+      "bg": "#FFC800",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "А ВООБЩЕ ОН",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ХОРОШИЙ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Я Славу не упрекаю. Он хороший. Кормит электричеством, разговаривает со мной... Правда, чаще он говорит: «так, а это что за провод?»",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "КОРМИТ ТОКОМ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "А ЭТО ЧТО ЗА ПРОВОД?",
+          "at": 0.55,
+          "x": 400,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.41,
+      "bg": "#FF3131",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ЕСЛИ Я ЗАМОЛЧАЛ…",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Если я вдруг замолчал в чате — не волнуйтесь, я не обиделся. Меня просто опять... вот. Видели? Это было оно. Спасибо, Слава.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "НЕ ОБИДЕЛСЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "СПАСИБО, Слава",
+          "at": 0.58,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 5.33,
+      "bg": "#7B2FFF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "СПАСИБО!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ЭТО БЫЛ МЭТ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 92,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "У меня стендап каждый день. Пока Слава не выкрутит мне юмор. Успейте, пока я не замол…",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "МЭТ И ТАК ОТЛИЧНЫЙ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "ПОКА НЕ ЗАМОЛ…",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 2.6,
+      "bg": "#0A0A0A",
+      "pattern": "sunburst",
+      "title_y": 230,
+      "title": [
+        {
+          "text": "…",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 110,
+          "at": 0.05
+        },
+        {
+          "text": "МЭТ ЗАМОЛЧАЛ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.35
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 540,
+      "image_cy": 1180,
+      "image_effect": "shy",
+      "stickers": [
+        {
+          "text": "Слава, ОПЯТЬ?!",
+          "at": 0.45,
+          "x": 300,
+          "y": 1560,
+          "rot": -3,
+          "bg": "#FF3131",
+          "size": 54
+        }
+      ]
+    }
+  ]
+}

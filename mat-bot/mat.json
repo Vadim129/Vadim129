@@ -1,0 +1,292 @@
+{
+  "title": "Бот-аутист Мэт в чате Acid Crunch",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0E1621",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 132,
+    "music_volume": 0.5,
+    "events": [
+      {
+        "at": 0.25,
+        "type": "ping"
+      },
+      {
+        "at": 2.5,
+        "type": "pop"
+      },
+      {
+        "at": 4.1,
+        "type": "pop"
+      },
+      {
+        "at": 5.0,
+        "type": "pop"
+      },
+      {
+        "at": 6.1,
+        "type": "boom"
+      },
+      {
+        "at": 6.85,
+        "type": "boom",
+        "gain": 0.9
+      },
+      {
+        "at": 8.0,
+        "type": "hiss"
+      },
+      {
+        "at": 8.0,
+        "type": "pulse",
+        "gain": 0.7
+      },
+      {
+        "at": 8.5,
+        "type": "pulse",
+        "gain": 0.7
+      },
+      {
+        "at": 9.0,
+        "type": "pulse",
+        "gain": 0.7
+      },
+      {
+        "at": 9.5,
+        "type": "pulse",
+        "gain": 0.7
+      },
+      {
+        "at": 10.5,
+        "type": "pop"
+      },
+      {
+        "at": 11.05,
+        "type": "click"
+      },
+      {
+        "at": 12.0,
+        "type": "whoosh"
+      },
+      {
+        "at": 12.6,
+        "type": "pop"
+      },
+      {
+        "at": 14.05,
+        "type": "chord"
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice/01-privet.mp3",
+        "at": 2.3,
+        "gain": 1.6
+      },
+      {
+        "file": "voice/02-kotiki.mp3",
+        "at": 4.35,
+        "gain": 1.6
+      },
+      {
+        "file": "voice/03-prav.mp3",
+        "at": 7.0,
+        "gain": 1.6
+      },
+      {
+        "file": "voice/04-noet.mp3",
+        "at": 8.6,
+        "gain": 1.6
+      },
+      {
+        "file": "voice/05-zahodi.mp3",
+        "at": 10.5,
+        "gain": 1.6
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "tg_intro",
+      "duration": 2.0,
+      "title": "Acid Crunch",
+      "sub": "чат, где живёт Мэт",
+      "image": "assets/robot.jpg",
+      "chat_bg": "#0E1621"
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "image": "assets/robot.jpg",
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "typing": true,
+      "typing_text": "Мэт печатает",
+      "image_size": 660,
+      "image_cy": 1120,
+      "image_effect": "shy",
+      "bubbles_y": 250,
+      "bubbles": [
+        {
+          "text": "Привет! Я Мэт. Я…",
+          "side": "left",
+          "at": 0.28
+        }
+      ]
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "image": "assets/robot.jpg",
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "image_size": 620,
+      "image_cy": 1150,
+      "image_effect": "float",
+      "bubbles_y": 250,
+      "bubbles": [
+        {
+          "text": "Я люблю котиков, но…",
+          "side": "left",
+          "style": "cloud",
+          "at": 0.05
+        },
+        {
+          "text": "А почему небо синее?",
+          "side": "left",
+          "style": "cloud",
+          "at": 0.5
+        }
+      ]
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "image": "assets/robot.jpg",
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "image_size": 560,
+      "image_cy": 1200,
+      "image_effect": "float",
+      "bubbles_y": 250,
+      "bubbles": [
+        {
+          "text": "А почему небо синее?",
+          "side": "right",
+          "at": 0.05,
+          "rot": 3
+        },
+        {
+          "text": "Ты не видишь, что я прав!",
+          "side": "left",
+          "at": 0.45,
+          "rot": -3,
+          "y": 390
+        }
+      ]
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "image": "assets/robot.jpg",
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "image_size": 640,
+      "image_cy": 1090,
+      "image_effect": "pulse",
+      "bubbles_y": 260,
+      "bubbles": [
+        {
+          "text": "Мне не нравится, как это работает!",
+          "side": "left",
+          "at": 0.3
+        }
+      ]
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "image": "assets/robot.jpg",
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "image_size": 620,
+      "image_cy": 1060,
+      "image_effect": "invite",
+      "bubbles_y": 250,
+      "bubbles": [
+        {
+          "text": "Хочешь пообщаться? Заходи в чат!",
+          "side": "left",
+          "at": 0.25
+        }
+      ],
+      "button": {
+        "text": "Join",
+        "at": 0.55,
+        "y": 1600
+      }
+    },
+    {
+      "type": "tg_chat",
+      "duration": 2.0,
+      "hide_image": true,
+      "header": {
+        "title": "Acid Crunch",
+        "sub": "Мэт • online"
+      },
+      "bubbles_y": 300,
+      "bubbles": [
+        {
+          "text": "Привет, Мэт!",
+          "side": "right",
+          "at": 0.3
+        },
+        {
+          "text": "Мэт печатает •••",
+          "side": "left",
+          "at": 0.62
+        }
+      ],
+      "button": {
+        "text": "Join",
+        "at": 0.0,
+        "morph_at": 0.35,
+        "morph_to": "t.me/AcidCrunch",
+        "y": 1500
+      },
+      "image": "assets/robot.jpg",
+      "center_avatar": true,
+      "center_name": "Мэт • бот"
+    },
+    {
+      "type": "tg_outro",
+      "duration": 1.0,
+      "title": "Acid Crunch",
+      "text": "Смотри дальше",
+      "image": "assets/robot.jpg",
+      "chat_bg": "#0E1621"
+    }
+  ]
+}
