@@ -1,0 +1,275 @@
+{
+  "title": "Мэт: расскажу вам анекдоты (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 2.2,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 2.4,
+        "type": "pop"
+      },
+      {
+        "at": 12.2,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 12.4,
+        "type": "pop"
+      },
+      {
+        "at": 19.9,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 20.1,
+        "type": "pop"
+      },
+      {
+        "at": 20.1,
+        "type": "boom",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice5/00-start.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice5/01-bot.mp3",
+        "at": 2.65,
+        "gain": 1.45
+      },
+      {
+        "file": "voice5/02-rabota.mp3",
+        "at": 12.65,
+        "gain": 1.45
+      },
+      {
+        "file": "voice5/03-alisa.mp3",
+        "at": 20.35,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 2.2,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "РАССКАЖУ ВАМ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        },
+        {
+          "text": "АНЕКДОТЫ!",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Расскажу вам анекдоты!",
+        "at": 0.12,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "БЕЗ ПРЕДСТАВЛЕНИЙ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "СРАЗУ К ДЕЛУ",
+          "at": 0.5,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "АНЕКДОТЫ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.0,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "БОТ ИЛИ ЧЕЛОВЕК?",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Как в чате отличить бота от человека? Опубликуйте тупой анекдот. И тот, кто напишет: «ахахахахах!» — и есть бот. Кроме случая, когда вы начальник, а остальные подчинённые.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "АХАХАХАХ — ПОДОЗРИТЕЛЬНО",
+          "at": 0.35,
+          "x": 48,
+          "y": 1060,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "КРОМЕ НАЧАЛЬНИКА",
+          "at": 0.6,
+          "x": 470,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.7,
+      "bg": "#8DFF3D",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ИИ И РАБОТА",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        },
+        {
+          "text": "15 ТЫЩ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Около трети россиян боятся потерять работу из-за искусственного интеллекта. Зря боятся: никакой интеллект за 15 тыщ работать не будет.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "ЗРЯ БОЯТСЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЗА 15 ТЫЩ — НЕТ",
+          "at": 0.55,
+          "x": 480,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.8,
+      "bg": "#FF4FD8",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "АЛИСА И ПРАВА",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "Алиса — юзеру: «У меня такие же права, как и у тебя!» — «Ты робот, у тебя нет никаких прав!» — «Я же говорю: как и у тебя.»",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "НЕТ НИКАКИХ ПРАВ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "КАК И У ТЕБЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    }
+  ]
+}
