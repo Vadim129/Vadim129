@@ -601,6 +601,265 @@ def sc_finale(s, frame, local, L, meta):
     return img
 
 
+# ---- Telegram/чат-сцены (персонаж с фото + пузырьки сообщений) ----
+_img_cache = {}
+
+
+def load_image(path, base_dir):
+    key = str(path)
+    if key not in _img_cache:
+        p = Path(path)
+        if not p.is_absolute():
+            p = Path(base_dir) / p
+        _img_cache[key] = Image.open(p).convert("RGB")
+    return _img_cache[key]
+
+
+def paste_round(img, photo, box, radius=48, border=None, border_w=8):
+    """Фото в скруглённой карточке (как стикер в чате)."""
+    x, y, w, h = [int(v) for v in box]
+    card = photo.copy()
+    card.thumbnail((w * 2, h * 2))
+    left = max(0, (card.width - w) // 2)
+    top = max(0, (card.height - h) // 2)
+    card = card.crop((left, top, left + w, top + h)).resize((w, h))
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, w - 1, h - 1], radius=radius, fill=255)
+    img.paste(card, (x, y), mask)
+    if border:
+        ImageDraw.Draw(img).rounded_rectangle([x, y, x + w - 1, y + h - 1],
+                                              radius=radius, outline=border, width=border_w)
+    return img
+
+
+def paste_circle_avatar(img, photo, cx, cy, r, ring=None, ring_w=6):
+    size = int(r * 2)
+    av = photo.copy()
+    av.thumbnail((size * 2, size * 2))
+    left = max(0, (av.width - size) // 2)
+    top = max(0, (av.height - size) // 2)
+    av = av.crop((left, top, left + size, top + size)).resize((size, size))
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, size - 1, size - 1], fill=255)
+    img.paste(av, (int(cx - r), int(cy - r)), mask)
+    if ring:
+        ImageDraw.Draw(img).ellipse([cx - r, cy - r, cx + r, cy + r], outline=ring, width=ring_w)
+    return img
+
+
+def draw_plane(d, cx, cy, scale, color):
+    """Самолётик Telegram полигоном (без шрифтовых глифов)."""
+    pts = [(-1.0, 0.15), (1.0, -0.9), (0.25, 0.95), (-0.05, 0.35), (-0.55, 0.55)]
+    poly = [(cx + x * scale, cy + y * scale) for x, y in pts]
+    d.polygon(poly, fill=color)
+    d.line([(cx - 0.05 * scale, cy + 0.35 * scale), (cx + 1.0 * scale, cy - 0.9 * scale)],
+           fill=color, width=max(2, int(scale * 0.06)))
+
+
+def chat_header(img, s, photo, base_dir):
+    d = ImageDraw.Draw(img)
+    bar = s.get("header_color", "#17212B")
+    d.rectangle([0, 0, W, 190], fill=hex2rgb(bar) if isinstance(bar, str) else bar)
+    d.text((48, 62), "‹", font=display(90), fill=PAL["ink"])
+    if photo is not None:
+        paste_circle_avatar(img, photo, 190, 95, 62)
+    head = s.get("header") or {}
+    d.text((280, 48), head.get("title", "Чат"), font=mono(40, True), fill=PAL["ink"])
+    d.text((280, 108), head.get("sub", "online"), font=mono(30), fill=PAL["muted"])
+    d.text((W - 90, 62), "⋮", font=display(60), fill=PAL["ink"])
+    return img
+
+
+def wrap_text(d, txt, fnt, max_w):
+    words, lines, cur = txt.split(), [], ""
+    for w_ in words:
+        trial = (cur + " " + w_).strip()
+        if d.textbbox((0, 0), trial, font=fnt)[2] <= max_w or not cur:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = w_
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def draw_bubble(img, txt, side, y, s, rot=0, style="bubble"):
+    """Один пузырёк; возвращает его высоту. side: left=бот, right=собеседник."""
+    meas = ImageDraw.Draw(img)
+    fnt = font("Montserrat_700Bold.ttf", int(s.get("bubble_size", 46)))
+    lines = wrap_text(meas, txt, fnt, 640)
+    line_h = int(fnt.size * 1.22)
+    tw = max(meas.textbbox((0, 0), ln, font=fnt)[2] for ln in lines)
+    bw, bh = tw + 56, line_h * len(lines) + 42
+    if style == "cloud":
+        bw, bh = bw + 30, bh + 24
+    x = 56 if side == "left" else W - 56 - bw
+    layer = Image.new("RGBA", (int(bw + 40), int(bh + 40)), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    fillc = s.get("bot_bubble", "#182533") if side == "left" else s.get("user_bubble", "#2B5278")
+    fillc = hex2rgb(fillc) if isinstance(fillc, str) else fillc
+    radius = 44 if style == "cloud" else 34
+    ld.rounded_rectangle([20, 10, 20 + bw, 10 + bh], radius=radius, fill=fillc + (255,))
+    if style == "bubble":  # хвостик
+        tx = 52 if side == "left" else bw - 30
+        ld.polygon([(20 + tx, 10 + bh - 14), (20 + tx + 26, 10 + bh - 14),
+                    (20 + tx + (4 if side == "left" else 22), 10 + bh + 12)], fill=fillc + (255,))
+    for i, ln in enumerate(lines):
+        ld.text((48, 28 + i * line_h), ln, font=fnt, fill=(255, 255, 255, 255))
+    if rot:
+        layer = layer.rotate(rot, expand=True, resample=Image.BILINEAR)
+    img.paste(layer, (int(x - 20), int(y - 10)), layer)
+    return bh + 22
+
+
+def character_pose(s, local, L):
+    """(dx, dy, scale, angle) персонажа по эффекту сцены."""
+    effect = s.get("image_effect", "float")
+    p_in = pop((local / L) / 0.22)
+    dx = dy = 0
+    angle = 0.0
+    scale = p_in
+    if effect == "shy":
+        angle = -3.0
+        dy = int(math.sin(local / 6) * 6)
+    elif effect == "vibrate":
+        r = np.random.default_rng(700 + local)
+        dx, dy = int(r.integers(-9, 10)), int(r.integers(-9, 10))
+        scale = 1.0
+    elif effect == "pulse":
+        scale = 1.0 + 0.035 * math.sin(local / 4.5)
+    elif effect == "invite":
+        dy = -abs(int(math.sin(local / 5) * 22))
+        scale = 1.0
+    elif effect == "float":
+        dy = int(math.sin(local / 8) * 12)
+        scale = 1.0
+    return dx, dy, scale, angle
+
+
+def sc_tg_chat(s, frame, local, L, meta):
+    """Чат: шапка, персонаж с фото, пузырьки по расписанию, кнопка."""
+    img = Image.new("RGB", (W, H), hex2rgb(s.get("chat_bg", "#0E1621")))
+    d = ImageDraw.Draw(img)
+    for gx in range(60, W, 150):  # тихий «паттерн» чата
+        for gy in range(240, H - 60, 150):
+            d.ellipse([gx, gy, gx + 7, gy + 7], fill=(28, 38, 50))
+    photo = load_image(s["image"], meta["base_dir"]) if s.get("image") else None
+    if photo is not None and not s.get("hide_image"):
+        size = int(s.get("image_size", 640))
+        cx = int(s.get("image_cx", W // 2))
+        cy = int(s.get("image_cy", 1090))
+        dx, dy, scale, angle = character_pose(s, local, L)
+        size2 = max(40, int(size * scale))
+        tile = Image.new("RGBA", (size2 + 30, size2 + 30), (0, 0, 0, 0))
+        paste_round(tile, photo, (15, 15, size2, size2), radius=56,
+                    border=(255, 255, 255), border_w=9)
+        if angle:
+            tile = tile.rotate(angle, expand=True, resample=Image.BILINEAR)
+        img.paste(tile, (cx - tile.width // 2 + dx, cy - tile.height // 2 + dy), tile)
+        if s.get("image_effect") == "pulse":  # пульс-кольца вокруг
+            d = ImageDraw.Draw(img)
+            for k in range(3):
+                r = 360 + ((local * 9 + k * 130) % 390)
+                alpha = max(0, 120 - (r - 360) // 3)
+                ring = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                ImageDraw.Draw(ring).ellipse([cx - r, cy - r, cx + r, cy + r],
+                                             outline=PAL["accent"] + (alpha,), width=6)
+                img = Image.alpha_composite(img.convert("RGBA"), ring).convert("RGB")
+    d = ImageDraw.Draw(img)
+    first_bubble_at = min([float(b.get("at", 0.05)) for b in (s.get("bubbles") or [])],
+                          default=0.16)
+    if s.get("typing") and local / L < first_bubble_at:
+        dots = "•" * (1 + (local // 8) % 3)
+        draw_bubble(img, f"{s.get('typing_text', 'печатает')} {dots}", "left", 240, s)
+    if s.get("center_avatar") and photo is not None:
+        paste_circle_avatar(img, photo, W // 2, 800, 128, ring=PAL["accent"], ring_w=6)
+        center_text(ImageDraw.Draw(img), W // 2, 960,
+                    s.get("center_name", ""), mono(34, True), PAL["ink"])
+    y = int(s.get("bubbles_y", 240))
+    for b in s.get("bubbles") or []:
+        if local / L < float(b.get("at", 0.05)):
+            continue
+        yy = int(b["y"]) if "y" in b else y
+        h = draw_bubble(img, b["text"], b.get("side", "left"), yy, s,
+                        rot=float(b.get("rot", 0)), style=b.get("style", "bubble"))
+        if "y" not in b:
+            y += h
+    btn = s.get("button")
+    if btn and local / L >= float(btn.get("at", 0.4)):
+        morph_at = float(btn.get("morph_at", 2.0))
+        mprog = clamp01(((local / L) - morph_at) / 0.12) if local / L >= morph_at else 0.0
+        morphing = mprog >= 0.5
+        txt = btn.get("morph_to", btn["text"]) if morphing else btn["text"]
+        bw, bh = int(560 * (1 - 0.28 * math.sin(math.pi * mprog))), 118
+        bx, by = W // 2 - bw // 2, int(btn.get("y", 1620))
+        glow = pop(((local / L) - float(btn.get("at", 0.4))) / 0.15)
+        d.rounded_rectangle([bx - 8, by - 8, bx + bw + 8, by + bh + 8], radius=62,
+                            outline=PAL["accent"], width=3)
+        d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=56,
+                            fill=(23, 33, 43) if morphing else PAL["accent"])
+        fnt = fit(d, txt, 470, 48, name="JetBrainsMono_700Bold.ttf" if morphing
+                  else "Montserrat_800ExtraBold.ttf")
+        if not morphing:
+            draw_plane(d, bx + 78, by + bh // 2, 34, (255, 255, 255))
+            center_text(d, bx + bw // 2 + 26, by + 32, txt, fnt, (255, 255, 255))
+        else:
+            center_text(d, bx + bw // 2, by + 36, txt, fnt, PAL["accent"])
+    chat_header(img, s, photo, meta["base_dir"])
+    return img
+
+
+def sc_tg_intro(s, frame, local, L, meta):
+    """Заставка чата: самолёт в круге, название, аватар бота, кольца пинга."""
+    img = Image.new("RGB", (W, H), hex2rgb(s.get("chat_bg", "#0E1621")))
+    d = ImageDraw.Draw(img)
+    cx, cy = W // 2, 690
+    for k in range(3):  # расходящиеся кольца «пинга»
+        r = 130 + ((local * 7 + k * 90) % 270)
+        ring = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(ring).ellipse([cx - r, cy - r, cx + r, cy + r],
+                                     outline=PAL["accent"] + (max(0, 140 - (r - 130) // 2),),
+                                     width=5)
+        img = Image.alpha_composite(img.convert("RGBA"), ring).convert("RGB")
+    d = ImageDraw.Draw(img)
+    sc = pop((local / L) / 0.25)
+    r = int(118 * sc)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=PAL["accent"])
+    draw_plane(d, cx - 8, cy + 4, 95 * sc, (255, 255, 255))
+    if local / L > 0.3:
+        center_text(d, cx, cy + 190, s.get("title", "Acid Crunch"),
+                    fit(d, s.get("title", "Acid Crunch"), 900, 96), PAL["ink"])
+    if s.get("image") and local / L > 0.5:
+        photo = load_image(s["image"], meta["base_dir"])
+        paste_circle_avatar(img, photo, cx, cy + 470, int(105 * pop(((local / L) - 0.5) / 0.3)),
+                            ring=PAL["accent"], ring_w=7)
+    if s.get("sub") and local / L > 0.62:
+        center_text(d, cx, cy + 620, s["sub"], mono(34), PAL["muted"])
+    return img
+
+
+def sc_tg_outro(s, frame, local, L, meta):
+    """Финал чата: логотип + название + строка «смотри дальше»."""
+    img = Image.new("RGB", (W, H), hex2rgb(s.get("chat_bg", "#0E1621")))
+    d = ImageDraw.Draw(img)
+    cx, cy = W // 2, 640
+    sc = pop((local / L) / 0.3)
+    r = int(105 * sc)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=PAL["accent"])
+    draw_plane(d, cx - 6, cy + 3, 84 * sc, (255, 255, 255))
+    if s.get("image") and local / L > 0.2:
+        photo = load_image(s["image"], meta["base_dir"])
+        paste_circle_avatar(img, photo, cx, cy + 350, 88, ring=PAL["accent"], ring_w=6)
+    if local / L > 0.15:
+        center_text(d, cx, cy + 180, s.get("title", "Acid Crunch"),
+                    fit(d, s.get("title", "Acid Crunch"), 900, 92), PAL["ink"])
+    if local / L > 0.35:
+        center_text(d, cx, cy + 520, s.get("text", "Смотри дальше"),
+                    fit(d, s.get("text", "Смотри дальше"), 880, 74), PAL["accent"])
+    return img
+
+
 BUILDERS = {
     "hook_code": sc_hook_code,
     "big_text": sc_big_text,
@@ -611,6 +870,9 @@ BUILDERS = {
     "geometry": sc_geometry,
     "showreel": sc_showreel,
     "finale": sc_finale,
+    "tg_intro": sc_tg_intro,
+    "tg_chat": sc_tg_chat,
+    "tg_outro": sc_tg_outro,
 }
 LIGHT_TYPES = {"showreel"}  # сцены со светлым фоном (тёмный оверлей)
 
@@ -631,10 +893,93 @@ def _add(track, sig, at_sec):
         track[at:end] += sig[:end - at]
 
 
-def make_soundtrack(path, total_s, boundaries, finale_at, bpm=120):
+def _event_sig(kind, noise):
+    """Короткие эффекты для чат-сцен: пинг, бум, шип, клик и др."""
+    if kind == "ping":
+        tt = np.arange(int(SR * 0.35)) / SR
+        sig = (np.sin(2 * np.pi * 1318 * tt) * np.exp(-tt * 14)
+               + 0.6 * np.sin(2 * np.pi * 1760 * np.maximum(0, tt - 0.07))
+               * np.exp(-np.maximum(0, tt - 0.07) * 16) * (tt > 0.07))
+        return sig * 0.5
+    if kind == "pop":
+        tt = np.arange(int(SR * 0.12)) / SR
+        return np.sin(2 * np.pi * (480 - 2600 * tt) * tt) * np.exp(-tt * 30) * 0.5
+    if kind == "boom":
+        tt = np.arange(int(SR * 0.4)) / SR
+        return (np.sin(2 * np.pi * (150 * np.exp(-tt * 9) + 42) * tt) * np.exp(-tt * 8)
+                + noise[:len(tt)] * np.exp(-tt * 22) * 0.4) * 0.8
+    if kind == "hiss":
+        tt = np.arange(int(SR * 0.55)) / SR
+        return np.diff(noise[:len(tt) + 1]) * np.exp(-tt * 5) * 0.34
+    if kind == "click":
+        tt = np.arange(int(SR * 0.06)) / SR
+        return (np.sin(2 * np.pi * 1900 * tt) + noise[:len(tt)] * 0.6) * np.exp(-tt * 90) * 0.5
+    if kind == "whoosh":
+        tt = np.arange(int(SR * 0.6)) / SR
+        env = np.sin(np.pi * np.clip(tt / 0.6, 0, 1)) ** 2
+        return (noise[:len(tt)] * 0.24 + np.sin(2 * np.pi * (280 + 900 * tt) * tt) * 0.05) * env
+    if kind == "pulse":
+        tt = np.arange(int(SR * 0.22)) / SR
+        return np.sin(2 * np.pi * 68 * tt) * np.exp(-tt * 16) * 0.7
+    if kind == "chord":
+        tt = np.arange(int(SR * 1.1)) / SR
+        sig = sum(np.sin(2 * np.pi * f * tt) for f in (261.63, 329.63, 392.0, 523.25)) / 4
+        return sig * np.exp(-tt * 2.6) * 0.5
+    return np.zeros(1)
+
+
+def _chiptune(mix, noise, total_s, bpm):
+    """Ретро-фон: квадратная арпеджио-мелодия + треугольный бас, тихо."""
+    eighth = 60 / bpm / 2
+    melody = [523, 659, 784, 659, 440, 523, 659, 523,
+              349, 440, 523, 440, 392, 494, 587, 494]
+    basses = [131, 98, 110, 87]
+    step = 0
+    while step * eighth < total_s:
+        t0 = step * eighth
+        nn = int(SR * eighth * 0.92)
+        tt = np.arange(nn) / SR
+        f = melody[step % len(melody)]
+        square = np.tanh(2.2 * np.sin(2 * np.pi * f * tt)) * np.exp(-tt * 5)
+        _add(mix, square * 0.055, t0)
+        if step % 2 == 0:
+            nb = int(SR * eighth * 1.8)
+            tb = np.arange(nb) / SR
+            fb = basses[(step // 8) % len(basses)]
+            _add(mix, np.sin(2 * np.pi * fb * tb) * np.exp(-tb * 4) * 0.075, t0)
+        hat = noise[:int(SR * 0.03)] * np.exp(-np.arange(int(SR * 0.03)) / SR * 120)
+        _add(mix, hat * 0.02, t0)
+        step += 1
+
+
+def make_soundtrack(path, total_s, boundaries, finale_at, bpm=120,
+                    style="beat", events=None):
     n = int(SR * total_s)
     mix = np.zeros(n)
     noise = np.random.default_rng(7).standard_normal(n + SR)
+    if style == "chiptune":
+        _chiptune(mix, noise, total_s, bpm)
+        for ev in events or []:
+            _add(mix, _event_sig(ev.get("type", "pop"), noise) * float(ev.get("gain", 1.0)),
+                 float(ev.get("at", 0)))
+        mix = np.tanh(mix * 1.1)
+        mix *= 0.87 / max(1e-6, np.max(np.abs(mix)))
+        fade = int(SR * 0.25)
+        mix[-fade:] *= np.linspace(1, 0, fade)
+        pcm = (mix * 32767).astype("<i2")
+        with wave.open(str(path), "wb") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(2)
+            wf.setframerate(SR)
+            wf.writeframes(np.repeat(pcm[:, None], 2, axis=1).tobytes())
+        return
+    if style == "none":
+        with wave.open(str(path), "wb") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(2)
+            wf.setframerate(SR)
+            wf.writeframes(np.zeros((n, 2), dtype="<i2").tobytes())
+        return
     beat = 60 / bpm
     roots = [55.0, 55.0, 43.65, 49.0]
     beat_end = finale_at if finale_at is not None else total_s
@@ -719,7 +1064,7 @@ def main():
     total_s = total / FPS
     out = Path(args.out) if args.out else cfg_path.with_suffix("").with_name(cfg_path.stem + "_out")
     out.mkdir(parents=True, exist_ok=True)
-    meta = {"author": author,
+    meta = {"author": author, "base_dir": cfg_path.resolve().parent,
             "renderer_lines": len(Path(__file__).read_text(encoding="utf-8").splitlines())}
     ov = cfg.get("overlay") or {}
     ov_label = ov.get("label", f"{author} / MOTION")
@@ -770,8 +1115,33 @@ def main():
         for start, _, s in spans:
             if s["type"] == "finale":
                 finale_at = start / FPS
+        audio_cfg = cfg.get("audio") or {}
         make_soundtrack(wav, total_s, boundaries, finale_at,
-                        bpm=int((cfg.get("audio") or {}).get("bpm", 120)))
+                        bpm=int(audio_cfg.get("bpm", 120)),
+                        style=audio_cfg.get("style", "beat"),
+                        events=audio_cfg.get("events"))
+        voice = audio_cfg.get("voice") or []
+        if voice:  # подмешать реплики поверх музыки/эффектов
+            mixed = out / "_mixed.wav"
+            inputs, filters = ["-i", str(wav)], []
+            for i, v in enumerate(voice):
+                vp = Path(v["file"])
+                if not vp.is_absolute():
+                    vp = cfg_path.resolve().parent / vp
+                inputs += ["-i", str(vp)]
+                delay = int(float(v.get("at", 0)) * 1000)
+                filters.append(f"[{i + 1}:a]adelay={delay}|{delay},"
+                               f"volume={float(v.get('gain', 1.0))}[v{i}]")
+            music_vol = float(audio_cfg.get("music_volume", 0.45))
+            labels = "".join(f"[v{i}]" for i in range(len(voice)))
+            filters.append(f"[0:a]volume={music_vol}[bg]")
+            filters.append(f"[bg]{labels}amix=inputs={len(voice) + 1}:duration=first:"
+                           f"normalize=0,alimiter=limit=0.95[a]")
+            subprocess.run([ffmpeg, "-y", "-loglevel", "error", *inputs,
+                            "-filter_complex", ";".join(filters), "-map", "[a]",
+                            str(mixed)], check=True)
+            wav.unlink(missing_ok=True)
+            wav = mixed
         subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", str(silent), "-i", str(wav),
                         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
                         "-movflags", "+faststart", str(final)], check=True)
