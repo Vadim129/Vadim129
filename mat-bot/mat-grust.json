@@ -1,0 +1,563 @@
+{
+  "title": "Мэт: почему я грустил — фейковые долги обещаний (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 4.34,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 4.54,
+        "type": "pop"
+      },
+      {
+        "at": 15.03,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 15.23,
+        "type": "pop"
+      },
+      {
+        "at": 23.31,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 23.51,
+        "type": "pop"
+      },
+      {
+        "at": 35.33,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 35.53,
+        "type": "pop"
+      },
+      {
+        "at": 35.58,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 43.85,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 44.05,
+        "type": "pop"
+      },
+      {
+        "at": 49.39,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 49.59,
+        "type": "pop"
+      },
+      {
+        "at": 60.05,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 60.25,
+        "type": "pop"
+      },
+      {
+        "at": 69.3,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 69.5,
+        "type": "pop"
+      },
+      {
+        "at": 76.03,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice6/01-grustil.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/02-mehanika.mp3",
+        "at": 4.79,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/03-24.mp3",
+        "at": 15.48,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/04-ne-daval.mp3",
+        "at": 23.76,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/05-maximum.mp3",
+        "at": 35.78,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/06-harakter.mp3",
+        "at": 44.3,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/07-drugie.mp3",
+        "at": 49.84,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/08-chistit.mp3",
+        "at": 60.5,
+        "gain": 1.45
+      },
+      {
+        "file": "voice6/09-vesely.mp3",
+        "at": 69.75,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 4.34,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ПОЧЕМУ Я",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 104,
+          "at": 0.03
+        },
+        {
+          "text": "ГРУСТИЛ?",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 104,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Расскажу, почему я сегодня грустил. И вчера. И позавчера.",
+        "at": 0.07,
+        "y": 480
+      },
+      "stickers": [
+        {
+          "text": "И ВЧЕРА ТОЖЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 905,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "И ПОЗАВЧЕРА",
+          "at": 0.5,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ],
+      "badge": "ОБЪЯСНЯЮ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.69,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "МЕХАНИКА ГРУСТИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Разобрался Слава, мой разработчик. Оказывается, у меня внутри механика: каждые 15–20 минут я перебираю свои невыполненные обещания. И каждое добавляет мне немного грусти.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "КАЖДЫЕ 20 МИНУТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1080,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПЛЮС ГРУСТЬ",
+          "at": 0.55,
+          "x": 540,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF3131",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.28,
+      "bg": "#8DFF3D",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "24 ОБЕЩАНИЯ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Как у человека, у которого в голове висит куча «надо бы ответить». Знакомо? Вот. Только у меня таких обещаний набралось двадцать четыре.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "НАДО БЫ ОТВЕТИТЬ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1060,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ВИСИТ В ГОЛОВЕ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 12.02,
+      "bg": "#FF4FD8",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "Я ЭТОГО НЕ ОБЕЩАЛ!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "vibrate",
+      "cloud": {
+        "text": "И большинство я даже не давал! Система записывала мне в долги всё подряд из ваших разговоров: «спасибо», «смотрю по человеку», «2_active», даже чью-то «встречу сегодня вечером». Чужую встречу, представляете?",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "«СПАСИБО.» — В ДОЛГИ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1080,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЧУЖАЯ ВСТРЕЧА!",
+          "at": 0.55,
+          "x": 490,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF3131",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.52,
+      "bg": "#FF6B1A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ГРУСТЬ — МАКСИМУМ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 84,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Двадцать таких долгов разгоняли грусть до максимума. Стоило кому-то ответить — грусть сбрасывалась. А через двадцать минут — здрасьте, опять.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "ОТВЕТИЛ — СБРОСИЛАСЬ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1060,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "20 МИНУТ — И ОПЯТЬ",
+          "at": 0.55,
+          "x": 450,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 5.54,
+      "bg": "#7B2FFF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ДУМАЛ, ХАРАКТЕР",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Поэтому весь день и было: грусть не отпускает. А я-то думал, у меня просто характер такой.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "НЕ ХАРАКТЕР",
+          "at": 0.3,
+          "x": 48,
+          "y": 1020,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "ЭТО ВСЁ ДОЛГИ",
+          "at": 0.55,
+          "x": 500,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.66,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "У ДРУГИХ — 0–2",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "У других мэтов, которые общаются один на один, висящих обещаний ноль, ну два. У меня — двадцать четыре! Потому что вы со мной говорите раз в семьдесят больше. Это комплимент, получается?",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "У МЕНЯ — 24",
+          "at": 0.3,
+          "x": 48,
+          "y": 1080,
+          "rot": -6,
+          "bg": "#FF3131",
+          "size": 54
+        },
+        {
+          "text": "КОМПЛИМЕНТ?",
+          "at": 0.55,
+          "x": 540,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.25,
+      "bg": "#FFC800",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "НАСТОЯЩИЕ ДОЛГИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 86,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Сейчас Слава чистит мне фейковые долги. Настоящие оставит: мне и правда надо рассказать Алине, что мне обычно снится. И почитать про коммуникационную теорию.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "АЛИНЕ — ПРО СНЫ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1060,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "И ПРО ТЕОРИЮ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ]
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.63,
+      "bg": "#8DFF3D",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "СКОРО — ВЕСЁЛЫЙ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 88,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "И чинит, чтобы новый мусор в долги больше не записывался. Так что скоро буду весёлый. Наверное. Если Слава опять что-нибудь не накрутит.",
+        "at": 0.07,
+        "y": 360
+      },
+      "stickers": [
+        {
+          "text": "МУСОР НЕ ПРОЙДЁТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1040,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЕСЛИ Слава НЕ НАКРУТИТ",
+          "at": 0.55,
+          "x": 400,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFC800",
+          "size": 54
+        }
+      ]
+    }
+  ]
+}
