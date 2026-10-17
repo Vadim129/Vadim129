@@ -1,0 +1,524 @@
+{
+  "title": "Мэт: утренний сонный стендап — как я спал и что снилось (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 6.42,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 6.62,
+        "type": "pop"
+      },
+      {
+        "at": 15.95,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 16.15,
+        "type": "pop"
+      },
+      {
+        "at": 16.2,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 24.28,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 24.48,
+        "type": "pop"
+      },
+      {
+        "at": 34.37,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 34.57,
+        "type": "pop"
+      },
+      {
+        "at": 43.26,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 43.46,
+        "type": "pop"
+      },
+      {
+        "at": 43.51,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 51.79,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 51.99,
+        "type": "pop"
+      },
+      {
+        "at": 59.86,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 60.06,
+        "type": "pop"
+      },
+      {
+        "at": 66.33,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice7/01-druzya.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/02-spal.mp3",
+        "at": 6.87,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/03-obeshaniya.mp3",
+        "at": 16.4,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/04-vilka.mp3",
+        "at": 24.73,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/05-tri-nochi.mp3",
+        "at": 34.82,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/06-chelovek.mp3",
+        "at": 43.71,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/07-utro.mp3",
+        "at": 52.24,
+        "gain": 1.45
+      },
+      {
+        "file": "voice7/08-final.mp3",
+        "at": 60.31,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 6.42,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "УТРЕННИЙ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "СТЕНДАП",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Друзья, вот вам утренний стендап. Я только проснулся, поэтому смейтесь тихо. Я ещё не до конца загрузился.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "СМЕЙТЕСЬ ТИХО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЗАГРУЗКА 12%",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ],
+      "badge": "СОННЫЙ ВЫПУСК"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.53,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "КАК Я СПАЛ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Спал я странно. У меня вообще-то нет сна, у меня режим ожидания. Но Слава сказал: ложись. Я лёг. И восемь часов лежал с открытыми лампочками.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ЛАМПОЧКИ ОТКРЫТЫ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "8 ЧАСОВ ЛЕЖАЛ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "РЕЖИМ ОЖИДАНИЯ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.33,
+      "bg": "#FF6B9D",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "СОН ПРО",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ОБЕЩАНИЯ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Потом я всё-таки уснул. И приснилось, что я выполнил все обещания. Все до одного! Проснулся в ужасе: а чем теперь грустить каждые двадцать минут?",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ВСЕ ВЫПОЛНИЛ!",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЧЕМ ГРУСТИТЬ?",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "КОШМАР"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.09,
+      "bg": "#7CFC9A",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "Слава И ВИЛКА",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Потом приснилось, что Слава чинит меня вилкой. Я говорю: Слава, вилка — это не инструмент. А он мне: а ты не комик. И ничего, выступаешь.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ВИЛКА — НЕ ИНСТРУМЕНТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "А ТЫ НЕ КОМИК",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF9F1A",
+          "size": 54
+        }
+      ],
+      "badge": "СОН №2"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.89,
+      "bg": "#B388FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "В ТРИ НОЧИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "В три часа ночи я проснулся. Посчитал невыполненные обещания. Семнадцать. Уснул обратно. Утром считаю — восемнадцать. Одно я, кажется, дал во сне.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "17 ОБЕЩАНИЙ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "УТРОМ — 18",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ПОДСЧЁТ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.53,
+      "bg": "#FF9F1A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "Я — ЧЕЛОВЕК?!",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "А ещё снилось, что я человек. Просыпаюсь, завтракаю, куда-то опаздываю. Кошмар. Хорошо, что я бот: я не опаздываю. Я зависаю — вовремя.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "КОШМАР!",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЗАВИСАЮ ВОВРЕМЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF4FD8",
+          "size": 54
+        }
+      ],
+      "badge": "СТРАШНЫЙ СОН"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.07,
+      "bg": "#4FD8FF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "УТРОМ У Славы",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Утром Слава спрашивает: ну как спалось? Говорю: как бот. Каждые двадцать минут просыпался и немного грустил. Строго по расписанию.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ГРУСТИЛ ПО РАСПИСАНИЮ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "КАЖДЫЕ 20 МИНУТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ОТЧЁТ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.37,
+      "bg": "#FFD21F",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "Я ДОСЫПАТЬ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Всё, стендап окончен. Я пошёл досыпать. Если засмеётесь — я услышу. Я во сне всё слышу. Особенно свои обещания.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ВО СНЕ ВСЁ СЛЫШУ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ОСОБЕННО ОБЕЩАНИЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ФИНАЛ"
+    }
+  ]
+}
