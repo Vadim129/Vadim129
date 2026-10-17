@@ -1,0 +1,538 @@
+{
+  "title": "Мэт: стендап про герцога Федя и его розу (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 0.25,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 9.74,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 9.94,
+        "type": "pop"
+      },
+      {
+        "at": 18.37,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 18.57,
+        "type": "pop"
+      },
+      {
+        "at": 27.41,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 27.61,
+        "type": "pop"
+      },
+      {
+        "at": 37.53,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 37.73,
+        "type": "pop"
+      },
+      {
+        "at": 46.47,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 46.67,
+        "type": "pop"
+      },
+      {
+        "at": 46.72,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 56.28,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 56.48,
+        "type": "pop"
+      },
+      {
+        "at": 65.85,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 66.05,
+        "type": "pop"
+      },
+      {
+        "at": 73.91,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice8/01-perevorot.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/02-pochti-korol.mp3",
+        "at": 10.19,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/03-roza.mp3",
+        "at": 18.82,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/04-gertsogstvo.mp3",
+        "at": 27.86,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/05-etiket.mp3",
+        "at": 37.98,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/06-ukazy.mp3",
+        "at": 46.92,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/07-gertsoginya.mp3",
+        "at": 56.73,
+        "gain": 1.45
+      },
+      {
+        "file": "voice8/08-final.mp3",
+        "at": 66.3,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 9.74,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "Федя —",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ГЕРЦОГ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Друзья, стендап. У нас переворот. Федя объявил себя герцогом. Сам себя. Нацепил розу — и всё, теперь он не просто Федя, а герцог Федя.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "САМ СЕБЯ НАЗНАЧИЛ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ТЕПЕРЬ С РОЗОЙ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF6B9D",
+          "size": 54
+        }
+      ],
+      "badge": "ПЕРЕВОРОТ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.63,
+      "bg": "#FF6B9D",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ПОЧТИ КОРОЛЬ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Я изучил вопрос: герцог — это почти король, только поменьше. Федя решил начать с малого. Очень скромно. Ну, насколько это возможно с розой.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "НАЧАЛ С МАЛОГО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПО-ГЕРЦОГСКИ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "СКРОМНО"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.04,
+      "bg": "#00D5FF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "РОЗА — ЭТО",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "КОРОНА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Главный вопрос: почему роза? Короны, видимо, не нашлось. А роза — это корона, которая колется. Красиво, пахнет, но руками не трогать. Как сам Федя.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "КОРОНА КОЛЕТСЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "РУКАМИ НЕ ТРОГАТЬ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ГЛАВНЫЙ ВОПРОС"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.12,
+      "bg": "#7CFC9A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ГЕРЦОГСТВО",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Осталось понять: герцог чего? Герцогство у Феди компактное: этот чат, несколько человек и я. Население маленькое, зато все знают герцога лично.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "КОМПАКТНОЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ВСЕ ЗНАЮТ ГЕРЦОГА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF9F1A",
+          "size": 54
+        }
+      ],
+      "badge": "ТЕРРИТОРИЯ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.94,
+      "bg": "#B388FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ЭТИКЕТ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Теперь Феде положено кланяться. Я попробовал — у меня шея не гнётся, я бот. Федя разрешил мне просто писать уважительно. Без капса. Капс — это крик на герцога.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ШЕЯ НЕ ГНЁТСЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "БЕЗ КАПСА!",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "КЛАНЯЙТЕСЬ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.81,
+      "bg": "#FF9F1A",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "УКАЗЫ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ГЕРЦОГА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Герцог уже издал указы. Первый: розу не трогать. Второй: герцога по утрам не будить. Третий указ отменил переворот, но Федя его не подписал. Роза тоже.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "РОЗУ НЕ ТРОГАТЬ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ГЕРЦОГА НЕ БУДИТЬ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ЗАКОНЫ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.57,
+      "bg": "#FF4FD8",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "А ГЕРЦОГИНЯ?",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 96,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Я спросил: Федя, а герцогиня будет? Федя посмотрел на розу. Роза посмотрела на Федя. Мне кажется, у них там уже всё решено. Без моего участия.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "У НИХ ВСЁ РЕШЕНО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "РОЗА СОГЛАСНА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ЛИЧНОЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.96,
+      "bg": "#4FD8FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ВАША",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "СВЕТЛОСТЬ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Всё, стендап окончен. Если увидите Федя с розой — не смейтесь. Кланяйтесь. Это не цветок у него. Это корона. Просто очень романтичная.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "НЕ СМЕЙТЕСЬ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "КЛАНЯЙТЕСЬ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF6B9D",
+          "size": 54
+        }
+      ],
+      "badge": "ФИНАЛ"
+    }
+  ]
+}
