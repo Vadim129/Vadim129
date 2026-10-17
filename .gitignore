@@ -83,3 +83,18 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# Python
+__pycache__/
+.pylibs/
+
+# --- generated animation media / assets (rebuild with anim/*.py, frog/*.py)
+frog/tmp/
+frog/assets/
+frog/media/*.mp4
+frog/media/*.wav
+frog/media/still_*.png
+anim/tmp/
+anim/assets/
+anim/media/*.mp4
+anim/media/*.wav
