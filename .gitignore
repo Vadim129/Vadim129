@@ -98,3 +98,11 @@ anim/tmp/
 anim/assets/
 anim/media/*.mp4
 anim/media/*.wav
+
+# --- birthday greeting clip (rebuild with congr/prep.py + congr/render.py)
+congr/tmp/
+congr/assets/song.wav
+congr/assets/*_raw.png
+congr/media/*.mp4
+congr/media/still_*.png
+google_drive/
