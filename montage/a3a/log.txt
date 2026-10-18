@@ -1,0 +1,29 @@
++ . montage/common.sh
+++ SRC=/home/runner/montage-src.mp4
+++ AUD=/home/runner/montage-audio.wav
++ need_src
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ '[' '!' -s /home/runner/montage-audio.wav ']'
++ ls -la /home/runner/montage-src.mp4 /home/runner/montage-audio.wav
+-rw-r--r-- 1 runner runner  27487304 Oct 18 21:21 /home/runner/montage-audio.wav
+-rw------- 1 runner runner 378304536 Oct 18 20:46 /home/runner/montage-src.mp4
++ python3 -m pip install --quiet numpy scipy librosa soundfile
++ timeout 1200 python3 montage/sfx.py /home/runner/montage-audio.wav montage/a3a 0 430
+dur 430.0
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/montage/sfx.py", line 35, in <module>
+    print("tempo", float(tempo), "beats", len(beats))
+                   ^^^^^^^^^^^^
+TypeError: only 0-dimensional arrays can be converted to Python scalars
++ ls -la montage/a3a
+total 12
+drwxr-xr-x 2 runner runner 4096 Oct 18 21:26 .
+drwxr-xr-x 3 runner runner 4096 Oct 18 21:26 ..
+-rw-r--r-- 1 runner runner  886 Oct 18 21:30 log.txt
+++ date -u +%H%M%S
++ push_dir montage/a3a 'montage: фоли 0-430 213007'
+++ dirname montage/step3a.sh
++ cd montage/..
++ git config user.email ci@local
++ git config user.name ci
++ git add -f montage/a3a
