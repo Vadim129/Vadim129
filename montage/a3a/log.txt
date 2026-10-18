@@ -27,3 +27,37 @@ drwxr-xr-x 3 runner runner 4096 Oct 18 21:26 ..
 + git config user.email ci@local
 + git config user.name ci
 + git add -f montage/a3a
++ . montage/common.sh
+++ SRC=/home/runner/montage-src.mp4
+++ AUD=/home/runner/montage-audio.wav
++ need_src
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ '[' '!' -s /home/runner/montage-audio.wav ']'
++ ls -la /home/runner/montage-src.mp4 /home/runner/montage-audio.wav
+-rw-r--r-- 1 runner runner  27487304 Oct 18 21:21 /home/runner/montage-audio.wav
+-rw------- 1 runner runner 378304536 Oct 18 20:46 /home/runner/montage-src.mp4
++ python3 -m pip install --quiet numpy scipy librosa soundfile
++ timeout 1200 python3 montage/sfx.py /home/runner/montage-audio.wav montage/a3a 0 430
+/home/runner/.local/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3862: RuntimeWarning: Mean of empty slice
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/home/runner/.local/lib/python3.12/site-packages/numpy/_core/_methods.py:142: RuntimeWarning: invalid value encountered in divide
+  ret = ret.dtype.type(ret / rcount)
+dur 430.0
+tempo 121.59926470588235 beats 901
+onsets 390 cands 79
++ ls -la montage/a3a
+total 64
+drwxr-xr-x 2 runner runner  4096 Oct 18 21:35 .
+drwxr-xr-x 5 runner runner  4096 Oct 18 21:31 ..
+-rw-r--r-- 1 runner runner  5600 Oct 18 21:35 events-0.txt
+-rw-r--r-- 1 runner runner  2249 Oct 18 21:35 log.txt
+-rw-r--r-- 1 runner runner  5603 Oct 18 21:35 loudness-0.txt
+-rw-r--r-- 1 runner runner 28903 Oct 18 21:35 sfx-0.csv
+-rw-r--r-- 1 runner runner    83 Oct 18 21:35 sfx-0.json
+++ date -u +%H%M%S
++ push_dir montage/a3a 'montage: фоли 0-430 213520'
+++ dirname montage/step3a.sh
++ cd montage/..
++ git config user.email ci@local
++ git config user.name ci
++ git add -f montage/a3a
