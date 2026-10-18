@@ -1,0 +1,65 @@
+name: montage
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "какой скрипт из montage/ запускать"
+        required: false
+        default: probe
+      file_id:
+        description: "Google Drive file id источника"
+        required: false
+        default: 14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
+permissions:
+  contents: write
+concurrency:
+  group: montage-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          ffmpeg -version | head -1
+      - name: cache source video
+        id: src
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/montage-src.mp4
+          key: montage-src-${{ inputs.file_id }}
+      - name: cache python+hf
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.cache/pip
+            /home/runner/.cache/huggingface
+          key: montage-py-v2
+      - name: task
+        env:
+          FILE_ID: ${{ inputs.file_id }}
+          TASK: ${{ inputs.task }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash montage/$TASK.sh || echo "task exit=$?"
+      - name: push results
+        if: always()
+        run: |
+          git config user.email "ci@local"
+          git config user.name "ci"
+          git add -f montage || true
+          git commit -q -m "montage: ${{ inputs.task }} $(date -u +%H%M%S)" || echo "nothing to commit"
+          git push || echo "push failed"
+      - name: artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: montage-${{ inputs.task }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: montage/**
