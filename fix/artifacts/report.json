@@ -1,0 +1,22 @@
+[
+ {
+  "name": "ladle",
+  "window": [
+   312.4,
+   313.22
+  ],
+  "delta": 0.34,
+  "peak_before": 0.9456,
+  "gain_used": 1.0
+ },
+ {
+  "name": "door",
+  "window": [
+   545.05,
+   545.92
+  ],
+  "delta": -0.42,
+  "peak_before": 0.8166,
+  "gain_used": 1.0
+ }
+]
