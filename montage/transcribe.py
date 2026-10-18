@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 """Расшифровка речи с точными таймингами (faster-whisper, CPU)."""
-import sys, os, json
+import sys, os, json, wave
+import numpy as np
 from faster_whisper import WhisperModel
+
+def load_wav(path):
+    with wave.open(path, "rb") as w:
+        sr = w.getframerate(); n = w.getnframes(); ch = w.getnchannels()
+        raw = w.readframes(n)
+    x = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+    if ch > 1:
+        x = x.reshape(-1, ch).mean(axis=1)
+    return x
 
 src, outdir = sys.argv[1], sys.argv[2]
 model = WhisperModel("base", device="cpu", compute_type="int8", download_root="/home/runner/.cache/huggingface/whisper")
-segments, info = model.transcribe(src, language="ru", vad_filter=True, word_timestamps=True,
+segments, info = model.transcribe(load_wav(src), language="ru", vad_filter=True, word_timestamps=True,
                                   beam_size=5, condition_on_previous_text=False)
 print("lang", info.language, info.language_probability)
 rows = []

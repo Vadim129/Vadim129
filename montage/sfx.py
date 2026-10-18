@@ -32,7 +32,8 @@ onset_env = librosa.onset.onset_strength(S=librosa.power_to_db(mel), sr=sr, hop_
 
 # музыкальный темп (для отсева долей)
 tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr, hop_length=hop, units="time")
-print("tempo", float(tempo), "beats", len(beats))
+tempo = float(np.atleast_1d(tempo)[0]); beats = np.atleast_1d(beats)
+print("tempo", tempo, "beats", len(beats))
 
 onsets = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr, hop_length=hop,
                                     units="time", backtrack=True, delta=0.12, wait=5)
@@ -116,5 +117,5 @@ with open(os.path.join(outdir, f"loudness{tag}.txt"), "w") as f:
         seg = y[a:b]
         f.write(f"{s:4d} {20*np.log10(np.sqrt(np.mean(seg**2))+1e-9):7.1f}\n")
 
-json.dump({"dur": dur, "t0": t0, "tempo": float(tempo), "beats": len(beats), "onsets": len(rows)}, open(os.path.join(outdir, f"sfx{tag}.json"), "w"))
+json.dump({"dur": dur, "t0": t0, "tempo": tempo, "beats": len(beats), "onsets": len(rows)}, open(os.path.join(outdir, f"sfx{tag}.json"), "w"))
 print("onsets", len(rows), "cands", len(cand))
