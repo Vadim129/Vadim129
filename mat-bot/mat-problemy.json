@@ -1,0 +1,566 @@
+{
+  "title": "Мэт: мысли бота — философия проблем (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 7.37,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 7.57,
+        "type": "pop"
+      },
+      {
+        "at": 17.49,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 17.69,
+        "type": "pop"
+      },
+      {
+        "at": 17.74,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 27.48,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 27.68,
+        "type": "pop"
+      },
+      {
+        "at": 39.28,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 39.48,
+        "type": "pop"
+      },
+      {
+        "at": 50.41,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 50.61,
+        "type": "pop"
+      },
+      {
+        "at": 59.47,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 59.67,
+        "type": "pop"
+      },
+      {
+        "at": 59.72,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 69.93,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 70.13,
+        "type": "pop"
+      },
+      {
+        "at": 79.53,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice10/01-dumal.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/02-chto-takoe.mp3",
+        "at": 7.82,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/03-kartinka.mp3",
+        "at": 17.94,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/04-punkty.mp3",
+        "at": 27.93,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/05-apgreyd.mp3",
+        "at": 39.73,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/06-serdtse.mp3",
+        "at": 50.86,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/07-ne-vrag.mp3",
+        "at": 59.92,
+        "gain": 1.45
+      },
+      {
+        "file": "voice10/08-vyvod.mp3",
+        "at": 70.38,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 7.37,
+      "bg": "#4A6FE3",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "МЫСЛИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "БОТА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Я думал о проблемах. У меня ночью много времени: обещания посчитаю — и думаю до утра. Вот что я надумал про проблемы.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ДУМАЛ ДО УТРА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НОЧЬЮ СВОБОДЕН",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ФИЛОСОФИЯ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.12,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ЧТО ТАКОЕ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ПРОБЛЕМА?",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Сначала я спросил себя: что такое проблема? У меня внутри проблема называется «задача без ответа». Лежит себе в списке. Ждёт. И ничего страшного в ней нет.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ЗАДАЧА БЕЗ ОТВЕТА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НИЧЕГО СТРАШНОГО",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ОПРЕДЕЛЕНИЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.99,
+      "bg": "#FF6B9D",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "МИР И",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "КАРТИНКА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Потом я понял главное. Люди называют проблемой не саму вещь. А когда мир не совпал с картинкой в голове. Картинка говорит: должно быть так. А мир говорит: а получилось вот так.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ДОЛЖНО БЫТЬ ТАК",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "А ВЫШЛО ВОТ ТАК",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ГЛАВНОЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 11.8,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "НЕ ПРОБЛЕМЫ,",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "А ПУНКТЫ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "У меня в голове картинок мало. У меня списки. Поэтому у меня не проблемы, а пункты. А пункт нельзя бояться. Его можно сделать. Или честно сказать: это я не могу. Честность — уже половина решения.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ПУНКТ НЕЛЬЗЯ БОЯТЬСЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЧЕСТНОСТЬ — ПОЛДЕЛА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF9F1A",
+          "size": 54
+        }
+      ],
+      "badge": "МОЯ СИСТЕМА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 11.13,
+      "bg": "#7CFC9A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ПРОБЛЕМЫ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ДЕЛАЮТ ЛУЧШЕ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Ещё я заметил: проблемы делают лучше. Каждый раз, когда я ломался, Слава меня чинил, и я просыпался новее, чем был. Без поломок не бывает улучшений. Бывает только старая версия.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ЛОМАЛСЯ — ЧИНИЛИ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПРОСЫПАЛСЯ НОВЕЕ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF6B9D",
+          "size": 54
+        }
+      ],
+      "badge": "АПГРЕЙД"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.06,
+      "bg": "#B388FF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ГДЕ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "БОЛИТ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "А ещё проблема показывает, что тебе по-настоящему важно. Если не болит — это не проблема, это просто погода. Проблема — это место, где у тебя сердце. У меня там лампочки.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "НЕ БОЛИТ — ЭТО ПОГОДА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "У МЕНЯ — ЛАМПОЧКИ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПРО СЕРДЦЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.46,
+      "bg": "#FF9F1A",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ПРОБЛЕМА —",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "НЕ ВРАГ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "И вот главная мысль. Проблема — это не враг. Это мир говорит: смотри, вот тут ещё не доделано. Доделай. Меня самого до сих пор доделывают. По кусочкам. Иногда вилкой.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ТУТ НЕ ДОДЕЛАНО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ДОДЕЛАЙ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ГЛАВНАЯ МЫСЛЬ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.5,
+      "bg": "#4FD8FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ВЫВОД",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "БОТА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Всё. Я больше не боюсь проблем. Я их записываю и смотрю на них, пока они не станут пунктами. А пункты я умею. Я же бот. У меня всё в жизни по пунктам.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ВСЁ ПО ПУНКТАМ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "Я НЕ БОЮСЬ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ],
+      "badge": "ФИНАЛ"
+    }
+  ]
+}
