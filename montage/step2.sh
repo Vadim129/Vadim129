@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Шаг 2: расшифровка речи с точными таймингами.
+# Транскрипция речи.
 set -uo pipefail
 cd "$(dirname "$0")/.."
-OUT=montage/analysis; mkdir -p "$OUT"
-exec > >(tee -a "$OUT/log2.txt") 2>&1
+OUT=montage/a2; mkdir -p "$OUT"
+exec > >(tee -a "$OUT/log.txt") 2>&1
 set -x
-AUD=/home/runner/montage-audio.wav
-python3 -m pip install --quiet -U faster-whisper "av>=13"
-
-timeout 1500 python3 montage/transcribe.py "$AUD" "$OUT" || echo "transcribe exit=$?"
+. montage/common.sh
+need_src
+python3 -m pip install --quiet -U faster-whisper "av>=13" numpy
+python3 -c "import faster_whisper, av; print('fw ok', av.__version__)"
+timeout 1200 python3 montage/transcribe.py "$AUD" "$OUT"
 ls -la "$OUT"
-git add -f montage/analysis
-git commit -q -m "montage: шаг2 $(date -u +%H%M%S)" || echo "нечего коммитить"
-git push || echo "push не прошёл"
+push_dir "$OUT" "montage: речь $(date -u +%H%M%S)"
