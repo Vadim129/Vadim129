@@ -87,7 +87,8 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         continue-on-error: true
         run: |
-          if python3 fix/upload_drive.py "$(cat fix/upload_uri.txt)" /tmp/fixed.mp4 /tmp/upload.json; then
+          set -o pipefail
+          if python3 -u fix/upload_drive.py "$(cat fix/upload_uri.txt)" /tmp/fixed.mp4 /tmp/upload.json 2>&1 | tee /tmp/upload_stdout.txt; then
             echo "ok" > /tmp/upload_status.txt
             echo "used — сессия одноразовая" > fix/upload_uri.txt
           else
@@ -95,7 +96,8 @@ jobs:
           fi
           cp /tmp/upload.json fix/artifacts/upload.json || true
           cp /tmp/upload_log.txt fix/artifacts/upload_log.txt || true
-          cat fix/artifacts/upload_log.txt || true
+          cp /tmp/upload_stdout.txt fix/artifacts/upload_stdout.txt || true
+          tail -20 fix/artifacts/upload_log.txt || true
 
       - name: commit verification
         if: always() && steps.guard.outputs.skip != 'true'
