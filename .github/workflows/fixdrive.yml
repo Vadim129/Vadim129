@@ -83,14 +83,22 @@ jobs:
           cp /tmp/report.json fix/artifacts/report.json
 
       - name: upload to drive
+        id: upload
         if: steps.guard.outputs.skip != 'true'
+        continue-on-error: true
         run: |
-          python3 fix/upload_drive.py "$(cat fix/upload_uri.txt)" /tmp/fixed.mp4 /tmp/upload.json
-          cp /tmp/upload.json fix/artifacts/upload.json
-          echo "used — сессия одноразовая" > fix/upload_uri.txt
+          if python3 fix/upload_drive.py "$(cat fix/upload_uri.txt)" /tmp/fixed.mp4 /tmp/upload.json; then
+            echo "ok" > /tmp/upload_status.txt
+            echo "used — сессия одноразовая" > fix/upload_uri.txt
+          else
+            echo "fail" > /tmp/upload_status.txt
+          fi
+          cp /tmp/upload.json fix/artifacts/upload.json || true
+          cp /tmp/upload_log.txt fix/artifacts/upload_log.txt || true
+          cat fix/artifacts/upload_log.txt || true
 
       - name: commit verification
-        if: steps.guard.outputs.skip != 'true'
+        if: always() && steps.guard.outputs.skip != 'true'
         run: |
           git config user.email "ci@local"
           git config user.name "ci"
