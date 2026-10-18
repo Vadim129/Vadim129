@@ -1,7 +1,8 @@
 name: montage
 on:
-  push:
-    branches: [ 'arena/08e16207-vadim129' ]
+  # временно выключено, пока идёт правка звука (fixdrive.yml)
+  # push:
+  #   branches: [ 'arena/08e16207-vadim129' ]
   workflow_dispatch:
 permissions:
   contents: write

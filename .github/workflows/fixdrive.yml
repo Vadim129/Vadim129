@@ -1,0 +1,105 @@
+name: fix-audio
+
+on:
+  push:
+    branches: [ 'arena/08e16207-vadim129' ]
+    paths:
+      - 'fix/**'
+      - '.github/workflows/fixdrive.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-audio-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: guard
+        id: guard
+        run: |
+          if [ ! -s fix/upload_uri.txt ] || head -c 4 fix/upload_uri.txt | grep -q '^used'; then
+            echo "Сессия выгрузки не задана или уже использована — выходим."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ffmpeg
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          ffmpeg -version | head -1
+
+      - name: cache source video
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/montage-src.mp4
+          key: montage-src-14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
+
+      - name: source
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          if [ ! -s /home/runner/montage-src.mp4 ]; then
+            python3 -m pip install --quiet gdown
+            gdown "https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ" -O /home/runner/montage-src.mp4
+          fi
+          ls -la /home/runner/montage-src.mp4
+
+      - name: extract + fix audio
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          python3 -m pip install --quiet numpy
+          ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 \
+            -vn -ac 2 -ar 44100 -c:a pcm_s16le /tmp/aud.wav
+          cp /tmp/aud.wav /tmp/aud_src.wav
+          python3 fix/fix_av.py /tmp/aud.wav /tmp/fixed.wav /tmp/report.json
+
+      - name: mux (video copy, audio only)
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          ffmpeg -hide_banner -loglevel error -y \
+            -i /home/runner/montage-src.mp4 -i /tmp/fixed.wav \
+            -map 0:v:0 -map 1:a:0 -map_metadata 0 \
+            -c:v copy -c:a aac -b:a 192k -ar 44100 \
+            -movflags +faststart /tmp/fixed.mp4
+          ls -la /tmp/fixed.mp4
+
+      - name: verify
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          python3 fix/verify.py /home/runner/montage-src.mp4 /tmp/fixed.mp4 /tmp/verify.txt fix/artifacts
+          cp /tmp/report.json fix/artifacts/report.json
+
+      - name: upload to drive
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          python3 fix/upload_drive.py "$(cat fix/upload_uri.txt)" /tmp/fixed.mp4 /tmp/upload.json
+          cp /tmp/upload.json fix/artifacts/upload.json
+          echo "used — сессия одноразовая" > fix/upload_uri.txt
+
+      - name: commit verification
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.email "ci@local"
+          git config user.name "ci"
+          cp /tmp/verify.txt fix/artifacts/verify.txt
+          git add -f fix/artifacts fix/upload_uri.txt
+          git commit -q -m "fix: правка звука выполнена, отчёт проверки" || { echo "нечего коммитить"; exit 0; }
+          for i in 1 2 3 4 5 6; do
+            if git push; then echo "push ок"; exit 0; fi
+            git pull --rebase --autostash --no-edit -q || git rebase --abort || true
+            sleep 5
+          done
+          exit 1
