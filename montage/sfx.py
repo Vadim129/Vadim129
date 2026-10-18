@@ -9,7 +9,10 @@ import numpy as np
 import librosa
 
 wav, outdir = sys.argv[1], sys.argv[2]
-y, sr = librosa.load(wav, sr=44100, mono=True)
+t0 = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0
+t1 = float(sys.argv[4]) if len(sys.argv) > 4 else 1e9
+tag = f"-{int(t0)}" if t0 or t1 < 1e8 else ""
+y, sr = librosa.load(wav, sr=44100, mono=True, offset=t0, duration=min(t1, 1e9) - t0)
 dur = len(y) / sr
 print("dur", dur)
 
@@ -69,13 +72,13 @@ for t in times:
     tail = (j - i) * hop / sr
     # близость к доле
     dbeat = float(np.min(np.abs(beats - t))) if len(beats) else 9
-    rows.append(dict(t=round(t, 3), lvl=round(lvl, 1), pre=round(pre, 1), attack=round(attack, 1),
+    rows.append(dict(t=round(t + t0, 3), lvl=round(lvl, 1), pre=round(pre, 1), attack=round(attack, 1),
                      decay=round(decay, 1), tail=round(tail, 2), cent=round(c, 0),
                      flat=round(fl, 3), hi=round(hi, 3), mid=round(mid, 3), lo=round(lo, 3),
                      zcr=round(z, 3), dbeat=round(dbeat, 3)))
 
 rows.sort(key=lambda r: r["t"])
-with open(os.path.join(outdir, "sfx.csv"), "w") as f:
+with open(os.path.join(outdir, f"sfx{tag}.csv"), "w") as f:
     cols = list(rows[0].keys()) if rows else []
     f.write(",".join(cols) + "\n")
     for r in rows:
@@ -100,18 +103,18 @@ for r in rows:
     cand.append((score, r))
 
 cand.sort(key=lambda x: (-x[0], x[1]["t"]))
-with open(os.path.join(outdir, "events.txt"), "w") as f:
+with open(os.path.join(outdir, f"events{tag}.txt"), "w") as f:
     f.write(f"{'t':>9} {'mm:ss':>7} {'score':>6} {'lvl':>6} {'attack':>6} {'tail':>5} {'cent':>6} {'hi':>5} {'lo':>5} {'dbeat':>5}\n")
     for s, r in cand[:160]:
         mm = f"{int(r['t']//60)}:{r['t']%60:05.2f}"
         f.write(f"{r['t']:9.2f} {mm:>7} {s:6.1f} {r['lvl']:6.1f} {r['attack']:6.1f} {r['tail']:5.2f} {r['cent']:6.0f} {r['hi']:5.2f} {r['lo']:5.2f} {r['dbeat']:5.2f}\n")
 
 # карта громкости по секундам
-with open(os.path.join(outdir, "loudness.txt"), "w") as f:
+with open(os.path.join(outdir, f"loudness{tag}.txt"), "w") as f:
     for s in range(int(dur) + 1):
         a = int(s * sr); b = int(min(dur, s + 1) * sr)
         seg = y[a:b]
         f.write(f"{s:4d} {20*np.log10(np.sqrt(np.mean(seg**2))+1e-9):7.1f}\n")
 
-json.dump({"dur": dur, "tempo": float(tempo), "beats": len(beats), "onsets": len(rows)}, open(os.path.join(outdir, "sfx.json"), "w"))
+json.dump({"dur": dur, "t0": t0, "tempo": float(tempo), "beats": len(beats), "onsets": len(rows)}, open(os.path.join(outdir, f"sfx{tag}.json"), "w"))
 print("onsets", len(rows), "cands", len(cand))

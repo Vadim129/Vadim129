@@ -6,8 +6,8 @@ OUT=montage/analysis; mkdir -p "$OUT"
 exec > >(tee -a "$OUT/log2.txt") 2>&1
 set -x
 AUD=/home/runner/montage-audio.wav
-python3 -m pip install --quiet faster-whisper
-python3 -c "import av; print('av', av.__version__)" || python3 -m pip install -q -U "av>=12"
+python3 -m pip install --quiet -U faster-whisper "av>=13"
+
 timeout 1500 python3 montage/transcribe.py "$AUD" "$OUT" || echo "transcribe exit=$?"
 ls -la "$OUT"
 git add -f montage/analysis
