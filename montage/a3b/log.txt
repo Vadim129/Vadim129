@@ -27,3 +27,33 @@ drwxr-xr-x 3 runner runner 4096 Oct 18 21:27 ..
 + git config user.email ci@local
 + git config user.name ci
 + git add -f montage/a3b
++ . montage/common.sh
+++ SRC=/home/runner/montage-src.mp4
+++ AUD=/home/runner/montage-audio.wav
++ need_src
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ '[' '!' -s /home/runner/montage-audio.wav ']'
++ ls -la /home/runner/montage-src.mp4 /home/runner/montage-audio.wav
+-rw-r--r-- 1 runner runner  27487304 Oct 18 21:21 /home/runner/montage-audio.wav
+-rw------- 1 runner runner 378304536 Oct 18 20:46 /home/runner/montage-src.mp4
++ python3 -m pip install --quiet numpy scipy librosa soundfile
++ timeout 1200 python3 montage/sfx.py /home/runner/montage-audio.wav montage/a3b 430 900
+dur 428.9758276643991
+tempo 118.80387931034483 beats 867
+onsets 328 cands 36
++ ls -la montage/a3b
+total 52
+drwxr-xr-x 2 runner runner  4096 Oct 18 21:35 .
+drwxr-xr-x 5 runner runner  4096 Oct 18 21:31 ..
+-rw-r--r-- 1 runner runner  2603 Oct 18 21:35 events-430.txt
+-rw-r--r-- 1 runner runner  1943 Oct 18 21:35 log.txt
+-rw-r--r-- 1 runner runner  5577 Oct 18 21:35 loudness-430.txt
+-rw-r--r-- 1 runner runner 24423 Oct 18 21:35 sfx-430.csv
+-rw-r--r-- 1 runner runner    97 Oct 18 21:35 sfx-430.json
+++ date -u +%H%M%S
++ push_dir montage/a3b 'montage: фоли 430-900 213522'
+++ dirname montage/step3b.sh
++ cd montage/..
++ git config user.email ci@local
++ git config user.name ci
++ git add -f montage/a3b
