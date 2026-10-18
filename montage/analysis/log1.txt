@@ -23,3 +23,8 @@ To: /home/runner/montage-src.mp4
 + ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vf scdet=threshold=18,metadata=print:file=montage/analysis/scdet.txt -an -f null -
 + timeout 900 python3 montage/shots.py montage/analysis/scdet.txt
 + git add -f montage/analysis
+++ date -u +%H%M%S
++ git commit -q -m 'montage: шаг1 211310'
++ git push
+To https://github.com/Vadim129/Vadim129
+   01b72f5..140d499  arena/08e16207-vadim129 -> arena/08e16207-vadim129

@@ -1,0 +1,36 @@
++ AUD=/home/runner/montage-audio.wav
++ python3 -m pip install --quiet faster-whisper
++ python3 -c 'import av; print('\''av'\'', av.__version__)'
+av 19.0.1
++ timeout 1500 python3 montage/transcribe.py /home/runner/montage-audio.wav montage/analysis
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/montage/transcribe.py", line 8, in <module>
+    segments, info = model.transcribe(src, language="ru", vad_filter=True, word_timestamps=True,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/faster_whisper/transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/faster_whisper/audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 479, in av.container.core.open
+TypeError: open() got an unexpected keyword argument 'metadata_errors'
++ echo 'transcribe exit=1'
+transcribe exit=1
++ ls -la montage/analysis
+total 53096
+drwxr-xr-x 2 runner runner     4096 Oct 18 21:13 .
+drwxr-xr-x 3 runner runner     4096 Oct 18 21:09 ..
+-rw-r--r-- 1 runner runner      425 Oct 18 21:13 cuts.json
+-rw-r--r-- 1 runner runner     4505 Oct 18 21:09 info.json
+-rw-r--r-- 1 runner runner      293 Oct 18 21:09 info.txt
+-rw-r--r-- 1 runner runner     4304 Oct 18 21:13 log1.txt
+-rw-r--r-- 1 runner runner     1398 Oct 18 21:13 log2.txt
+-rw-r--r-- 1 runner runner 51900374 Oct 18 21:11 proxy.mp4
+-rw-r--r-- 1 runner runner  1716369 Oct 18 21:13 scdet.txt
+-rw-r--r-- 1 runner runner   291847 Oct 18 21:11 sheet-01.jpg
+-rw-r--r-- 1 runner runner   337061 Oct 18 21:12 sheet-02.jpg
+-rw-r--r-- 1 runner runner    71103 Oct 18 21:12 sheet-03.jpg
+-rw-r--r-- 1 runner runner     1373 Oct 18 21:13 shots.txt
++ git add -f montage/analysis
