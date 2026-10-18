@@ -4,7 +4,7 @@ import sys, os, json
 from faster_whisper import WhisperModel
 
 src, outdir = sys.argv[1], sys.argv[2]
-model = WhisperModel("small", device="cpu", compute_type="int8", download_root="/home/runner/.cache/huggingface/whisper")
+model = WhisperModel("base", device="cpu", compute_type="int8", download_root="/home/runner/.cache/huggingface/whisper")
 segments, info = model.transcribe(src, language="ru", vad_filter=True, word_timestamps=True,
                                   beam_size=5, condition_on_previous_text=False)
 print("lang", info.language, info.language_probability)
