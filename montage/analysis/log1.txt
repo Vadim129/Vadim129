@@ -1,0 +1,25 @@
++ SRC=/home/runner/montage-src.mp4
++ AUD=/home/runner/montage-audio.wav
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ python3 -m pip install --quiet gdown
++ gdown 'https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ' -O /home/runner/montage-src.mp4
+Downloading...
+From (original): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
+From (redirected): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ&confirm=t&uuid=dd1a260f-c6da-4214-b4d7-14bae7d567db
+To: /home/runner/montage-src.mp4
+  0%|          | 0.00/378M [00:00<?, ?B/s]  1%|          | 4.72M/378M [00:00<00:13, 27.4MB/s]  4%|▍         | 15.2M/378M [00:00<00:07, 48.2MB/s]  7%|▋         | 27.8M/378M [00:00<00:05, 63.2MB/s] 11%|█         | 40.4M/378M [00:00<00:04, 74.0MB/s] 13%|█▎        | 48.8M/378M [00:00<00:04, 74.6MB/s] 16%|█▌        | 59.2M/378M [00:00<00:03, 80.3MB/s] 18%|█▊        | 69.2M/378M [00:00<00:03, 85.3MB/s] 21%|██        | 78.1M/378M [00:01<00:03, 76.7MB/s] 24%|██▍       | 91.8M/378M [00:01<00:03, 85.8MB/s] 27%|██▋       | 102M/378M [00:01<00:03, 89.0MB/s]  30%|██▉       | 113M/378M [00:01<00:02, 93.0MB/s] 32%|███▏      | 123M/378M [00:01<00:03, 83.8MB/s] 35%|███▌      | 134M/378M [00:01<00:02, 88.8MB/s] 38%|███▊      | 144M/378M [00:01<00:02, 78.6MB/s] 41%|████▏     | 157M/378M [00:01<00:02, 85.3MB/s] 44%|████▍     | 167M/378M [00:02<00:02, 83.3MB/s] 47%|████▋     | 176M/378M [00:02<00:02, 78.2MB/s] 50%|████▉     | 188M/378M [00:02<00:02, 85.0MB/s] 53%|█████▎    | 201M/378M [00:02<00:01, 89.3MB/s] 56%|█████▌    | 210M/378M [00:02<00:02, 82.3MB/s] 59%|█████▉    | 224M/378M [00:02<00:01, 91.7MB/s] 63%|██████▎   | 240M/378M [00:02<00:01, 107MB/s]  66%|██████▋   | 251M/378M [00:02<00:01, 105MB/s] 70%|███████   | 266M/378M [00:03<00:00, 113MB/s] 74%|███████▍  | 281M/378M [00:03<00:00, 123MB/s] 79%|███████▊  | 297M/378M [00:03<00:00, 129MB/s] 82%|████████▏ | 312M/378M [00:03<00:00, 134MB/s] 86%|████████▌ | 326M/378M [00:03<00:00, 136MB/s] 90%|█████████ | 341M/378M [00:03<00:00, 139MB/s] 94%|█████████▍| 355M/378M [00:03<00:00, 139MB/s] 99%|█████████▊| 373M/378M [00:03<00:00, 146MB/s]100%|██████████| 378M/378M [00:03<00:00, 98.7MB/s]
++ ls -la /home/runner/montage-src.mp4
+-rw------- 1 runner runner 378304536 Oct 18 20:46 /home/runner/montage-src.mp4
++ '[' '!' -s /home/runner/montage-audio.wav ']'
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vn -ac 1 -ar 16000 -c:a pcm_s16le /home/runner/montage-audio.wav
++ ls -la /home/runner/montage-audio.wav
+-rw-r--r-- 1 runner runner 27487304 Oct 18 21:09 /home/runner/montage-audio.wav
++ ffprobe -v error -print_format json -show_format -show_streams /home/runner/montage-src.mp4
++ ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels,bit_rate,duration -of default=noprint_wrappers=1 /home/runner/montage-src.mp4
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vf scale=960:-2 -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart montage/analysis/proxy.mp4
++ ls -la montage/analysis/proxy.mp4
+-rw-r--r-- 1 runner runner 51900374 Oct 18 21:11 montage/analysis/proxy.mp4
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vf 'fps=1/10,scale=320:-2,drawtext=text='\''%{pts\:hms}'\'':x=5:y=5:fontsize=20:fontcolor=yellow:box=1:boxcolor=black@0.55,tile=8x5' -frames:v 3 montage/analysis/sheet-%02d.jpg
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vf scdet=threshold=18,metadata=print:file=montage/analysis/scdet.txt -an -f null -
++ timeout 900 python3 montage/shots.py montage/analysis/scdet.txt
++ git add -f montage/analysis
