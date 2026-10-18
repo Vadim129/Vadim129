@@ -1,15 +1,8 @@
 name: montage
 on:
+  push:
+    branches: [ 'arena/08e16207-vadim129' ]
   workflow_dispatch:
-    inputs:
-      task:
-        description: "какой скрипт из montage/ запускать"
-        required: false
-        default: probe
-      file_id:
-        description: "Google Drive file id источника"
-        required: false
-        default: 14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
 permissions:
   contents: write
 concurrency:
@@ -33,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/montage-src.mp4
-          key: montage-src-${{ inputs.file_id }}
+          key: montage-src-14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
       - name: cache python+hf
         uses: actions/cache@v4
         with:
@@ -43,23 +36,24 @@ jobs:
           key: montage-py-v2
       - name: task
         env:
-          FILE_ID: ${{ inputs.file_id }}
-          TASK: ${{ inputs.task }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash montage/$TASK.sh || echo "task exit=$?"
+        run: |
+          TASK=$(cat montage/task.txt 2>/dev/null || echo probe)
+          echo "task=$TASK"
+          bash montage/$TASK.sh || echo "task exit=$?"
       - name: push results
         if: always()
         run: |
           git config user.email "ci@local"
           git config user.name "ci"
           git add -f montage || true
-          git commit -q -m "montage: ${{ inputs.task }} $(date -u +%H%M%S)" || echo "nothing to commit"
+          git commit -q -m "montage: $(cat montage/task.txt 2>/dev/null) $(date -u +%H%M%S)" || echo "nothing to commit"
           git push || echo "push failed"
       - name: artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: montage-${{ inputs.task }}
+          name: montage-result
           if-no-files-found: warn
           retention-days: 7
           path: montage/**
