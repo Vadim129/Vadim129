@@ -106,3 +106,10 @@ congr/assets/*_raw.png
 congr/media/*.mp4
 congr/media/still_*.png
 google_drive/
+
+# --- energetic clip (rebuild with clip2/prep.py + clip2/render.py)
+clip2/tmp/
+clip2/assets/src/
+clip2/assets/song.wav
+clip2/assets/song_mono.f32
+clip2/media/*.mp4
