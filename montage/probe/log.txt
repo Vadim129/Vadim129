@@ -1,0 +1,88 @@
++ SRC=/home/runner/montage-src.mp4
++ : 14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ python3 -m pip install --quiet gdown
++ gdown 'https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ' -O /home/runner/montage-src.mp4
+Downloading...
+From (original): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
+From (redirected): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ&confirm=t&uuid=ea438fd6-0cc5-48cc-bf4c-234699af0147
+To: /home/runner/montage-src.mp4
+  0%|          | 0.00/378M [00:00<?, ?B/s]  0%|          | 524k/378M [00:00<01:15, 5.00MB/s]  1%|▏         | 5.24M/378M [00:00<00:13, 27.2MB/s]  2%|▏         | 8.39M/378M [00:00<00:18, 19.5MB/s]  3%|▎         | 13.1M/378M [00:00<00:15, 23.7MB/s]  5%|▌         | 19.4M/378M [00:00<00:14, 24.1MB/s]  7%|▋         | 25.7M/378M [00:01<00:12, 28.6MB/s]  9%|▉         | 34.1M/378M [00:01<00:11, 30.3MB/s] 11%|█         | 42.5M/378M [00:01<00:09, 35.5MB/s] 13%|█▎        | 48.8M/378M [00:01<00:08, 40.4MB/s] 14%|█▍        | 53.5M/378M [00:01<00:08, 37.8MB/s] 16%|█▌        | 61.3M/378M [00:01<00:07, 41.6MB/s] 18%|█▊        | 69.7M/378M [00:01<00:06, 46.0MB/s] 20%|██        | 76.0M/378M [00:02<00:06, 48.8MB/s] 21%|██▏       | 81.3M/378M [00:02<00:06, 45.8MB/s] 24%|██▎       | 89.7M/378M [00:02<00:05, 50.6MB/s] 25%|██▌       | 95.4M/378M [00:02<00:05, 51.8MB/s] 28%|██▊       | 104M/378M [00:02<00:05, 46.5MB/s]  31%|███       | 117M/378M [00:02<00:04, 62.5MB/s] 33%|███▎      | 124M/378M [00:02<00:04, 58.8MB/s] 35%|███▌      | 134M/378M [00:03<00:04, 55.1MB/s] 39%|███▉      | 147M/378M [00:03<00:03, 72.4MB/s] 41%|████      | 156M/378M [00:03<00:03, 64.0MB/s] 43%|████▎     | 163M/378M [00:03<00:03, 59.9MB/s] 47%|████▋     | 178M/378M [00:03<00:02, 72.8MB/s] 49%|████▉     | 186M/378M [00:03<00:02, 70.4MB/s] 51%|█████▏    | 195M/378M [00:03<00:02, 71.5MB/s] 53%|█████▎    | 202M/378M [00:04<00:02, 71.8MB/s] 56%|█████▌    | 211M/378M [00:04<00:02, 72.3MB/s] 59%|█████▉    | 223M/378M [00:04<00:01, 82.9MB/s] 61%|██████▏   | 232M/378M [00:04<00:02, 58.2MB/s] 65%|██████▍   | 244M/378M [00:04<00:01, 71.7MB/s] 67%|██████▋   | 253M/378M [00:04<00:02, 59.0MB/s] 70%|██████▉   | 264M/378M [00:04<00:01, 67.6MB/s] 72%|███████▏  | 272M/378M [00:05<00:01, 60.9MB/s] 74%|███████▍  | 279M/378M [00:05<00:01, 61.3MB/s] 77%|███████▋  | 291M/378M [00:05<00:01, 70.9MB/s] 79%|███████▉  | 299M/378M [00:05<00:01, 65.5MB/s] 82%|████████▏ | 309M/378M [00:05<00:00, 72.3MB/s] 84%|████████▎ | 317M/378M [00:05<00:00, 67.4MB/s] 86%|████████▋ | 327M/378M [00:05<00:00, 71.6MB/s] 88%|████████▊ | 334M/378M [00:06<00:00, 71.7MB/s] 90%|█████████ | 342M/378M [00:06<00:00, 72.7MB/s] 93%|█████████▎| 352M/378M [00:06<00:00, 63.6MB/s] 95%|█████████▍| 359M/378M [00:06<00:00, 63.4MB/s] 98%|█████████▊| 371M/378M [00:06<00:00, 77.4MB/s]100%|██████████| 378M/378M [00:06<00:00, 56.4MB/s]
++ ls -la /home/runner/montage-src.mp4
+-rw------- 1 runner runner 378304536 Oct 18 20:46 /home/runner/montage-src.mp4
++ ffprobe -v error -print_format json -show_format -show_streams /home/runner/montage-src.mp4
++ ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels,bit_rate,duration -of default=noprint_wrappers=1 /home/runner/montage-src.mp4
+++ ffprobe -v error -show_entries format=duration -of csv=p=0 /home/runner/montage-src.mp4
++ DUR=858.975782
++ echo duration=858.975782
++ ffmpeg -hide_banner -loglevel error -i /home/runner/montage-src.mp4 -vf 'fps=1/10,scale=360:-2,drawtext=text='\''%{pts\:hms}'\'':x=6:y=6:fontsize=22:fontcolor=yellow:box=1:boxcolor=black@0.55,tile=6x5' -frames:v 4 montage/probe/sheet-%02d.jpg
++ ffmpeg -hide_banner -loglevel error -i /home/runner/montage-src.mp4 -vf 'fps=1/30,scale=900:-2,drawtext=text='\''%{pts\:hms}'\'':x=10:y=10:fontsize=30:fontcolor=yellow:box=1:boxcolor=black@0.55' -q:v 3 montage/probe/frame-%03d.jpg
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vn -ac 1 -ar 16000 -c:a pcm_s16le /tmp/a.wav
++ ls -la /tmp/a.wav
+-rw-r--r-- 1 runner runner 27487304 Oct 18 20:55 /tmp/a.wav
++ python3 -m pip install --quiet numpy scipy pillow
++ python3 montage/audio_probe.py /tmp/a.wav montage/probe
+sr=16000 dur=858.98
+ok
++ python3 -m pip install --quiet faster-whisper
++ python3 montage/transcribe.py /home/runner/montage-src.mp4 montage/probe
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/montage/transcribe.py", line 8, in <module>
+    segments, info = model.transcribe(src, language="ru", vad_filter=True, word_timestamps=True,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/faster_whisper/transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/faster_whisper/audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 479, in av.container.core.open
+TypeError: open() got an unexpected keyword argument 'metadata_errors'
++ echo 'transcribe failed'
+transcribe failed
++ ls -la montage/probe
+total 3976
+drwxr-xr-x 3 runner runner   4096 Oct 18 20:55 .
+drwxr-xr-x 3 runner runner   4096 Oct 18 20:53 ..
+-rw-r--r-- 1 runner runner     81 Oct 18 20:55 audio.json
+-rw-r--r-- 1 runner runner  13824 Oct 18 20:55 envelope.png
+-rw-r--r-- 1 runner runner   7327 Oct 18 20:54 frame-001.jpg
+-rw-r--r-- 1 runner runner  92405 Oct 18 20:54 frame-002.jpg
+-rw-r--r-- 1 runner runner 120418 Oct 18 20:54 frame-003.jpg
+-rw-r--r-- 1 runner runner  73435 Oct 18 20:54 frame-004.jpg
+-rw-r--r-- 1 runner runner  88298 Oct 18 20:54 frame-005.jpg
+-rw-r--r-- 1 runner runner  92819 Oct 18 20:54 frame-006.jpg
+-rw-r--r-- 1 runner runner  99911 Oct 18 20:54 frame-007.jpg
+-rw-r--r-- 1 runner runner 100351 Oct 18 20:54 frame-008.jpg
+-rw-r--r-- 1 runner runner  93157 Oct 18 20:54 frame-009.jpg
+-rw-r--r-- 1 runner runner  85921 Oct 18 20:55 frame-010.jpg
+-rw-r--r-- 1 runner runner  94881 Oct 18 20:55 frame-011.jpg
+-rw-r--r-- 1 runner runner 116213 Oct 18 20:55 frame-012.jpg
+-rw-r--r-- 1 runner runner 124910 Oct 18 20:55 frame-013.jpg
+-rw-r--r-- 1 runner runner  84854 Oct 18 20:55 frame-014.jpg
+-rw-r--r-- 1 runner runner  22707 Oct 18 20:55 frame-015.jpg
+-rw-r--r-- 1 runner runner 109664 Oct 18 20:55 frame-016.jpg
+-rw-r--r-- 1 runner runner  91390 Oct 18 20:55 frame-017.jpg
+-rw-r--r-- 1 runner runner 147514 Oct 18 20:55 frame-018.jpg
+-rw-r--r-- 1 runner runner  97491 Oct 18 20:55 frame-019.jpg
+-rw-r--r-- 1 runner runner 103534 Oct 18 20:55 frame-020.jpg
+-rw-r--r-- 1 runner runner  70274 Oct 18 20:55 frame-021.jpg
+-rw-r--r-- 1 runner runner 113608 Oct 18 20:55 frame-022.jpg
+-rw-r--r-- 1 runner runner  88204 Oct 18 20:55 frame-023.jpg
+-rw-r--r-- 1 runner runner 161263 Oct 18 20:55 frame-024.jpg
+-rw-r--r-- 1 runner runner 151782 Oct 18 20:55 frame-025.jpg
+-rw-r--r-- 1 runner runner 150773 Oct 18 20:55 frame-026.jpg
+-rw-r--r-- 1 runner runner 118624 Oct 18 20:55 frame-027.jpg
+-rw-r--r-- 1 runner runner 127004 Oct 18 20:55 frame-028.jpg
+-rw-r--r-- 1 runner runner 107514 Oct 18 20:55 frame-029.jpg
+-rw-r--r-- 1 runner runner   4505 Oct 18 20:53 info.json
+-rw-r--r-- 1 runner runner    313 Oct 18 20:53 info.txt
+-rw-r--r-- 1 runner runner   6064 Oct 18 20:55 log.txt
+-rw-r--r-- 1 runner runner  21330 Oct 18 20:55 peaks.csv
+-rw-r--r-- 1 runner runner  40260 Oct 18 20:55 peaks.txt
+-rw-r--r-- 1 runner runner  13596 Oct 18 20:55 segments.txt
+-rw-r--r-- 1 runner runner 271435 Oct 18 20:54 sheet-01.jpg
+-rw-r--r-- 1 runner runner 338967 Oct 18 20:54 sheet-02.jpg
+-rw-r--r-- 1 runner runner 324240 Oct 18 20:54 sheet-03.jpg
+drwxr-xr-x 2 runner runner   4096 Oct 18 20:55 spectro
