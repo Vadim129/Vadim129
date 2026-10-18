@@ -22,38 +22,35 @@ jobs:
           sudo apt-get install -y -qq ffmpeg >/dev/null
           ffmpeg -version | head -1
       - name: cache source video
-        id: src
         uses: actions/cache@v4
         with:
-          path: /home/runner/montage-src.mp4
+          path: |
+            /home/runner/montage-src.mp4
+            /home/runner/montage-audio.wav
           key: montage-src-14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
-      - name: cache python+hf
+      - name: cache python
         uses: actions/cache@v4
         with:
           path: |
             /home/runner/.cache/pip
             /home/runner/.cache/huggingface
-          key: montage-py-v2
-      - name: task
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TASK=$(cat montage/task.txt 2>/dev/null || echo probe)
-          echo "task=$TASK"
-          bash montage/$TASK.sh || echo "task exit=$?"
-      - name: push results
-        if: always()
+          key: montage-py-v3
+      - name: git setup
         run: |
           git config user.email "ci@local"
           git config user.name "ci"
+      - name: step1 download proxy cuts
+        continue-on-error: true
+        run: bash montage/step1.sh
+      - name: step2 transcript
+        continue-on-error: true
+        run: bash montage/step2.sh
+      - name: step3 sfx
+        continue-on-error: true
+        run: bash montage/step3.sh
+      - name: push results
+        if: always()
+        run: |
           git add -f montage || true
           git commit -q -m "montage: $(cat montage/task.txt 2>/dev/null) $(date -u +%H%M%S)" || echo "nothing to commit"
           git push || echo "push failed"
-      - name: artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: montage-result
-          if-no-files-found: warn
-          retention-days: 7
-          path: montage/**
