@@ -28,3 +28,23 @@ To: /home/runner/montage-src.mp4
 + git push
 To https://github.com/Vadim129/Vadim129
    01b72f5..140d499  arena/08e16207-vadim129 -> arena/08e16207-vadim129
++ SRC=/home/runner/montage-src.mp4
++ AUD=/home/runner/montage-audio.wav
++ '[' '!' -s /home/runner/montage-src.mp4 ']'
++ python3 -m pip install --quiet gdown
++ gdown 'https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ' -O /home/runner/montage-src.mp4
+Downloading...
+From (original): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ
+From (redirected): https://drive.google.com/uc?id=14w459uIJuDZTB5A7fj2E54gS3tOPLLhJ&confirm=t&uuid=ef65e0a4-ea3b-4182-839e-8947e90e3733
+To: /home/runner/montage-src.mp4
+  0%|          | 0.00/378M [00:00<?, ?B/s]  1%|          | 4.72M/378M [00:00<00:10, 35.3MB/s]  4%|▍         | 15.2M/378M [00:00<00:06, 56.6MB/s]  7%|▋         | 27.8M/378M [00:00<00:05, 68.2MB/s] 11%|█         | 39.8M/378M [00:00<00:04, 83.7MB/s] 13%|█▎        | 48.8M/378M [00:00<00:04, 75.8MB/s] 16%|█▌        | 59.2M/378M [00:00<00:03, 80.9MB/s] 19%|█▊        | 70.3M/378M [00:00<00:03, 88.7MB/s] 21%|██        | 79.7M/378M [00:01<00:03, 81.3MB/s] 24%|██▍       | 92.3M/378M [00:01<00:03, 92.5MB/s] 28%|██▊       | 104M/378M [00:01<00:02, 100MB/s]   30%|███       | 115M/378M [00:01<00:02, 93.3MB/s] 33%|███▎      | 125M/378M [00:01<00:02, 95.3MB/s] 36%|███▋      | 138M/378M [00:01<00:02, 101MB/s]  40%|███▉      | 150M/378M [00:01<00:02, 106MB/s] 43%|████▎     | 161M/378M [00:01<00:02, 94.9MB/s] 45%|████▌     | 171M/378M [00:02<00:02, 70.7MB/s] 48%|████▊     | 180M/378M [00:02<00:03, 58.5MB/s] 52%|█████▏    | 197M/378M [00:02<00:02, 68.3MB/s] 56%|█████▋    | 213M/378M [00:02<00:02, 79.7MB/s] 60%|█████▉    | 226M/378M [00:02<00:01, 88.9MB/s] 63%|██████▎   | 238M/378M [00:02<00:01, 94.6MB/s] 66%|██████▌   | 248M/378M [00:02<00:01, 93.0MB/s] 69%|██████▊   | 260M/378M [00:03<00:01, 97.2MB/s] 71%|███████▏  | 270M/378M [00:03<00:01, 92.6MB/s] 75%|███████▌  | 285M/378M [00:03<00:00, 102MB/s]  79%|███████▊  | 297M/378M [00:03<00:00, 105MB/s] 82%|████████▏ | 310M/378M [00:03<00:00, 104MB/s] 86%|████████▌ | 325M/378M [00:03<00:00, 112MB/s] 89%|████████▉ | 338M/378M [00:03<00:00, 115MB/s] 93%|█████████▎| 350M/378M [00:03<00:00, 115MB/s] 96%|█████████▌| 362M/378M [00:04<00:00, 102MB/s] 99%|█████████▉| 375M/378M [00:04<00:00, 109MB/s]100%|██████████| 378M/378M [00:04<00:00, 91.5MB/s]
++ '[' -s /home/runner/montage-audio.wav ']'
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vn -ac 1 -ar 16000 -c:a pcm_s16le /home/runner/montage-audio.wav
++ ffprobe -v error -print_format json -show_format -show_streams /home/runner/montage-src.mp4
++ ffprobe -v error -show_entries format=duration,size,bit_rate -show_entries stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels,bit_rate,duration -of default=noprint_wrappers=1 /home/runner/montage-src.mp4
++ '[' '!' -s montage/analysis/proxy.mp4 ']'
++ '[' -s montage/analysis/scdet.txt ']'
++ timeout 600 python3 montage/shots.py montage/analysis/scdet.txt
++ ffmpeg -hide_banner -loglevel error -y -i /home/runner/montage-src.mp4 -vf 'fps=1/10,scale=320:-2,drawtext=text='\''%{pts\:hms}'\'':x=5:y=5:fontsize=20:fontcolor=yellow:box=1:boxcolor=black@0.55,tile=8x5' -frames:v 3 montage/analysis/sheet-%02d.jpg
+++ date -u +%H%M%S
++ bash montage/push.sh montage/analysis 'montage: шаг1 212214'
