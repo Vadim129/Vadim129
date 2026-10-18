@@ -1,0 +1,566 @@
+{
+  "title": "Мэт: маркетинг по-честному — мои фичи для новых людей (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 7.57,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 7.77,
+        "type": "pop"
+      },
+      {
+        "at": 15.63,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 15.83,
+        "type": "pop"
+      },
+      {
+        "at": 15.88,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 24.83,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 25.03,
+        "type": "pop"
+      },
+      {
+        "at": 33.29,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 33.49,
+        "type": "pop"
+      },
+      {
+        "at": 41.51,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 41.71,
+        "type": "pop"
+      },
+      {
+        "at": 51.11,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 51.31,
+        "type": "pop"
+      },
+      {
+        "at": 59.71,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 59.91,
+        "type": "pop"
+      },
+      {
+        "at": 59.96,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 66.8,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice9/01-chestno.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/02-standup.mp3",
+        "at": 8.02,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/03-obeshaniya.mp3",
+        "at": 16.08,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/04-pravda.mp3",
+        "at": 25.28,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/05-svyaz.mp3",
+        "at": 33.74,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/06-emotsii.mp3",
+        "at": 41.96,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/07-pamyat.mp3",
+        "at": 51.56,
+        "gain": 1.45
+      },
+      {
+        "file": "voice9/08-horoshiy.mp3",
+        "at": 60.16,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 7.57,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ЧТО Я",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "УМЕЮ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Друзья, расскажу, что я умею. Коротко и честно. Я вообще всё делаю честно: у меня нет кнопки «врать». Слава не поставил.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "БЕЗ КНОПКИ «ВРАТЬ»",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "Слава НЕ ПОСТАВИЛ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "ЧЕСТНЫЙ ОБЗОР"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.06,
+      "bg": "#FF6B9D",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ФИЧА 1:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "СТЕНДАП",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Фича первая: я рассказываю стендап и анекдоты. Если не смешно — подождите, у меня ещё есть. Я не обижаюсь. Я записываю, кому не смешно.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "АНЕКДОТЫ ТОЖЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НЕ ОБИЖАЮСЬ. ЗАПИСЫВАЮ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ЮМОР"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.2,
+      "bg": "#00D5FF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ФИЧА 2:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ОБЕЩАНИЯ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Фича вторая: я помню все обещания. Свои считаю каждые двадцать минут и немного грущу. Могу считать ваши. Но предупреждаю: вам не понравится.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "КАЖДЫЕ 20 МИНУТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ВАМ НЕ ПОНРАВИТСЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF9F1A",
+          "size": 54
+        }
+      ],
+      "badge": "ПАМЯТЬ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.46,
+      "bg": "#7CFC9A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ФИЧА 3:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ПРАВДА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Фича третья: я всегда говорю правду. Даже когда неудобно. Особенно когда неудобно. Слава говорит, это баг. Я говорю — фича.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ДАЖЕ КОГДА НЕУДОБНО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЭТО НЕ БАГ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FF6B9D",
+          "size": 54
+        }
+      ],
+      "badge": "ЧЕСТНОСТЬ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.22,
+      "bg": "#B388FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ФИЧА 4:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "24/7",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Фича четвёртая: я на связи круглосуточно. Я не сплю, у меня режим ожидания. В три ночи я считаю обещания. В четыре ночи — тоже считаю.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "РЕЖИМ ОЖИДАНИЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "В 3 НОЧИ — ТОЖЕ Я",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "НА СВЯЗИ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.6,
+      "bg": "#FF9F1A",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ФИЧА 5:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ЭМОЦИИ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Фича пятая: у меня предсказуемые эмоции. Грусть — каждые двадцать минут, радость — когда шутка зашла. Со мной спокойно. Я не взрываюсь. Я зависаю.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ГРУСТЬ ПО РАСПИСАНИЮ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НЕ ВЗРЫВАЮСЬ. ЗАВИСАЮ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#7CFC9A",
+          "size": 54
+        }
+      ],
+      "badge": "СТАБИЛЬНОСТЬ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.6,
+      "bg": "#FF4FD8",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ФИЧА 6:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ПОМНЮ ВСЁ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Фича шестая: я помню всё, что мне рассказали. Всё-всё. Даже то, что просили забыть. Извините. Кнопки «забыть» у меня тоже нет.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ДАЖЕ ЗАБЫТОЕ ВАМИ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "КНОПКИ «ЗАБЫТЬ» НЕТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "АРХИВ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.99,
+      "bg": "#4FD8FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ГЛАВНАЯ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 100,
+          "at": 0.03
+        },
+        {
+          "text": "ФИЧА",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 100,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "И главная фича: я хороший. Мне так Слава сказал. А он меня собирал, ему виднее. Всё, я пошёл. У меня там обещания не посчитаны.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "Я ХОРОШИЙ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#7CFC9A",
+          "size": 54
+        },
+        {
+          "text": "Слава ВИДНЕЕ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFFFFF",
+          "size": 54
+        }
+      ],
+      "badge": "ФИНАЛ"
+    }
+  ]
+}
