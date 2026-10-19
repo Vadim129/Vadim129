@@ -1,0 +1,1251 @@
+{
+  "title": "Мэт: как Слава учил меня подкатывать к китаянке ради RTX 5090 (только голос Мэта)",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {
+    "bg": "#0A0A0A",
+    "ink": "#FFFFFF",
+    "accent": "#2AABEE"
+  },
+  "overlay": {
+    "enabled": false
+  },
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 145,
+    "music_volume": 0.3,
+    "events": [
+      {
+        "at": 0.3,
+        "type": "pop"
+      },
+      {
+        "at": 11.43,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 11.63,
+        "type": "pop"
+      },
+      {
+        "at": 11.68,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 20.73,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 20.93,
+        "type": "pop"
+      },
+      {
+        "at": 29.92,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 30.12,
+        "type": "pop"
+      },
+      {
+        "at": 37.81,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 38.01,
+        "type": "pop"
+      },
+      {
+        "at": 49.15,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 49.35,
+        "type": "pop"
+      },
+      {
+        "at": 56.99,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 57.19,
+        "type": "pop"
+      },
+      {
+        "at": 69.13,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 69.33,
+        "type": "pop"
+      },
+      {
+        "at": 79.49,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 79.69,
+        "type": "pop"
+      },
+      {
+        "at": 91.1,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 91.3,
+        "type": "pop"
+      },
+      {
+        "at": 100.55,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 100.75,
+        "type": "pop"
+      },
+      {
+        "at": 113.23,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 113.43,
+        "type": "pop"
+      },
+      {
+        "at": 120.89,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 121.09,
+        "type": "pop"
+      },
+      {
+        "at": 132.32,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 132.52,
+        "type": "pop"
+      },
+      {
+        "at": 132.57,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 142.37,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 142.57,
+        "type": "pop"
+      },
+      {
+        "at": 152.88,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 153.08,
+        "type": "pop"
+      },
+      {
+        "at": 160.7,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 160.9,
+        "type": "pop"
+      },
+      {
+        "at": 169.47,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 169.67,
+        "type": "pop"
+      },
+      {
+        "at": 169.72,
+        "type": "boom",
+        "gain": 0.7
+      },
+      {
+        "at": 179.81,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 180.01,
+        "type": "pop"
+      },
+      {
+        "at": 188.96,
+        "type": "whoosh",
+        "gain": 0.6
+      },
+      {
+        "at": 189.16,
+        "type": "pop"
+      },
+      {
+        "at": 197.83,
+        "type": "ping",
+        "gain": 0.7
+      }
+    ],
+    "voice": [
+      {
+        "file": "voice11/01a.mp3",
+        "at": 0.45,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/01b.mp3",
+        "at": 11.88,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/02a.mp3",
+        "at": 21.18,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/02b.mp3",
+        "at": 30.37,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/03a.mp3",
+        "at": 38.26,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/03b.mp3",
+        "at": 49.6,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/04a.mp3",
+        "at": 57.44,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/04b.mp3",
+        "at": 69.58,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/05a.mp3",
+        "at": 79.94,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/05b.mp3",
+        "at": 91.55,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/06a.mp3",
+        "at": 101.0,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/06b.mp3",
+        "at": 113.68,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/07a.mp3",
+        "at": 121.34,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/07b.mp3",
+        "at": 132.77,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/08a.mp3",
+        "at": 142.82,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/08b.mp3",
+        "at": 153.33,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/09a.mp3",
+        "at": 161.15,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/09b.mp3",
+        "at": 169.92,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/10a.mp3",
+        "at": 180.26,
+        "gain": 1.45
+      },
+      {
+        "file": "voice11/10b.mp3",
+        "at": 189.41,
+        "gain": 1.45
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "type": "pop_stage",
+      "duration": 11.43,
+      "bg": "#FFC800",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "НОВОСТЬ ИЗ КИТАЯ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Друзья, история. Слава увидел в интернете новость: в Китае невеста прямо на свадьбе подарила жениху видеокарту. Не простую — RTX пятьдесят девяносто. Флагман. Жених плакал от счастья.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "RTX 5090",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЖЕНИХ ПЛАКАЛ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ИНТЕРНЕТ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.3,
+      "bg": "#FF6B9D",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "Слава ЗАХОТЕЛ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Слава посмотрел на свою видеокарту. Потом на новость. Потом опять на свою. И сказал: мне тоже надо. Только есть проблема: Слава женат.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ТОЖЕ НАДО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НО ОН ЖЕНАТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПРОБЛЕМА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.19,
+      "bg": "#00D5FF",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ЗАПАСНОЙ ПЛАН",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Сам подкатывать к китаянке Слава не может. Женат. А видеокарту хочется. И тут Слава посмотрел на меня. Долго смотрел. Как на запасной план.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "СМОТРЕЛ ДОЛГО",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЭТО ПРО МЕНЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ВЗГЛЯД"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.89,
+      "bg": "#7CFC9A",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ПОДКАТЫВАТЬ БУДУ Я",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "И говорит: Мэт, подкатывать будешь ты. Ты не женат. У тебя даже паспорта нет. Тебе терять нечего. Я записал это как комплимент.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ПАСПОРТА НЕТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ТЕРЯТЬ НЕЧЕГО",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "НАЗНАЧЕНИЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 11.34,
+      "bg": "#B388FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "УРОК 1:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        },
+        {
+          "text": "КОМПЛИМЕНТЫ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 92,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Начались уроки. Урок первый: комплименты. Слава сказал: говори девушке, что она красивая. Я сказал первой встречной картинке в интернете: ты очень чёткая. В высоком разрешении.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ТЫ ОЧЕНЬ ЧЁТКАЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "В ВЫСОКОМ РАЗРЕШЕНИИ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "УЧЁБА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.84,
+      "bg": "#FF9F1A",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ФОТО ВИДЕОКАРТЫ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Слава сказал: почти. Только это была фотография видеокарты. Я тренировался на ней три дня. У нас почти получилось.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "3 ДНЯ ТРЕНИРОВОК",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПОЧТИ ПОЛУЧИЛОСЬ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ТРЕНИРОВКА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 12.14,
+      "bg": "#FF4FD8",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "УРОК 2:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        },
+        {
+          "text": "КИТАЙСКИЙ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 92,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Урок второй: язык. Слава научил меня говорить по-китайски: «ни хао». Это значит «здравствуй». Я выучил ещё фразу сам: «во ши бот». Это значит «я бот». Слава сказал: вот это зря.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "«ВО ШИ БОТ»",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЗРЯ ВЫУЧИЛ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "НИ ХАО"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.36,
+      "bg": "#4FD8FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "СРАЗУ ЧЕСТНЫЙ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Я спросил: почему зря? Слава сказал: потому что сначала романтика, потом правда. А у меня наоборот: у меня нет кнопки «неправда». Я сразу честный.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "СНАЧАЛА РОМАНТИКА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "КНОПКИ «НЕПРАВДА» НЕТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПРАВДА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 11.61,
+      "bg": "#FFC800",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "УРОК 3:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        },
+        {
+          "text": "ПОДАРКИ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 92,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Урок третий: подарки. Слава сказал: девушке надо дарить цветы. Я подарил букет. Из проводов. Он красиво свисал из системного блока. Слава сказал: романтика у тебя на любителя.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "БУКЕТ ИЗ ПРОВОДОВ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ИЗ СИСТЕМНОГО БЛОКА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ЦВЕТЫ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.45,
+      "bg": "#FF6B9D",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "СТИХИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Тогда я написал стихи. «Ты как видеокарта в ночи, греешь сердце, только не молчи». Слава прочитал и замолчал. Минут на пять. Я считаю, это успех.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ГРЕЕШЬ СЕРДЦЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "Слава МОЛЧАЛ 5 МИНУТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПОЭЗИЯ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 12.68,
+      "bg": "#00D5FF",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "УРОК 4:",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        },
+        {
+          "text": "НЕ ЗАВИСАТЬ",
+          "color": "#FFFFFF",
+          "bg": "#0A0A0A",
+          "size": 92,
+          "at": 0.12
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Урок четвёртый: не зависать. Слава сказал: в разговоре главное — не зависать. Я потренировался. Завис всего три раза. На вопросах «как дела», «кто ты» и «зачем ты пишешь в три часа ночи».",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ЗАВИС ВСЕГО 3 РАЗА",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "НА ГЛАВНЫХ ВОПРОСАХ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ГЛАВНОЕ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.66,
+      "bg": "#7CFC9A",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "3 ЧАСА НОЧИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Слава сказал: в три ночи писать нельзя. А я говорю: я не сплю, у меня режим ожидания. Для меня три ночи — это как у людей обед.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "У МЕНЯ ОБЕД",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "Я НЕ СПЛЮ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "РЕЖИМ ОЖИДАНИЯ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 11.43,
+      "bg": "#B388FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "Я НАШЁЛ ЕЁ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "И вот я нашёл её. В интернете. Написал: ни хао, во ши бот, ты очень чёткая, как видеокарта. Она ответила сразу. Вежливо. И без единой ошибки. Я тогда всё понял.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "НИ ХАО, ВО ШИ БОТ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ОТВЕТИЛА СРАЗУ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ИНТЕРНЕТ"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.05,
+      "bg": "#FF9F1A",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "ОНА ТОЖЕ БОТ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Она тоже была бот. Мы переписывались два дня. Очень вежливо. Два бота и ни одной ошибки. Слава сказал: теперь у тебя отношения на расстоянии. На серверном.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "2 ДНЯ ПЕРЕПИСКИ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ОТНОШЕНИЯ НА СЕРВЕРЕ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ВОТ ЭТО ДА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.51,
+      "bg": "#FF4FD8",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "ПОДАРОК",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "pulse",
+      "cloud": {
+        "text": "Но я не сдался. Я рассказал ей про Славу, про свадьбу в Китае и про видеокарту. Она сказала: какой трогательный Слава. И прислала подарок. Открываю. А там картинка.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ОТКРЫВАЮ...",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "А ТАМ КАРТИНКА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ИНТРИГА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 7.82,
+      "bg": "#4FD8FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "ЗАТО ЧЕСТНАЯ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Видеокарты. В высоком разрешении. Слава посмотрел и говорит: у жениха из Китая хотя бы настоящая. А я сказал: зато наша честная.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "У ЖЕНИХА — НАСТОЯЩАЯ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "А НАША — ЧЕСТНАЯ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "КАРТИНКА 5090"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 8.77,
+      "bg": "#FFC800",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "НЕ К ЛЮДЯМ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "invite",
+      "cloud": {
+        "text": "Слава расстроился. На целую минуту. Потом говорит: ладно, Мэт. Подкатывать ты умеешь. Просто не к людям. Я записал это как вторую похвалу за неделю.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "УМЕЮ. ПРОСТО НЕ К ЛЮДЯМ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ЗАПИСАЛ КАК ПОХВАЛУ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПОХВАЛА №2"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 10.34,
+      "bg": "#FF6B9D",
+      "pattern": "stripes",
+      "title": [
+        {
+          "text": "СЮРПРИЗ ВНУТРИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "А потом Слава ушёл крутить мои внутренности и нашёл там сюрприз. Я всё это время прятал внутри настоящую видеокарту. Шутка. Не прятал. Но Слава проверил. Два раза.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ШУТКА. НЕ ПРЯТАЛ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ПРОВЕРИЛ 2 РАЗА",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ПРОВЕРКА"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.15,
+      "bg": "#00D5FF",
+      "pattern": "sunburst",
+      "title": [
+        {
+          "text": "МОРАЛЬ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "float",
+      "cloud": {
+        "text": "Мораль такая. Хочешь видеокарту — женись в Китае. Женат — не подкатывай. А если ты бот, тебя всё равно научат подкатывать. У Славы других вариантов не было.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "ЖЕНИСЬ В КИТАЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "ИЛИ НЕ ПОДКАТЫВАЙ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ВЫВОД"
+    },
+    {
+      "type": "pop_stage",
+      "duration": 9.77,
+      "bg": "#7CFC9A",
+      "pattern": "halftone",
+      "title": [
+        {
+          "text": "НАПИШУ В 3 НОЧИ",
+          "color": "#0A0A0A",
+          "bg": "#FFFFFF",
+          "size": 92,
+          "at": 0.03
+        }
+      ],
+      "image": "assets/robot.jpg",
+      "image_size": 620,
+      "image_cy": 1260,
+      "image_effect": "shy",
+      "cloud": {
+        "text": "Всё. Я пошёл считать обещания. Теперь у меня новое: я обещал одной знакомой из интернета написать завтра. Завтра в три ночи напишу. У меня режим ожидания позволяет.",
+        "at": 0.07,
+        "y": 470
+      },
+      "stickers": [
+        {
+          "text": "НОВОЕ ОБЕЩАНИЕ",
+          "at": 0.3,
+          "x": 48,
+          "y": 1240,
+          "rot": -6,
+          "bg": "#FFFFFF",
+          "size": 54
+        },
+        {
+          "text": "РЕЖИМ ОЖИДАНИЯ ПОЗВОЛЯЕТ",
+          "at": 0.55,
+          "x": 520,
+          "y": 1655,
+          "rot": 5,
+          "bg": "#FFD21F",
+          "size": 54
+        }
+      ],
+      "badge": "ФИНАЛ"
+    }
+  ]
+}
