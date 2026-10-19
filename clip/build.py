@@ -297,12 +297,12 @@ SEQUENCE = [
     "101-court-wide", "103-verdict-desk", "104-cuffs-folder", "102-cage-portrait",
     "105-led-out", "106-cuffed-escort-h", "107-court-corridor",
     # --- автозак
-    "108-van-loading", "109-van-inside", "110-van-road",
+    "150-van-loading-clean-h", "109-van-inside", "110-van-road",
     # --- этап, поезд
     "111-railway-platform", "112-wagon-door", "113-wagon-interior", "114-wagon-window",
     # --- дорога к колонии
     "115-steppe-colony", "116-colony-approach", "117-gates-arrival",
-    "118-gate-threshold-h", "141-block-night",
+    "151-gate-threshold-clean", "141-block-night",
     # --- приём
     "119-checkpoint", "120-undress-search",
     # --- внутри: конвой, поверка
@@ -313,10 +313,10 @@ SEQUENCE = [
     "142-cell-night", "147-hands-bars",
     # --- быт: работа, баня, часовня, свидание, письма, церковь, прогулка
     "130-sewing-workshop", "131-shower-cage", "132-chapel-cuffed",
-    "133-visit-glass", "134-letter-writing", "135-photo-wall",
+    "134-letter-writing", "135-photo-wall",
     "136-prison-church", "128-walkbox", "144-walkbox-sky",
     # --- фонтан и финал (выхода нет)
-    "137-dolphin-sculpture", "138-dolphin-macro", "148-fountain-winter",
+    "152-dolphin-fountain", "138-dolphin-macro", "153-fountain-winter-clean",
     "140-finale-single-dolphin",
 ]
 
