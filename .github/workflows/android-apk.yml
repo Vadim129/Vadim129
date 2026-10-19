@@ -28,8 +28,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Use preinstalled Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          test -n "${ANDROID_HOME}"
+          test -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" || test -x "${ANDROID_HOME}/tools/bin/sdkmanager" || true
+          echo "sdk.dir=${ANDROID_HOME}" > local.properties
 
       - name: Build signed debug APK
         shell: bash
