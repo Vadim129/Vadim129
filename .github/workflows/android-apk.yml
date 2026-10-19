@@ -1,6 +1,11 @@
 name: Build Rhythm Overlay APK
 
 on:
+  push:
+    branches:
+      - arena/f567ee77-vadim129
+    paths-ignore:
+      - 'release/**'
   workflow_dispatch:
 
 permissions:
