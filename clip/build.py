@@ -72,8 +72,11 @@ def load_lyrics():
 
 
 def load_cues():
-    data = json.load(open(os.path.join(OUT, "timing.json"), encoding="utf-8"))
-    return [(c["t0"], c["t1"], c["text"]) for c in data["cues"]]
+    d = json.load(open(os.path.join(OUT, "timing.json"), encoding="utf-8"))
+    cues = [d["intro"]]
+    for p in d["passes"]:
+        cues += p
+    return cues
 
 
 def gradient_plate():
@@ -110,23 +113,30 @@ def render_title(title):
 
 
 def caption_layers(text):
-    """(тусклый слой, яркий слой, ширина текста) для одной строки."""
+    """(тусклый слой, яркий слой, x0, границы слов в пикселях)."""
     strip = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
     d = ImageDraw.Draw(strip)
     size = 78
+    words = text.split()
     while True:
         font = ImageFont.truetype(FONT_R, size)
-        if d.textlength(text, font=font) <= CAP_MAXW or size <= 34:
+        if d.textlength(text, font=font) <= CAP_MAXW or size <= 46:
             break
         size -= 2
     tw = d.textlength(text, font=font)
     x = (W - tw) / 2
     y = (CAP_H - size * 1.25) / 2
+    # границы слов — по префиксам строки, так точнее чем по отдельным словам
+    xs = []
+    for i in range(len(words) + 1):
+        xs.append(d.textlength(" ".join(words[:i]), font=font))
+    xs[-1] = tw
 
     plate = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
     ImageDraw.Draw(plate).rounded_rectangle(
         (x - 46, 8, x + tw + 46, CAP_H - 8), radius=26, fill=(5, 5, 6, 96))
     strip.alpha_composite(plate.filter(ImageFilter.GaussianBlur(18)))
+
     dim = strip.copy()
     ImageDraw.Draw(dim).text((x, y), text, font=font, fill=DIM,
                              stroke_width=2, stroke_fill=(0, 0, 0, 60))
@@ -138,7 +148,7 @@ def caption_layers(text):
     bright.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(4)))
     ImageDraw.Draw(bright).text((x, y), text, font=font, fill=IVORY,
                                 stroke_width=2, stroke_fill=(26, 20, 14, 230))
-    return dim, bright, int(round(tw)), x
+    return dim, bright, int(round(x)), [int(round(v)) for v in xs], font
 
 
 class RawVideo:
@@ -168,22 +178,32 @@ def build_caption_video(cues, title_png):
     idx = 0
     for f in range(NFRAMES):
         t = f / FPS
-        while idx + 1 < len(cues) and t >= cues[idx][1]:
+        while idx + 1 < len(cues) and t >= cues[idx]["t1"]:
             idx += 1
-        t0, t1, text = cues[idx]
-        if t < t0 or t > t1:
+        cue = cues[idx]
+        if t < cue["t0"] or t > cue["t1"]:
             vid.write(blank)
             continue
-        if text not in cache:
-            cache[text] = caption_layers(text)
-        dim, bright, tw, x = cache[text]
+        key = cue["text"]
+        if key not in cache:
+            cache[key] = caption_layers(cue["text"])
+        dim, bright, x, xs, _ = cache[key]
         frame = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
         frame.alpha_composite(dim)
-        p = min(1.0, max(0.0, (t - t0) / max(0.01, t1 - t0)))
-        wv = int(round(tw * p))
+        ws = cue["words"]
+        wv = 0.0
+        for i, w in enumerate(ws):
+            if t >= w["t1"]:
+                wv = xs[i + 1]
+            elif t >= w["t0"]:
+                p = (t - w["t0"]) / max(0.01, w["t1"] - w["t0"])
+                wv = xs[i] + (xs[i + 1] - xs[i]) * p
+                break
+            else:
+                break
+        wv = int(round(wv))
         if wv > 0:
-            crop = bright.crop((int(x), 0, int(x) + wv, CAP_H))
-            frame.alpha_composite(crop, (int(x), 0))
+            frame.alpha_composite(bright.crop((x, 0, x + wv, CAP_H)), (x, 0))
         vid.write(frame)
     vid.close()
 
@@ -191,16 +211,15 @@ def build_caption_video(cues, title_png):
     tpath = os.path.join(WORK, "title.mov")
     tvid = RawVideo(tpath, W, H)
     timg = Image.open(title_png).convert("RGBA")
-    for f in range(int(6.2 * FPS)):
+    for f in range(int(7.4 * FPS)):
         t = f / FPS
-        a = min(1.0, t / 0.7, max(0.0, (6.0 - t) / 0.8))
+        a = min(1.0, t / 0.7, max(0.0, (7.2 - t) / 0.8))
         if a <= 0:
             tvid.write(Image.new("RGBA", (W, H), (0, 0, 0, 0)))
             continue
         im = timg.copy()
         if a < 1:
-            al = im.getchannel("A").point(lambda v: int(v * a))
-            im.putalpha(al)
+            im.putalpha(im.getchannel("A").point(lambda v: int(v * a)))
         tvid.write(im)
     tvid.close()
     return path, tpath
@@ -285,9 +304,13 @@ def build_eq_video():
 
 # ------------------------------------------------------------------ видео
 
+DROP = ("03-", "17-", "25-", "34-")      # прогулки/футбол во дворе — в «Дельфине» такого нет
+
+
 def shots():
-    files = sorted(f for f in os.listdir(FRAMES) if f.lower().endswith(".jpg"))
-    assert len(files) == 50, len(files)
+    files = sorted(f for f in os.listdir(FRAMES) if f.lower().endswith(".jpg")
+                   and not f.startswith(DROP))
+    assert len(files) >= 40, len(files)
     os.makedirs(os.path.join(WORK, "shots"), exist_ok=True)
     out = []
     base_n = NFRAMES // len(files)
