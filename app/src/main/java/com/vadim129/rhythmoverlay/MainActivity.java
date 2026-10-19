@@ -187,7 +187,7 @@ public class MainActivity extends Activity {
             primaryButton.setBackground(Ui.round(enabled ? 0xFF4B285F : Ui.ACCENT, Ui.dp(this, 13)));
         }
         Skin.Spec selected = Skin.selected(this);
-        if (skinName != null) skinName.setText("Сейчас: " + selected.title + " — " + selected.subtitle);
+        if (skinName != null) skinName.setText("Сейчас: " + selected.title + " · " + selected.category + " · " + Skin.EXPECTED_SKIN_COUNT + " скинов в коллекции");
         if (preview != null) preview.setSkinId(selected.id);
     }
 
