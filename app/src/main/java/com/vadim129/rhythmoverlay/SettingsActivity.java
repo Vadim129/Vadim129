@@ -48,8 +48,8 @@ public class SettingsActivity extends Activity {
         Ui.addMargin(content, copy, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 7, 0, 16);
 
         LinearLayout appearance = Ui.card(this);
-        addSectionTitle(appearance, "Вид и движение", "100 разных композиций. На прозрачном виджете удержание открывает эти настройки, а щипок меняет размер.");
-        TextView skins = Ui.button(this, "100 скинов  ·  " + Skin.selected(this).title + "  ›", 0xFF262D4A, Ui.TEXT);
+        addSectionTitle(appearance, "Вид и движение", "100 музыкальных визуализаторов: их геометрия реагирует на звук. На прозрачном виджете удержание показывает шестерёнку настроек и крестик закрытия; щипок меняет размер.");
+        TextView skins = Ui.button(this, "100 визуализаторов  ·  " + Skin.selected(this).title + "  ›", 0xFF262D4A, Ui.TEXT);
         skins.setGravity(Gravity.CENTER_VERTICAL);
         skins.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) {

@@ -1,6 +1,7 @@
 package com.vadim129.rhythmoverlay;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,23 +15,22 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 /**
- * A deliberately transparent overlay: it paints only the skin and equalizer, never a rectangle
- * background or caption. One finger drags it, two fingers resize it, and a long press opens settings.
+ * Transparent audio-reactive overlay. It renders real equalizer layouts only: bars, mirrors,
+ * LEDs, dots, waves, circles, orbits, tunnels, particles, and beat-driven dancer scenes.
  */
 public class EqualizerOverlayView extends View {
     public interface DragCallback {
         void onDrag(float dx, float dy);
         void onResize(float scaleFactor);
+        void onClose();
         void onOpenSettings();
     }
 
-    private static final int BARS_VERTICAL = 0;
-    private static final int BARS_FACET = 1;
-    private static final int BARS_WAVE = 2;
-    private static final int BARS_RADIAL = 3;
-    private static final int BARS_PIXEL = 4;
+    private static final int CONTROL_NONE = 0;
+    private static final int CONTROL_SETTINGS = 1;
+    private static final int CONTROL_CLOSE = 2;
 
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
     private final RectF rect = new RectF();
@@ -41,6 +41,7 @@ public class EqualizerOverlayView extends View {
     private final ScaleGestureDetector scaleDetector;
     private String skinId;
     private DragCallback dragCallback;
+
     private float downRawX;
     private float downRawY;
     private float downX;
@@ -49,15 +50,29 @@ public class EqualizerOverlayView extends View {
     private boolean moved;
     private boolean resizing;
     private boolean longPressed;
+    private int controlTarget;
+    private boolean controlsVisible;
+    private float smoothedBeat;
+    private float lastBass;
     private long startedAt = SystemClock.elapsedRealtime();
+    private long lastDanceStep;
+    private int danceFrame;
+    private int dancePack = -1;
 
     private final Runnable longPress = new Runnable() {
         @Override public void run() {
             if (touchActive && !moved && !resizing && !preview && dragCallback != null) {
                 longPressed = true;
+                showControls();
                 performLongClick();
-                dragCallback.onOpenSettings();
             }
+        }
+    };
+
+    private final Runnable hideControls = new Runnable() {
+        @Override public void run() {
+            controlsVisible = false;
+            invalidate();
         }
     };
 
@@ -73,6 +88,7 @@ public class EqualizerOverlayView extends View {
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeCap(Paint.Cap.ROUND);
+        stroke.setStrokeJoin(Paint.Join.ROUND);
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
@@ -84,8 +100,7 @@ public class EqualizerOverlayView extends View {
 
             @Override public boolean onScale(ScaleGestureDetector detector) {
                 if (dragCallback == null) return false;
-                float factor = Math.max(.90f, Math.min(1.12f, detector.getScaleFactor()));
-                dragCallback.onResize(factor);
+                dragCallback.onResize(clamp(detector.getScaleFactor(), .90f, 1.12f));
                 return true;
             }
 
@@ -111,607 +126,408 @@ public class EqualizerOverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        final int width = getWidth();
-        final int height = getHeight();
+        int width = getWidth();
+        int height = getHeight();
         if (width < 2 || height < 2) return;
 
-        // The Window itself is translucent. Clearing prevents a stale frame from becoming a background.
+        // There is no card/background layer in the overlay — only the animated equalizer pixels.
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         Skin.Spec spec = skinId == null ? Skin.selected(getContext()) : Skin.byId(skinId);
-        float time = (SystemClock.elapsedRealtime() - startedAt) / 1000f;
+        long now = SystemClock.elapsedRealtime();
+        float time = (now - startedAt) / 1000f;
+        updateLevels(time);
+        float beat = smoothedBeat;
+
+        switch (spec.style) {
+            case Skin.LINEAR: drawLinear(canvas, spec, width, height, beat); break;
+            case Skin.MIRROR: drawMirror(canvas, spec, width, height, beat); break;
+            case Skin.LED: drawLed(canvas, spec, width, height, beat); break;
+            case Skin.DOTS: drawDots(canvas, spec, width, height, time, beat); break;
+            case Skin.WAVE: drawWave(canvas, spec, width, height, time, beat); break;
+            case Skin.CIRCULAR: drawCircular(canvas, spec, width, height, time, beat, false); break;
+            case Skin.ORBIT: drawOrbit(canvas, spec, width, height, time, beat); break;
+            case Skin.TUNNEL: drawTunnel(canvas, spec, width, height, time, beat); break;
+            case Skin.PARTICLES: drawParticles(canvas, spec, width, height, time, beat); break;
+            case Skin.DANCER: drawDancer(canvas, spec, width, height, now, time, beat); break;
+            default: drawLinear(canvas, spec, width, height, beat); break;
+        }
+        if (controlsVisible && !preview) drawEditControls(canvas, width, height);
+        postInvalidateDelayed(preview ? 80L : 33L);
+    }
+
+    private void updateLevels(float time) {
         boolean live = !preview && AudioLevels.isFresh();
-        float[] levels = AudioLevels.snapshot();
+        float[] values = AudioLevels.snapshot();
         float sensitivity = Skin.sensitivity(getContext()) / 100f;
         for (int i = 0; i < shown.length; i++) {
             float target;
             if (live) {
-                target = clamp(levels[i] * sensitivity, 0f, 1f);
+                target = clamp(values[i] * sensitivity, 0f, 1f);
             } else {
-                float rhythm = (float) ((Math.sin(time * (2.25f + i * .14f) + i * .63f) + 1d) * .5d);
-                target = .10f + rhythm * .22f + (i % 5 == 0 ? .08f : 0f);
+                float rhythm = (float) ((Math.sin(time * (2.15f + i * .11f) + i * .68f) + 1d) * .5d);
+                target = .10f + rhythm * .22f + (i < 4 ? .06f : 0f);
             }
-            shown[i] += (target - shown[i]) * (live ? .34f : .10f);
+            shown[i] += (target - shown[i]) * (live ? .34f : .11f);
         }
-        float beat = average();
-        drawSkinArt(canvas, spec, width, height, time, beat);
-        drawEqualizer(canvas, spec, width, height, time);
-        postInvalidateDelayed(preview ? 78L : 33L);
+        float bass = (shown[0] + shown[1] + shown[2] + shown[3]) * .25f;
+        float average = 0f;
+        for (float value : shown) average += value;
+        average /= shown.length;
+        float transient = Math.max(0f, bass - lastBass) * 1.8f;
+        lastBass += (bass - lastBass) * .22f;
+        float targetBeat = clamp(average * .56f + bass * .44f + transient, 0f, 1f);
+        smoothedBeat += (targetBeat - smoothedBeat) * .30f;
     }
 
-    private void drawSkinArt(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        switch (spec.kind) {
-            case Skin.HEARTS: drawCards(canvas, spec, w, h, time, 0); break;
-            case Skin.DIAMONDS: drawCards(canvas, spec, w, h, time, 1); break;
-            case Skin.CLUBS: drawCards(canvas, spec, w, h, time, 2); break;
-            case Skin.SPADES: drawCards(canvas, spec, w, h, time, 3); break;
-            case Skin.RUBY: case Skin.SAPPHIRE: case Skin.EMERALD: case Skin.AMETHYST:
-                drawGem(canvas, spec, w, h, time, beat); break;
-            case Skin.FIRE: drawFire(canvas, spec, w, h, time, beat); break;
-            case Skin.WATER: drawWater(canvas, spec, w, h, time, beat); break;
-            case Skin.ICE: drawIce(canvas, spec, w, h, time, beat); break;
-            case Skin.LIGHTNING: drawLightning(canvas, spec, w, h, time, beat); break;
-            case Skin.SUN: drawSun(canvas, spec, w, h, time, beat); break;
-            case Skin.MOON: drawMoon(canvas, spec, w, h, time, beat); break;
-            case Skin.CONSTELLATION: drawConstellation(canvas, spec, w, h, time); break;
-            case Skin.COMET: drawComets(canvas, spec, w, h, time, beat); break;
-            case Skin.VINYL: drawVinyl(canvas, spec, w, h, time, beat); break;
-            case Skin.CASSETTE: drawCassette(canvas, spec, w, h, time, beat); break;
-            case Skin.SYNTHWAVE: drawSynthwave(canvas, spec, w, h, time, beat); break;
-            case Skin.ARCADE: drawArcade(canvas, spec, w, h, time, beat); break;
-            case Skin.SAKURA: drawSakura(canvas, spec, w, h, time, beat); break;
-            case Skin.LOTUS: drawLotus(canvas, spec, w, h, time, beat); break;
-            case Skin.BUBBLES: drawBubbles(canvas, spec, w, h, time, beat); break;
-            case Skin.INK: drawInk(canvas, spec, w, h, time, beat); break;
-            case Skin.HOLOGRAM: drawHologram(canvas, spec, w, h, time, beat); break;
-            default: break;
-        }
-    }
-
-    private void drawCards(Canvas canvas, Skin.Spec spec, int w, int h, float time, int suit) {
-        float cx = w * .5f;
-        float cy = h * .52f;
-        float giant = Math.min(w, h) * (.26f + spec.variant * .025f);
-        paint.setColor(alpha(spec.primary, 35));
-        drawSuit(canvas, suit, cx, cy, giant, paint);
-        int count = spec.variant + 1;
-        float spread = Math.min(w, h) * .28f;
+    private void drawLinear(Canvas canvas, Skin.Spec spec, int w, int h, float beat) {
+        int count = shown.length;
+        float margin = dp(10 + (spec.variant % 3) * 3);
+        float gap = dp(spec.variant % 2 == 0 ? 3f : 1.6f);
+        float available = w - margin * 2f - gap * (count - 1);
+        float barWidth = Math.max(dp(1.5f), available / count);
+        float baseline = h - dp(10 + (spec.variant % 3) * 5);
+        float maximum = h * (.50f + (spec.variant % 4) * .045f);
         for (int i = 0; i < count; i++) {
-            float angle = (float) (time * (.28f + i * .04f) + (Math.PI * 2d * i / count));
-            float x = cx + (float) Math.cos(angle) * spread;
-            float y = cy + (float) Math.sin(angle) * spread * .65f;
-            paint.setColor(alpha(i % 2 == 0 ? spec.accent : spec.secondary, 155));
-            drawSuit(canvas, suit, x, y, dp(9 + (i % 2) * 2), paint);
-        }
-        stroke.setStrokeWidth(dp(1.2f));
-        stroke.setColor(alpha(spec.accent, 135));
-        canvas.drawCircle(cx, cy, giant * 1.1f, stroke);
-    }
-
-    private void drawGem(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * .5f;
-        float cy = h * .5f;
-        int sides = 4 + spec.variant * 2;
-        float radius = Math.min(w, h) * (.33f + beat * .08f);
-        path.reset();
-        for (int i = 0; i < sides; i++) {
-            float a = (float) (time * .32f + Math.PI * 2d * i / sides - Math.PI / 2d);
-            float x = cx + (float) Math.cos(a) * radius;
-            float y = cy + (float) Math.sin(a) * radius;
-            if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
-        }
-        path.close();
-        paint.setColor(alpha(spec.primary, 58));
-        canvas.drawPath(path, paint);
-        stroke.setStrokeWidth(dp(1.7f));
-        stroke.setColor(alpha(spec.accent, 205));
-        canvas.drawPath(path, stroke);
-        for (int i = 0; i < sides; i++) {
-            float a = (float) (time * .32f + Math.PI * 2d * i / sides - Math.PI / 2d);
-            float x = cx + (float) Math.cos(a) * radius;
-            float y = cy + (float) Math.sin(a) * radius;
-            stroke.setColor(alpha(i % 2 == 0 ? spec.secondary : spec.accent, 125));
-            canvas.drawLine(cx, cy, x, y, stroke);
-        }
-        paint.setColor(alpha(Color.WHITE, 155));
-        canvas.drawCircle(cx - radius * .18f, cy - radius * .2f, dp(3.5f), paint);
-    }
-
-    private void drawFire(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float base = h * .88f;
-        int flames = 3 + spec.variant;
-        for (int i = 0; i < flames; i++) {
-            float x = w * (i + 1f) / (flames + 1f);
-            float top = base - h * (.24f + .18f * (float) Math.abs(Math.sin(time * 2.2f + i)) + beat * .12f);
-            path.reset();
-            path.moveTo(x - dp(16), base);
-            path.cubicTo(x - dp(25), base - dp(30), x + dp(8), top + dp(24), x, top);
-            path.cubicTo(x + dp(22), top + dp(25), x + dp(27), base - dp(29), x + dp(16), base);
-            path.close();
-            paint.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 74 + i * 14));
-            canvas.drawPath(path, paint);
-            stroke.setStrokeWidth(dp(1.3f));
-            stroke.setColor(alpha(spec.accent, 170));
-            canvas.drawPath(path, stroke);
-        }
-    }
-
-    private void drawWater(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int waves = 3 + spec.variant;
-        for (int wave = 0; wave < waves; wave++) {
-            float base = h * (.28f + wave * .15f);
-            path.reset();
-            path.moveTo(-dp(10), base);
-            for (float x = 0; x <= w + dp(10); x += dp(8)) {
-                float y = base + (float) Math.sin(x / dp(26) + time * (1.3f + wave * .1f)) * dp(6 + beat * 12);
-                path.lineTo(x, y);
+            float level = shown[i];
+            float barHeight = maximum * (.10f + level * .90f);
+            float x = margin + i * (barWidth + gap);
+            float y = baseline - barHeight;
+            int color = bandColor(spec, i, count);
+            paint.setColor(alpha(color, 225));
+            if (spec.variant == 1 || spec.variant == 4) {
+                stroke.setStrokeWidth(Math.max(dp(1f), barWidth));
+                stroke.setColor(alpha(color, 220));
+                stroke.setShadowLayer(dp(5), 0, 0, alpha(color, 115));
+                canvas.drawLine(x + barWidth / 2f, baseline, x + barWidth / 2f, y, stroke);
+                stroke.clearShadowLayer();
+            } else if (spec.variant == 2 || spec.variant == 6) {
+                canvas.drawRect(x, y, x + barWidth, baseline, paint);
+            } else {
+                float radius = Math.min(barWidth * .5f, dp(5));
+                canvas.drawRoundRect(x, y, x + barWidth, baseline, radius, radius, paint);
             }
-            stroke.setStrokeWidth(dp(1.2f + wave * .35f));
-            stroke.setColor(alpha(wave % 2 == 0 ? spec.primary : spec.secondary, 170 - wave * 13));
-            canvas.drawPath(path, stroke);
+            if (spec.variant == 3 || spec.variant == 5 || spec.variant == 8) {
+                paint.setColor(alpha(spec.accent, 190));
+                float cap = Math.max(dp(1.4f), barWidth * .18f);
+                canvas.drawRoundRect(x, Math.max(dp(4), y - dp(4)), x + barWidth, Math.max(dp(4), y - dp(4)) + cap,
+                        cap, cap, paint);
+            }
         }
-        for (int i = 0; i < 4 + spec.variant; i++) {
-            float x = ((i * 53 + time * 16) % (w + dp(20))) - dp(10);
-            float y = h * (.18f + (i % 3) * .2f);
-            paint.setColor(alpha(spec.accent, 145));
-            canvas.drawCircle(x, y, dp(1.8f + (i % 2)), paint);
-        }
-    }
-
-    private void drawIce(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * .5f;
-        float cy = h * .5f;
-        float radius = Math.min(w, h) * (.33f + beat * .08f);
-        stroke.setStrokeWidth(dp(1.5f));
-        for (int arm = 0; arm < 6; arm++) {
-            float a = (float) (Math.PI * 2d * arm / 6d + time * .06f);
-            float ex = cx + (float) Math.cos(a) * radius;
-            float ey = cy + (float) Math.sin(a) * radius;
-            stroke.setColor(alpha(spec.primary, 205));
-            canvas.drawLine(cx, cy, ex, ey, stroke);
-            float bx = cx + (float) Math.cos(a) * radius * .57f;
-            float by = cy + (float) Math.sin(a) * radius * .57f;
-            float side = (float) (Math.PI / 4d);
-            canvas.drawLine(bx, by, bx + (float) Math.cos(a + side) * radius * .25f,
-                    by + (float) Math.sin(a + side) * radius * .25f, stroke);
-            canvas.drawLine(bx, by, bx + (float) Math.cos(a - side) * radius * .25f,
-                    by + (float) Math.sin(a - side) * radius * .25f, stroke);
-        }
-        paint.setColor(alpha(spec.secondary, 100));
-        canvas.drawCircle(cx, cy, radius * .18f, paint);
-    }
-
-    private void drawLightning(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int bolts = 1 + spec.variant;
-        for (int bolt = 0; bolt < bolts; bolt++) {
-            float x = w * (bolt + 1f) / (bolts + 1f);
-            float y = h * .13f;
-            path.reset();
-            path.moveTo(x + (float) Math.sin(time * 4 + bolt) * dp(5), y);
-            path.lineTo(x - dp(11), h * .42f);
-            path.lineTo(x + dp(5), h * .42f);
-            path.lineTo(x - dp(14), h * .82f);
-            path.lineTo(x + dp(17), h * .49f);
-            path.lineTo(x + dp(1), h * .49f);
-            stroke.setStrokeWidth(dp(2f + beat * 2f));
-            stroke.setColor(alpha(bolt % 2 == 0 ? spec.primary : spec.accent, 220));
-            stroke.setShadowLayer(dp(7), 0, 0, alpha(spec.accent, 160));
-            canvas.drawPath(path, stroke);
-            stroke.clearShadowLayer();
+        if (spec.variant == 7 || spec.variant == 9) {
+            stroke.setStrokeWidth(dp(1));
+            stroke.setColor(alpha(spec.secondary, 95));
+            canvas.drawLine(margin, baseline + dp(4), w - margin, baseline + dp(4), stroke);
         }
     }
 
-    private void drawSun(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * .5f;
-        float cy = h * .5f;
-        float radius = Math.min(w, h) * (.18f + beat * .06f);
-        paint.setColor(alpha(spec.primary, 115));
-        canvas.drawCircle(cx, cy, radius, paint);
-        stroke.setStrokeWidth(dp(1.5f));
-        int rays = 10 + spec.variant * 3;
-        for (int i = 0; i < rays; i++) {
-            float a = (float) (time * .22f + Math.PI * 2d * i / rays);
-            float in = radius + dp(7);
-            float out = radius + dp(18 + (i % 3) * 6);
-            stroke.setColor(alpha(i % 2 == 0 ? spec.accent : spec.secondary, 190));
-            canvas.drawLine(cx + (float) Math.cos(a) * in, cy + (float) Math.sin(a) * in,
-                    cx + (float) Math.cos(a) * out, cy + (float) Math.sin(a) * out, stroke);
-        }
-    }
-
-    private void drawMoon(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * (.48f + (float) Math.sin(time * .2f) * .03f);
-        float cy = h * .5f;
-        float r = Math.min(w, h) * (.27f + beat * .04f);
-        paint.setColor(alpha(spec.primary, 110));
-        canvas.drawCircle(cx, cy, r, paint);
-        paint.setColor(Color.TRANSPARENT);
-        paint.setXfermode(new android.graphics.PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        float shift = new float[]{r * .7f, r * .3f, 0f, -r * .33f}[spec.variant];
-        canvas.drawCircle(cx + shift, cy - r * .13f, r * .93f, paint);
-        paint.setXfermode(null);
-        stroke.setStrokeWidth(dp(1.4f));
-        stroke.setColor(alpha(spec.accent, 205));
-        canvas.drawCircle(cx, cy, r, stroke);
-        for (int i = 0; i < 5; i++) {
-            float x = (i * 71 % 233) / 233f * w;
-            float y = (i * 47 % 149) / 149f * h;
-            paint.setColor(alpha(spec.secondary, 160));
-            canvas.drawCircle(x, y, dp(1.1f + i % 2), paint);
-        }
-    }
-
-    private void drawConstellation(Canvas canvas, Skin.Spec spec, int w, int h, float time) {
-        int points = 5 + spec.variant;
-        float[] xs = new float[points];
-        float[] ys = new float[points];
-        for (int i = 0; i < points; i++) {
-            xs[i] = w * (.13f + ((i * 47 + spec.variant * 19) % 73) / 100f);
-            ys[i] = h * (.16f + ((i * 31 + spec.variant * 11) % 66) / 100f);
-        }
-        stroke.setStrokeWidth(dp(1));
-        for (int i = 0; i < points; i++) {
-            int next = (i + 1 + spec.variant % 2) % points;
-            stroke.setColor(alpha(spec.primary, 120));
-            canvas.drawLine(xs[i], ys[i], xs[next], ys[next], stroke);
-            float sparkle = dp(2f + (float) Math.abs(Math.sin(time * 3 + i)) * 2.5f);
-            paint.setColor(alpha(i % 2 == 0 ? Color.WHITE : spec.secondary, 220));
-            canvas.drawCircle(xs[i], ys[i], sparkle, paint);
-        }
-    }
-
-    private void drawComets(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int count = 2 + spec.variant;
-        stroke.setStrokeCap(Paint.Cap.ROUND);
+    private void drawMirror(Canvas canvas, Skin.Spec spec, int w, int h, float beat) {
+        int count = shown.length;
+        float margin = dp(10);
+        float gap = dp(2.2f);
+        float width = (w - margin * 2f - gap * (count - 1)) / count;
+        float center = h * (.48f + (spec.variant % 3 - 1) * .035f);
+        float max = Math.min(h * .42f, h * (.20f + beat * .05f));
         for (int i = 0; i < count; i++) {
-            float p = (time * (.09f + i * .018f) + i * .27f) % 1f;
-            float x = w * (1f - p);
-            float y = h * (.18f + ((i * 23) % 60) / 100f + p * .22f);
-            float tail = dp(28 + beat * 35);
-            stroke.setStrokeWidth(dp(2 + i % 2));
-            stroke.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 180));
-            canvas.drawLine(x + tail, y - tail * .32f, x, y, stroke);
-            paint.setColor(alpha(Color.WHITE, 240));
-            canvas.drawCircle(x, y, dp(2.5f + beat * 2), paint);
-        }
-    }
-
-    private void drawVinyl(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int disks = 1 + (spec.variant > 1 ? 1 : 0);
-        for (int i = 0; i < disks; i++) {
-            float cx = w * (.42f + i * .20f);
-            float cy = h * .52f;
-            float r = Math.min(w, h) * (.29f - i * .035f + beat * .03f);
-            paint.setColor(alpha(0xFF11111A, 100));
-            canvas.drawCircle(cx, cy, r, paint);
-            stroke.setStrokeWidth(dp(1.1f));
-            for (int ring = 1; ring < 4; ring++) {
-                stroke.setColor(alpha(spec.secondary, 70 + ring * 15));
-                canvas.drawCircle(cx, cy, r * ring / 4f, stroke);
+            float extent = max * (.13f + shown[i] * .87f);
+            float x = margin + i * (width + gap);
+            int color = bandColor(spec, i, count);
+            paint.setColor(alpha(color, 215));
+            float radius = Math.min(width * .45f, dp(4));
+            if (spec.variant == 2 || spec.variant == 7) {
+                canvas.drawRect(x, center - extent, x + width, center - dp(1), paint);
+                canvas.drawRect(x, center + dp(1), x + width, center + extent, paint);
+            } else {
+                canvas.drawRoundRect(x, center - extent, x + width, center - dp(1), radius, radius, paint);
+                canvas.drawRoundRect(x, center + dp(1), x + width, center + extent, radius, radius, paint);
             }
-            float a = time * (1.3f + i * .3f);
-            stroke.setColor(alpha(spec.accent, 195));
-            canvas.drawLine(cx, cy, cx + (float) Math.cos(a) * r * .73f, cy + (float) Math.sin(a) * r * .73f, stroke);
-            paint.setColor(alpha(spec.primary, 205));
-            canvas.drawCircle(cx, cy, r * .2f, paint);
-            paint.setColor(alpha(Color.WHITE, 190));
-            canvas.drawCircle(cx, cy, dp(2), paint);
-        }
-    }
-
-    private void drawCassette(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float left = w * .16f;
-        float right = w * .84f;
-        float top = h * .27f;
-        float bottom = h * .73f;
-        stroke.setStrokeWidth(dp(1.8f));
-        stroke.setColor(alpha(spec.primary, 205));
-        rect.set(left, top, right, bottom);
-        canvas.drawRoundRect(rect, dp(13), dp(13), stroke);
-        stroke.setColor(alpha(spec.secondary, 145));
-        canvas.drawLine(left + dp(13), h * .49f, right - dp(13), h * .49f, stroke);
-        float[] wheels = new float[]{w * .34f, w * .66f};
-        for (float cx : wheels) {
-            float r = dp(13 + beat * 4);
-            stroke.setColor(alpha(spec.accent, 210));
-            canvas.drawCircle(cx, h * .51f, r, stroke);
-            for (int s = 0; s < 4 + spec.variant; s++) {
-                float a = time * 2.4f + s * (float) Math.PI * 2 / (4 + spec.variant);
-                canvas.drawLine(cx, h * .51f, cx + (float) Math.cos(a) * r * .72f,
-                        h * .51f + (float) Math.sin(a) * r * .72f, stroke);
+            if (spec.variant == 1 || spec.variant == 4 || spec.variant == 8) {
+                stroke.setStrokeWidth(dp(1));
+                stroke.setColor(alpha(spec.accent, 120));
+                canvas.drawLine(x + width * .5f, center - extent - dp(4), x + width * .5f, center + extent + dp(4), stroke);
             }
         }
-        path.reset();
-        path.moveTo(w * .42f, bottom - dp(7)); path.lineTo(w * .58f, bottom - dp(7));
-        path.lineTo(w * .62f, bottom - dp(18)); path.lineTo(w * .38f, bottom - dp(18)); path.close();
-        paint.setColor(alpha(spec.secondary, 100));
-        canvas.drawPath(path, paint);
+        stroke.setStrokeWidth(dp(spec.variant == 5 ? 2f : 1f));
+        stroke.setColor(alpha(spec.secondary, 115));
+        canvas.drawLine(margin, center, w - margin, center, stroke);
     }
 
-    private void drawSynthwave(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float horizon = h * (.58f + spec.variant * .035f);
-        stroke.setStrokeWidth(dp(1));
-        for (int i = 0; i < 8; i++) {
-            float y = horizon + i * i * h * .008f;
-            stroke.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 90));
-            canvas.drawLine(0, y, w, y, stroke);
-        }
-        for (int i = -5; i <= 5; i++) {
-            stroke.setColor(alpha(spec.accent, 85));
-            canvas.drawLine(w * .5f, horizon, w * (.5f + i * .19f), h, stroke);
-        }
-        path.reset();
-        path.moveTo(0, horizon);
-        for (float x = 0; x <= w; x += dp(7)) {
-            float y = horizon - (float) Math.abs(Math.sin(x / dp(31) + time * 1.3f)) * (dp(13) + beat * dp(16));
-            path.lineTo(x, y);
-        }
-        stroke.setStrokeWidth(dp(2));
-        stroke.setColor(alpha(spec.primary, 220));
-        canvas.drawPath(path, stroke);
-    }
-
-    private void drawArcade(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cell = dp(8);
-        int cols = Math.max(8, (int) (w / cell));
-        int rows = Math.max(5, (int) (h / cell));
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < cols; col++) {
-                float wave = (float) Math.sin(time * 3 + col * .6f + row * .42f);
-                if ((col + row + spec.variant) % (3 + spec.variant % 2) == 0 && wave > -.15f) {
-                    paint.setColor(alpha((row + col) % 2 == 0 ? spec.primary : spec.secondary, 75 + (int) (wave * 45)));
-                    canvas.drawRect(col * cell, row * cell, col * cell + cell * .66f, row * cell + cell * .66f, paint);
+    private void drawLed(Canvas canvas, Skin.Spec spec, int w, int h, float beat) {
+        int count = shown.length;
+        float margin = dp(11);
+        float colWidth = (w - margin * 2f) / count;
+        int segments = 7 + spec.variant;
+        float gap = dp(spec.variant % 2 == 0 ? 2f : 1f);
+        float segmentHeight = (h * .64f - gap * (segments - 1)) / segments;
+        float bottom = h - dp(10);
+        for (int i = 0; i < count; i++) {
+            int lit = Math.max(1, (int) Math.ceil(shown[i] * segments));
+            float x = margin + i * colWidth + gap * .5f;
+            float cellWidth = Math.max(dp(2), colWidth - gap);
+            for (int s = 0; s < segments; s++) {
+                float y = bottom - (s + 1) * segmentHeight - s * gap;
+                boolean on = s < lit;
+                int color = bandColor(spec, i + s, count + segments);
+                paint.setColor(alpha(color, on ? 230 : 37));
+                if (spec.variant == 1 || spec.variant == 6) {
+                    canvas.drawCircle(x + cellWidth / 2f, y + segmentHeight / 2f, Math.min(cellWidth, segmentHeight) * .34f, paint);
+                } else {
+                    float radius = spec.variant == 3 || spec.variant == 8 ? dp(1f) : segmentHeight * .22f;
+                    canvas.drawRoundRect(x, y, x + cellWidth, y + segmentHeight, radius, radius, paint);
                 }
             }
         }
-        paint.setColor(alpha(spec.accent, 180));
-        float px = w * (.48f + (float) Math.sin(time * 1.7f) * .18f);
-        float py = h * (.54f + (float) Math.cos(time * 1.3f) * .17f);
-        canvas.drawRect(px - cell, py - cell, px + cell, py + cell, paint);
-        canvas.drawRect(px - cell * 1.6f, py, px + cell * 1.6f, py + cell, paint);
     }
 
-    private void drawSakura(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int blossoms = 5 + spec.variant * 2;
-        for (int i = 0; i < blossoms; i++) {
-            float x = ((i * 43 + time * (11 + i % 3 * 4)) % (w + dp(25))) - dp(12);
-            float y = ((i * 71 + time * (15 + i % 4 * 3)) % (h + dp(25))) - dp(12);
-            float size = dp(4 + i % 3 + beat * 2);
-            drawFlower(canvas, x, y, size, time * .6f + i, i % 2 == 0 ? spec.primary : spec.secondary);
-        }
-        stroke.setStrokeWidth(dp(1.2f));
-        stroke.setColor(alpha(spec.accent, 95));
-        path.reset(); path.moveTo(0, h * .2f); path.cubicTo(w * .3f, h * .38f, w * .72f, h * .04f, w, h * .23f);
-        canvas.drawPath(path, stroke);
-    }
-
-    private void drawLotus(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * .5f;
-        float cy = h * (.6f + (float) Math.sin(time * 1.4f) * .02f);
-        int petals = 8 + spec.variant * 2;
-        for (int i = 0; i < petals; i++) {
-            float a = (float) (Math.PI * 2d * i / petals + time * .12f);
-            canvas.save();
-            canvas.rotate((float) Math.toDegrees(a), cx, cy);
-            rect.set(cx - dp(7), cy - dp(37) - beat * dp(7), cx + dp(7), cy);
-            paint.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 85 + (i % 3) * 25));
-            canvas.drawOval(rect, paint);
-            canvas.restore();
-        }
-        paint.setColor(alpha(spec.accent, 180));
-        canvas.drawCircle(cx, cy, dp(6 + beat * 4), paint);
-        stroke.setStrokeWidth(dp(1));
-        stroke.setColor(alpha(spec.secondary, 120));
-        canvas.drawLine(0, h * .78f, w, h * .78f, stroke);
-    }
-
-    private void drawBubbles(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int count = 9 + spec.variant * 3;
-        stroke.setStrokeWidth(dp(1.1f));
-        for (int i = 0; i < count; i++) {
-            float x = (i * 59 % 263) / 263f * w + (float) Math.sin(time + i) * dp(7);
-            float y = h - ((time * (18 + i % 4 * 6) + i * 27) % (h + dp(25)));
-            float r = dp(3 + i % 4 + beat * 3);
-            stroke.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 135));
-            canvas.drawCircle(x, y, r, stroke);
-            paint.setColor(alpha(Color.WHITE, 145));
-            canvas.drawCircle(x - r * .25f, y - r * .3f, Math.max(dp(.9f), r * .16f), paint);
-        }
-    }
-
-    private void drawInk(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        int strokes = 2 + spec.variant;
-        for (int s = 0; s < strokes; s++) {
-            float centerY = h * (.25f + s * .16f);
-            path.reset();
-            path.moveTo(-dp(15), centerY);
-            path.cubicTo(w * .22f, centerY - dp(35 + s * 6), w * .58f, centerY + dp(35 + beat * 22), w + dp(15), centerY - dp(10));
-            stroke.setStrokeWidth(dp(5 + s * 2));
-            stroke.setColor(alpha(s % 2 == 0 ? spec.primary : spec.secondary, 50 + s * 20));
-            canvas.drawPath(path, stroke);
-            stroke.setStrokeWidth(dp(1.3f));
-            stroke.setColor(alpha(spec.accent, 165));
-            canvas.drawPath(path, stroke);
-        }
-        paint.setColor(alpha(spec.primary, 85));
-        canvas.drawCircle(w * (.3f + .12f * spec.variant), h * .67f, dp(8 + beat * 7), paint);
-    }
-
-    private void drawHologram(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
-        float cx = w * .5f;
-        float cy = h * .5f;
-        float radius = Math.min(w, h) * (.28f + beat * .04f);
-        int sides = 3 + spec.variant;
-        for (int layer = 0; layer < 3; layer++) {
-            path.reset();
-            float r = radius * (1f - layer * .22f);
-            for (int i = 0; i < sides; i++) {
-                float a = (float) (time * (.35f + layer * .14f) + Math.PI * 2d * i / sides);
-                float x = cx + (float) Math.cos(a) * r;
-                float y = cy + (float) Math.sin(a) * r * .72f;
-                if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+    private void drawDots(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
+        int columns = shown.length;
+        int rows = 8 + spec.variant % 3;
+        float margin = dp(11);
+        float stepX = (w - margin * 2f) / columns;
+        float stepY = (h * .62f) / rows;
+        float bottom = h - dp(10);
+        for (int i = 0; i < columns; i++) {
+            int lit = Math.max(1, (int) (shown[i] * rows));
+            for (int row = 0; row < rows; row++) {
+                float x = margin + i * stepX + stepX * .5f;
+                float y = bottom - row * stepY;
+                boolean on = row < lit;
+                float radius = dp(1.4f + (spec.variant % 3) * .42f);
+                if (spec.variant == 4 || spec.variant == 9) radius *= 1f + .22f * (float) Math.sin(time * 3f + i + row);
+                paint.setColor(alpha(bandColor(spec, i + row, columns + rows), on ? 225 : 35));
+                if (spec.variant == 2 || spec.variant == 6) {
+                    canvas.drawRect(x - radius, y - radius, x + radius, y + radius, paint);
+                } else {
+                    canvas.drawCircle(x, y, radius, paint);
+                }
             }
-            path.close();
-            stroke.setStrokeWidth(dp(1.1f));
-            stroke.setColor(alpha(layer % 2 == 0 ? spec.primary : spec.secondary, 170 - layer * 30));
-            canvas.drawPath(path, stroke);
-        }
-        stroke.setColor(alpha(spec.accent, 105));
-        for (int i = -2; i <= 2; i++) canvas.drawLine(cx - radius, cy + i * dp(10), cx + radius, cy + i * dp(10), stroke);
-    }
-
-    private void drawEqualizer(Canvas canvas, Skin.Spec spec, int w, int h, float time) {
-        switch (barMode(spec.kind)) {
-            case BARS_FACET: drawFacetBars(canvas, spec, w, h); break;
-            case BARS_WAVE: drawWaveBars(canvas, spec, w, h, time); break;
-            case BARS_RADIAL: drawRadialBars(canvas, spec, w, h, time); break;
-            case BARS_PIXEL: drawPixelBars(canvas, spec, w, h); break;
-            default: drawVerticalBars(canvas, spec, w, h); break;
         }
     }
 
-    private int barMode(int kind) {
-        if (kind <= Skin.SPADES || (kind >= Skin.RUBY && kind <= Skin.AMETHYST)) return BARS_FACET;
-        if (kind >= Skin.FIRE && kind <= Skin.LIGHTNING) return BARS_WAVE;
-        if ((kind >= Skin.SUN && kind <= Skin.COMET) || kind == Skin.VINYL || kind == Skin.LOTUS
-                || kind == Skin.BUBBLES || kind == Skin.HOLOGRAM) return BARS_RADIAL;
-        if (kind == Skin.CASSETTE || kind == Skin.ARCADE) return BARS_PIXEL;
-        return BARS_VERTICAL;
-    }
-
-    private void drawVerticalBars(Canvas canvas, Skin.Spec spec, int w, int h) {
-        float gap = dp(3);
-        float width = (w - dp(24) - gap * (shown.length - 1)) / shown.length;
-        float base = h - dp(10);
-        float max = h * .57f;
-        for (int i = 0; i < shown.length; i++) {
-            float bar = max * (.14f + shown[i] * .86f);
-            float x = dp(12) + i * (width + gap);
-            float y = base - bar;
-            paint.setColor(alpha(i % 3 == 0 ? spec.accent : spec.primary, 205));
-            paint.setShadowLayer(dp(5), 0, 0, alpha(spec.primary, 120));
-            canvas.drawRoundRect(x, y, x + width, base, width / 2f, width / 2f, paint);
-            paint.clearShadowLayer();
-        }
-    }
-
-    private void drawFacetBars(Canvas canvas, Skin.Spec spec, int w, int h) {
-        float cx = w * .5f;
-        float bottom = h * .87f;
-        float unit = w / (shown.length + 3f);
-        for (int i = 0; i < shown.length; i++) {
-            float x = unit * (i + 1.5f);
-            float high = h * (.10f + shown[i] * .38f);
+    private void drawWave(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
+        int layers = 1 + spec.variant % 4;
+        for (int layer = layers - 1; layer >= 0; layer--) {
+            float middle = h * (.5f + (layer - (layers - 1) * .5f) * .08f);
+            float amplitude = h * (.12f + .035f * (spec.variant % 4) + beat * .08f) * (1f - layer * .12f);
             path.reset();
-            path.moveTo(x, bottom);
-            path.lineTo(x + unit * .40f, bottom - high * .5f);
-            path.lineTo(x, bottom - high);
-            path.lineTo(x - unit * .40f, bottom - high * .5f);
-            path.close();
-            paint.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 145));
-            canvas.drawPath(path, paint);
-            stroke.setStrokeWidth(dp(1));
-            stroke.setColor(alpha(spec.accent, 190));
+            for (int x = 0; x <= w; x += Math.max(2, (int) dp(4))) {
+                float normalized = x / (float) w * (shown.length - 1);
+                int index = Math.min(shown.length - 1, (int) normalized);
+                float local = shown[index];
+                float y = middle + (float) Math.sin(x / dp(18 + spec.variant * 2) + time * (2.0f + layer * .35f))
+                        * amplitude * (.20f + local * .95f);
+                if (x == 0) path.moveTo(x, y); else path.lineTo(x, y);
+            }
+            stroke.setStrokeWidth(dp(layer == 0 ? 2.4f : 1.1f));
+            stroke.setColor(alpha(layer % 2 == 0 ? spec.primary : spec.secondary, 220 - layer * 35));
+            stroke.setShadowLayer(layer == 0 ? dp(5) : 0, 0, 0, alpha(spec.primary, 100));
             canvas.drawPath(path, stroke);
-            stroke.setColor(alpha(spec.secondary, 100));
-            canvas.drawLine(x, bottom, cx, h * .5f, stroke);
-        }
-    }
-
-    private void drawWaveBars(Canvas canvas, Skin.Spec spec, int w, int h, float time) {
-        float gap = dp(2);
-        float barWidth = (w - dp(20) - gap * (shown.length - 1)) / shown.length;
-        for (int i = 0; i < shown.length; i++) {
-            float x = dp(10) + i * (barWidth + gap);
-            float base = h * (.72f + (float) Math.sin(i * .55f + time * .8f) * .08f);
-            float bar = h * (.09f + shown[i] * .42f);
-            path.reset();
-            path.moveTo(x, base);
-            path.cubicTo(x + barWidth * .2f, base - bar * .4f, x + barWidth * .75f, base - bar,
-                    x + barWidth, base - bar);
-            path.lineTo(x + barWidth, base);
-            path.close();
-            paint.setColor(alpha(i % 2 == 0 ? spec.primary : spec.secondary, 145));
-            canvas.drawPath(path, paint);
-            stroke.setStrokeWidth(dp(1.1f));
-            stroke.setColor(alpha(spec.accent, 180));
-            canvas.drawPath(path, stroke);
-        }
-    }
-
-    private void drawRadialBars(Canvas canvas, Skin.Spec spec, int w, int h, float time) {
-        float cx = w * .5f;
-        float cy = h * .5f;
-        float radius = Math.min(w, h) * .19f;
-        for (int i = 0; i < shown.length; i++) {
-            float a = (float) (Math.PI * 2d * i / shown.length + time * .1f);
-            float outer = radius + h * (.08f + shown[i] * .24f);
-            stroke.setStrokeWidth(dp(2.1f));
-            stroke.setColor(alpha(i % 3 == 0 ? spec.accent : spec.primary, 205));
-            stroke.setShadowLayer(dp(4), 0, 0, alpha(spec.primary, 100));
-            canvas.drawLine(cx + (float) Math.cos(a) * radius, cy + (float) Math.sin(a) * radius,
-                    cx + (float) Math.cos(a) * outer, cy + (float) Math.sin(a) * outer, stroke);
             stroke.clearShadowLayer();
         }
+        if (spec.variant == 2 || spec.variant == 7) {
+            paint.setColor(alpha(spec.accent, 80));
+            canvas.drawCircle(w * .5f, h * .5f, dp(5 + beat * 14), paint);
+        }
     }
 
-    private void drawPixelBars(Canvas canvas, Skin.Spec spec, int w, int h) {
-        float size = dp(5);
-        float gap = dp(2);
-        float xStep = (w - dp(18)) / shown.length;
-        float base = h - dp(11);
-        for (int i = 0; i < shown.length; i++) {
-            int segments = 1 + (int) (shown[i] * 8);
-            for (int s = 0; s < segments; s++) {
-                paint.setColor(alpha((s + i) % 2 == 0 ? spec.primary : spec.accent, 165 + s * 10));
-                float x = dp(9) + i * xStep;
-                float y = base - (s + 1) * (size + gap);
-                canvas.drawRect(x, y, x + Math.max(dp(3), xStep - gap), y + size, paint);
+    private void drawCircular(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat, boolean behindDancer) {
+        float cx = w * .5f;
+        float cy = h * .5f;
+        float base = Math.min(w, h) * (behindDancer ? .27f : .21f);
+        int count = spec.variant == 6 ? 32 : shown.length * 2;
+        float rotation = time * (spec.variant % 2 == 0 ? .10f : -.10f);
+        for (int i = 0; i < count; i++) {
+            float a = (float) (Math.PI * 2d * i / count + rotation);
+            float local = shown[(i * shown.length / count) % shown.length];
+            float length = Math.min(w, h) * (.055f + local * (.16f + spec.variant % 3 * .025f));
+            float inner = base + (spec.variant == 3 ? (i % 2) * dp(4) : 0);
+            stroke.setStrokeWidth(dp(spec.variant == 4 || spec.variant == 9 ? 1.2f : 2.2f));
+            int color = bandColor(spec, i, count);
+            stroke.setColor(alpha(color, 220));
+            if (spec.variant == 5 || spec.variant == 8) stroke.setShadowLayer(dp(5), 0, 0, alpha(color, 120));
+            canvas.drawLine(cx + (float) Math.cos(a) * inner, cy + (float) Math.sin(a) * inner,
+                    cx + (float) Math.cos(a) * (inner + length), cy + (float) Math.sin(a) * (inner + length), stroke);
+            stroke.clearShadowLayer();
+        }
+        if (!behindDancer) {
+            stroke.setStrokeWidth(dp(1));
+            stroke.setColor(alpha(spec.secondary, 130));
+            canvas.drawCircle(cx, cy, base - dp(6), stroke);
+            if (spec.variant == 1 || spec.variant == 7) {
+                paint.setColor(alpha(spec.primary, 75 + (int) (beat * 80)));
+                canvas.drawCircle(cx, cy, base * .32f + beat * dp(6), paint);
             }
         }
     }
 
-    private void drawSuit(Canvas canvas, int suit, float x, float y, float size, Paint p) {
-        path.reset();
-        if (suit == 0) { // heart
-            path.moveTo(x, y + size * .9f);
-            path.cubicTo(x - size * 1.25f, y + size * .1f, x - size * .64f, y - size * .78f, x, y - size * .2f);
-            path.cubicTo(x + size * .64f, y - size * .78f, x + size * 1.25f, y + size * .1f, x, y + size * .9f);
-        } else if (suit == 1) { // diamond
-            path.moveTo(x, y - size); path.lineTo(x + size * .72f, y); path.lineTo(x, y + size); path.lineTo(x - size * .72f, y); path.close();
-        } else if (suit == 2) { // club
-            canvas.drawCircle(x, y - size * .30f, size * .48f, p);
-            canvas.drawCircle(x - size * .43f, y + size * .20f, size * .44f, p);
-            canvas.drawCircle(x + size * .43f, y + size * .20f, size * .44f, p);
-            path.moveTo(x - size * .22f, y + size * .74f); path.lineTo(x + size * .22f, y + size * .74f);
-            path.lineTo(x + size * .13f, y + size * .25f); path.lineTo(x - size * .13f, y + size * .25f); path.close();
-        } else { // spade
-            path.moveTo(x, y - size);
-            path.cubicTo(x - size * 1.15f, y - size * .05f, x - size * .68f, y + size * .48f, x, y + size * .24f);
-            path.cubicTo(x + size * .68f, y + size * .48f, x + size * 1.15f, y - size * .05f, x, y - size);
-            canvas.drawPath(path, p);
-            path.reset(); path.moveTo(x - size * .22f, y + size * .78f); path.lineTo(x + size * .22f, y + size * .78f);
-            path.lineTo(x + size * .12f, y + size * .16f); path.lineTo(x - size * .12f, y + size * .16f); path.close();
+    private void drawOrbit(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
+        float cx = w * .5f;
+        float cy = h * .5f;
+        float base = Math.min(w, h) * .16f;
+        int rings = 2 + spec.variant % 4;
+        for (int ring = 0; ring < rings; ring++) {
+            float radius = base + ring * dp(10 + spec.variant);
+            stroke.setStrokeWidth(dp(ring == 0 ? 2f : 1f));
+            stroke.setColor(alpha(ring % 2 == 0 ? spec.primary : spec.secondary, 190 - ring * 20));
+            canvas.drawCircle(cx, cy, radius + beat * dp(3 + ring), stroke);
+            int satellites = 1 + (ring + spec.variant) % 3;
+            for (int s = 0; s < satellites; s++) {
+                float a = time * (1.2f + ring * .28f) + (float) Math.PI * 2f * s / satellites * (ring % 2 == 0 ? 1f : -1f);
+                float x = cx + (float) Math.cos(a) * radius;
+                float y = cy + (float) Math.sin(a) * radius;
+                paint.setColor(alpha(spec.accent, 210));
+                canvas.drawCircle(x, y, dp(2 + beat * 2), paint);
+            }
         }
-        canvas.drawPath(path, p);
+        paint.setColor(alpha(spec.primary, 85 + (int) (beat * 100)));
+        paint.setShadowLayer(dp(9), 0, 0, alpha(spec.primary, 140));
+        canvas.drawCircle(cx, cy, base * (.56f + beat * .22f), paint);
+        paint.clearShadowLayer();
     }
 
-    private void drawFlower(Canvas canvas, float x, float y, float size, float rotation, int color) {
-        for (int petal = 0; petal < 5; petal++) {
-            canvas.save();
-            canvas.rotate(rotation * 40 + petal * 72, x, y);
-            rect.set(x - size * .36f, y - size, x + size * .36f, y + size * .04f);
-            paint.setColor(alpha(color, 130));
-            canvas.drawOval(rect, paint);
-            canvas.restore();
+    private void drawTunnel(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
+        float cx = w * .5f;
+        float cy = h * .5f;
+        int frames = 5 + spec.variant % 4;
+        for (int frame = frames; frame >= 1; frame--) {
+            float depth = frame / (float) frames;
+            float wave = shown[(frame * 2 + spec.variant) % shown.length];
+            float halfW = w * (.08f + depth * .44f) * (1f + wave * .12f);
+            float halfH = h * (.06f + depth * .37f) * (1f + beat * .12f);
+            stroke.setStrokeWidth(dp(frame == frames ? 1.8f : 1f));
+            stroke.setColor(alpha(frame % 2 == 0 ? spec.primary : spec.secondary, 70 + (int) (depth * 130)));
+            if (spec.variant == 2 || spec.variant == 7) {
+                path.reset();
+                path.moveTo(cx, cy - halfH); path.lineTo(cx + halfW, cy); path.lineTo(cx, cy + halfH); path.lineTo(cx - halfW, cy); path.close();
+                canvas.drawPath(path, stroke);
+            } else {
+                rect.set(cx - halfW, cy - halfH, cx + halfW, cy + halfH);
+                canvas.drawRoundRect(rect, dp(3 + spec.variant), dp(3 + spec.variant), stroke);
+            }
         }
-        paint.setColor(alpha(0xFFFFE2A1, 210));
-        canvas.drawCircle(x, y, size * .20f, paint);
+        if (spec.variant == 1 || spec.variant == 5 || spec.variant == 9) {
+            stroke.setColor(alpha(spec.accent, 105));
+            for (int i = 0; i < shown.length; i += 3) {
+                float x = i / (float) shown.length * w;
+                canvas.drawLine(cx, cy, x, h, stroke);
+            }
+        }
     }
 
-    private float average() {
-        float sum = 0f;
-        for (float value : shown) sum += value;
-        return sum / shown.length;
+    private void drawParticles(Canvas canvas, Skin.Spec spec, int w, int h, float time, float beat) {
+        int particles = 40 + spec.variant * 5;
+        for (int i = 0; i < particles; i++) {
+            int band = i % shown.length;
+            float energy = shown[band];
+            float x = fractional(i * 0.618f + time * (.022f + band * .0015f)) * w;
+            float y = fractional(i * 0.381f - time * (.032f + band * .001f) - energy * .12f) * h;
+            float size = dp(.8f + (i % 3) * .55f + energy * (2.8f + beat * 2f));
+            int color = bandColor(spec, i, particles);
+            paint.setColor(alpha(color, 65 + (int) (energy * 180)));
+            if (spec.variant == 1 || spec.variant == 6) {
+                canvas.drawRect(x - size, y - size, x + size, y + size, paint);
+            } else {
+                canvas.drawCircle(x, y, size, paint);
+            }
+        }
+        // A low, readable spectrum anchors the particle field as an actual equalizer.
+        float base = h * .82f;
+        float step = w / shown.length;
+        for (int i = 0; i < shown.length; i++) {
+            stroke.setStrokeWidth(dp(1.5f));
+            stroke.setColor(alpha(bandColor(spec, i, shown.length), 180));
+            canvas.drawLine(i * step + step * .5f, base, i * step + step * .5f,
+                    base - h * (.05f + shown[i] * .23f), stroke);
+        }
+    }
+
+    private void drawDancer(Canvas canvas, Skin.Spec spec, int w, int h, long now, float time, float beat) {
+        int pack = Math.min(DancerSprite.PACK_COUNT - 1, spec.variant / 2);
+        if (pack != dancePack) {
+            dancePack = pack;
+            danceFrame = 0;
+            lastDanceStep = now;
+        }
+        long cadence = (long) (330 - beat * 190);
+        if (now - lastDanceStep >= cadence || beat > lastBass + .15f) {
+            danceFrame = (danceFrame + (beat > .62f ? 2 : 1)) % DancerSprite.FRAMES_PER_PACK;
+            lastDanceStep = now;
+        }
+        // Clean EQ geometry sits behind the dancer; the person itself is a transparent frame sequence.
+        if (spec.variant % 2 == 0) drawDancerSideBars(canvas, spec, w, h, beat);
+        else drawCircular(canvas, spec, w, h, time, beat, true);
+
+        Bitmap frame = DancerSprite.frame(getContext(), pack, danceFrame);
+        if (frame == null) return;
+        float maxHeight = h * .93f;
+        float ratio = frame.getWidth() / (float) frame.getHeight();
+        float targetHeight = Math.min(maxHeight, w * .83f / ratio);
+        float targetWidth = targetHeight * ratio;
+        float bounce = dp(3 + beat * 15);
+        float scale = 1f + beat * .045f;
+        float centerX = w * .5f;
+        float centerY = h - targetHeight * .47f - bounce;
+        canvas.save();
+        canvas.scale(scale, scale, centerX, centerY);
+        rect.set(centerX - targetWidth * .5f, h - targetHeight - bounce,
+                centerX + targetWidth * .5f, h - bounce);
+        paint.setAlpha(255);
+        canvas.drawBitmap(frame, null, rect, paint);
+        canvas.restore();
+    }
+
+    private void drawDancerSideBars(Canvas canvas, Skin.Spec spec, int w, int h, float beat) {
+        int perSide = 7;
+        float base = h - dp(9);
+        float max = h * .34f;
+        for (int side = 0; side < 2; side++) {
+            for (int i = 0; i < perSide; i++) {
+                int band = side == 0 ? i : shown.length - 1 - i;
+                float x = side == 0 ? dp(7) + i * dp(8) : w - dp(7) - (i + 1) * dp(8);
+                float height = max * (.12f + shown[band] * .88f);
+                stroke.setStrokeWidth(dp(3));
+                stroke.setColor(alpha(bandColor(spec, i + side * perSide, perSide * 2), 215));
+                canvas.drawLine(x, base, x, base - height, stroke);
+            }
+        }
+    }
+
+    private void drawEditControls(Canvas canvas, int w, int h) {
+        float y = dp(20);
+        float gearX = dp(20);
+        float closeX = w - dp(20);
+        stroke.setStrokeWidth(dp(2));
+        stroke.setColor(alpha(Color.WHITE, 230));
+        stroke.setShadowLayer(dp(5), 0, 0, alpha(0xFF579BFF, 165));
+        canvas.drawCircle(gearX, y, dp(11), stroke);
+        canvas.drawCircle(closeX, y, dp(11), stroke);
+        for (int i = 0; i < 8; i++) {
+            float a = (float) (Math.PI * 2d * i / 8d);
+            canvas.drawLine(gearX + (float) Math.cos(a) * dp(7), y + (float) Math.sin(a) * dp(7),
+                    gearX + (float) Math.cos(a) * dp(10), y + (float) Math.sin(a) * dp(10), stroke);
+        }
+        canvas.drawCircle(gearX, y, dp(3), stroke);
+        canvas.drawLine(closeX - dp(4), y - dp(4), closeX + dp(4), y + dp(4), stroke);
+        canvas.drawLine(closeX + dp(4), y - dp(4), closeX - dp(4), y + dp(4), stroke);
+        stroke.clearShadowLayer();
+    }
+
+    private int bandColor(Skin.Spec spec, int index, int total) {
+        float position = total <= 1 ? 0f : index / (float) (total - 1);
+        if (position < .5f) return Skin.mix(spec.primary, spec.secondary, position * 2f);
+        return Skin.mix(spec.secondary, spec.accent, (position - .5f) * 2f);
+    }
+
+    private void showControls() {
+        controlsVisible = true;
+        removeCallbacks(hideControls);
+        postDelayed(hideControls, 5200L);
+        invalidate();
+    }
+
+    private boolean inCircle(float x, float y, float cx, float cy) {
+        float dx = x - cx;
+        float dy = y - cy;
+        return dx * dx + dy * dy <= dp(17) * dp(17);
     }
 
     private static int alpha(int color, int alpha) {
@@ -722,9 +538,12 @@ public class EqualizerOverlayView extends View {
         return Math.max(min, Math.min(max, value));
     }
 
+    private static float fractional(float value) {
+        return value - (float) Math.floor(value);
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // Gallery previews must not consume the card's click target.
         if (preview) return false;
         if (dragCallback == null) return super.onTouchEvent(event);
         scaleDetector.onTouchEvent(event);
@@ -738,14 +557,19 @@ public class EqualizerOverlayView extends View {
                 downY = event.getY();
                 downRawX = event.getRawX();
                 downRawY = event.getRawY();
-                postDelayed(longPress, ViewConfiguration.getLongPressTimeout());
+                controlTarget = CONTROL_NONE;
+                if (controlsVisible) {
+                    if (inCircle(downX, downY, dp(20), dp(20))) controlTarget = CONTROL_SETTINGS;
+                    if (inCircle(downX, downY, getWidth() - dp(20), dp(20))) controlTarget = CONTROL_CLOSE;
+                }
+                if (controlTarget == CONTROL_NONE) postDelayed(longPress, ViewConfiguration.getLongPressTimeout());
                 return true;
             case MotionEvent.ACTION_POINTER_DOWN:
                 resizing = true;
                 removeCallbacks(longPress);
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (!resizing && !longPressed) {
+                if (!resizing && !longPressed && controlTarget == CONTROL_NONE) {
                     float dx = event.getRawX() - downRawX;
                     float dy = event.getRawY() - downRawY;
                     if (!moved && Math.hypot(event.getX() - downX, event.getY() - downY) > touchSlop) {
@@ -760,8 +584,20 @@ public class EqualizerOverlayView extends View {
                 }
                 return true;
             case MotionEvent.ACTION_UP:
+                touchActive = false;
+                removeCallbacks(longPress);
+                if (controlTarget == CONTROL_CLOSE && inCircle(event.getX(), event.getY(), getWidth() - dp(20), dp(20))) {
+                    dragCallback.onClose();
+                } else if (controlTarget == CONTROL_SETTINGS && inCircle(event.getX(), event.getY(), dp(20), dp(20))) {
+                    controlsVisible = false;
+                    dragCallback.onOpenSettings();
+                }
+                controlTarget = CONTROL_NONE;
+                resizing = false;
+                return true;
             case MotionEvent.ACTION_CANCEL:
                 touchActive = false;
+                controlTarget = CONTROL_NONE;
                 removeCallbacks(longPress);
                 resizing = false;
                 return true;

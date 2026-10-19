@@ -10,7 +10,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/** Browsable catalogue: 25 motif families × four distinct layouts = 100 selectable skins. */
+/** Browsable catalogue: 10 recognisable equalizer formats × 10 real layout presets. */
 public class SkinGalleryActivity extends Activity {
     private LinearLayout categoryRow;
     private LinearLayout skinList;
@@ -34,7 +34,7 @@ public class SkinGalleryActivity extends Activity {
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView titleBox = Ui.title(this, "100 скинов");
+        TextView titleBox = Ui.title(this, "100 визуализаторов");
         header.addView(titleBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
         TextView back = Ui.button(this, "Назад", 0xFF262B43, Ui.TEXT);
         back.setOnClickListener(new View.OnClickListener() {
@@ -43,7 +43,7 @@ public class SkinGalleryActivity extends Activity {
         header.addView(back, new LinearLayout.LayoutParams(Ui.dp(this, 76), Ui.dp(this, 44)));
         content.addView(header);
         TextView description = Ui.subtitle(this,
-                "25 разных направлений по 4 самостоятельные композиции: карты, камни, стихии, космос, музыка, природа и абстракция. Это не просто перекрашенные варианты.");
+                "10 узнаваемых форм аудиовизуализации по 10 самостоятельных пресетов: спектр, зеркало, LED, точки, осциллограф, круги, орбиты, туннель, частицы и танец. Геометрия и реакция на звук меняются, а цвет — только финальный акцент.");
         Ui.addMargin(content, description, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 7, 0, 14);
 
         HorizontalScrollView categoryScroll = new HorizontalScrollView(this);
@@ -103,13 +103,13 @@ public class SkinGalleryActivity extends Activity {
             mark.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
             textRow.addView(mark);
             Ui.addMargin(card, textRow, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 12, 0, 0);
-            TextView detail = Ui.subtitle(this, spec.category + " · вариант " + (spec.variant + 1) + " из 4");
+            TextView detail = Ui.subtitle(this, spec.category + " · пресет " + (spec.variant + 1) + " из " + Skin.PRESETS_PER_FAMILY);
             Ui.addMargin(card, detail, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 4, 0, 0);
 
             card.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View view) {
                     Skin.select(SkinGalleryActivity.this, spec.id);
-                    Toast.makeText(SkinGalleryActivity.this, "Выбран скин: " + spec.title, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SkinGalleryActivity.this, "Выбран визуализатор: " + spec.title, Toast.LENGTH_SHORT).show();
                     finish();
                 }
             });

@@ -4,9 +4,10 @@
 *.ap_
 *.aab
 
-# Local Android toolchain and reproducible build intermediates
+# Local Android toolchain, Drive source downloads, and reproducible build intermediates
 .tools/
 .apk-build/
+google_drive/
 release/
 
 # Files for the ART/Dalvik VM

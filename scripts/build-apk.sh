@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a signed, installable debug APK without Gradle/Android Studio.
+# Builds a persistently signed, installable APK without Gradle/Android Studio.
 # Downloads are intentionally restricted to GitHub and npm (the Arena build environment's allowed hosts).
 set -euo pipefail
 
@@ -12,6 +12,9 @@ ANDROID_JAR="$TOOLS/android-35.jar"
 AAPT2="$TOOLS/aapt2"
 D8="$TOOLS/d8.jar"
 SIGNER="$TOOLS/uber-apk-signer.jar"
+KEYSTORE="$ROOT/app/signing/rhythm-overlay.keystore"
+KEYSTORE_PASSWORD="rhythm-overlay-persistent-2026"
+APK_NAME="RhythmOverlay-v1.2.0.apk"
 
 mkdir -p "$TOOLS/downloads" "$BUILD" "$RELEASE"
 
@@ -72,6 +75,12 @@ fi
 JAVA="$JDK/bin/java"
 JAVAC="$JDK/bin/javac"
 
+if [[ ! -s "$KEYSTORE" ]]; then
+  echo "Persistent signing key is missing: $KEYSTORE" >&2
+  echo "Run the GitHub Actions build once to create and store the shared signing identity." >&2
+  exit 1
+fi
+
 note "Compiling Java sources"
 rm -rf "$BUILD"
 mkdir -p "$BUILD/classes" "$BUILD/dex" "$BUILD/generated"
@@ -85,12 +94,16 @@ note "Packaging resources"
   --manifest "$ROOT/app/src/main/AndroidManifest.xml" \
   --min-sdk-version 26 \
   --target-sdk-version 35 \
-  --version-code 1 \
-  --version-name 1.0.0 \
+  --version-code 4 \
+  --version-name 1.2.0 \
   --auto-add-overlay \
   -R "$BUILD/resources.zip" \
   --java "$BUILD/generated" \
   -o "$BUILD/unsigned.apk"
+# aapt2 links resources, while Android assets are deliberately kept as source PNG frames.
+if [[ -d "$ROOT/app/src/main/assets" ]]; then
+  (cd "$ROOT/app/src/main" && zip -qr "$BUILD/unsigned.apk" assets)
+fi
 
 note "Converting bytecode to DEX"
 mapfile -t classes < <(find "$BUILD/classes" -name '*.class' -print | sort)
@@ -106,15 +119,17 @@ mapfile -t classes < <(find "$BUILD/classes" -name '*.class' -print | sort)
 
 note "Signing and zip-aligning the APK"
 rm -f "$RELEASE"/*.apk "$RELEASE"/*.sha256
-"$JAVA" -jar "$SIGNER" --apks "$BUILD/unsigned.apk" --out "$RELEASE" --overwrite >/dev/null
+"$JAVA" -jar "$SIGNER" --apks "$BUILD/unsigned.apk" --out "$RELEASE" --overwrite \
+  --ks "$KEYSTORE" --ksAlias rhythm-overlay \
+  --ksPass "pass:$KEYSTORE_PASSWORD" --ksKeyPass "pass:$KEYSTORE_PASSWORD" >/dev/null
 signed="$(find "$RELEASE" -maxdepth 1 -name '*-aligned-*.apk' -o -name '*signed*.apk' | head -n 1)"
 if [[ -z "$signed" || ! -f "$signed" ]]; then
   echo "APK signer did not emit an APK" >&2
   exit 1
 fi
-final="$RELEASE/RhythmOverlay-v1.1.0.apk"
+final="$RELEASE/$APK_NAME"
 mv -f "$signed" "$final"
-sha256sum "$final" | tee "$RELEASE/RhythmOverlay-v1.1.0.apk.sha256"
+sha256sum "$final" | tee "$RELEASE/$APK_NAME.sha256"
 "$AAPT2" dump badging "$final" | sed -n '1,2p'
 unzip -tq "$final" >/dev/null
 echo

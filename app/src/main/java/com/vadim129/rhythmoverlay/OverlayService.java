@@ -105,6 +105,10 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
                 resizeOverlay(scaleFactor);
             }
 
+            @Override public void onClose() {
+                stopOverlay();
+            }
+
             @Override public void onOpenSettings() {
                 openSettings();
             }
@@ -200,7 +204,7 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentTitle("Ритм-виджет включён")
-                .setContentText("Тяните одним пальцем · удерживайте для настроек · щипок меняет размер")
+                .setContentText("Тяните одним пальцем · удерживайте: шестерёнка и крестик · щипок меняет размер")
                 .setOngoing(true)
                 .setContentIntent(openIntent)
                 .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Закрыть", stopIntent).build())
