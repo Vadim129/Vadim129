@@ -33,6 +33,7 @@ public class EqualizerOverlayView extends View {
     private float downX;
     private float downY;
     private boolean dragging;
+    private boolean movedDuringDrag;
     private long startedAt = SystemClock.elapsedRealtime();
 
     public EqualizerOverlayView(Context context) {
@@ -421,7 +422,9 @@ public class EqualizerOverlayView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (preview || dragCallback == null) return preview || super.onTouchEvent(event);
+        // Let the containing skin card receive touches in gallery previews.
+        if (preview) return false;
+        if (dragCallback == null) return super.onTouchEvent(event);
         float headerLimit = dp(33);
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
@@ -430,12 +433,14 @@ public class EqualizerOverlayView extends View {
                 downRawX = event.getRawX();
                 downRawY = event.getRawY();
                 dragging = downY <= headerLimit;
+                movedDuringDrag = false;
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (dragging) {
                     float dx = event.getRawX() - downRawX;
                     float dy = event.getRawY() - downRawY;
                     if (Math.abs(dx) > 0.5f || Math.abs(dy) > 0.5f) {
+                        movedDuringDrag = true;
                         dragCallback.onDrag(dx, dy);
                         downRawX = event.getRawX();
                         downRawY = event.getRawY();
@@ -443,8 +448,7 @@ public class EqualizerOverlayView extends View {
                 }
                 return true;
             case MotionEvent.ACTION_UP:
-                if (downY <= headerLimit && Math.abs(event.getRawX() - downRawX) < dp(5)
-                        && event.getX() > getWidth() - dp(37)) {
+                if (downY <= headerLimit && !movedDuringDrag && event.getX() > getWidth() - dp(37)) {
                     dragCallback.onClose();
                 } else if (!dragging) {
                     performClick();

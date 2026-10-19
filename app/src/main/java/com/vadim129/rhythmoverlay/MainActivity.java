@@ -31,6 +31,9 @@ public class MainActivity extends Activity {
     private EqualizerOverlayView preview;
     private boolean pendingOverlayStart;
     private boolean captureAfterMicrophone;
+    // MediaProjection consent is a short-lived in-memory token; retain it while the user enables overlay permission.
+    private Intent pendingCaptureData;
+    private int pendingCaptureResult;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -46,7 +49,11 @@ public class MainActivity extends Activity {
         super.onResume();
         if (pendingOverlayStart && Settings.canDrawOverlays(this)) {
             pendingOverlayStart = false;
-            startOverlay(null, 0);
+            Intent captureData = pendingCaptureData;
+            int captureResult = pendingCaptureResult;
+            pendingCaptureData = null;
+            pendingCaptureResult = 0;
+            startOverlay(captureData, captureResult);
         }
         refreshState();
     }
@@ -259,6 +266,8 @@ public class MainActivity extends Activity {
             if (resultCode == RESULT_OK && data != null) {
                 if (!Settings.canDrawOverlays(this)) {
                     pendingOverlayStart = true;
+                    pendingCaptureData = data;
+                    pendingCaptureResult = resultCode;
                     Toast.makeText(this, "Сначала разрешите показ поверх других окон", Toast.LENGTH_LONG).show();
                     startActivity(OverlayService.settingsIntent(this));
                 } else {

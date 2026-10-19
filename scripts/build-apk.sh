@@ -112,9 +112,9 @@ if [[ -z "$signed" || ! -f "$signed" ]]; then
   echo "APK signer did not emit an APK" >&2
   exit 1
 fi
-final="$RELEASE/RhythmOverlay-v1.0.0.apk"
+final="$RELEASE/RhythmOverlay-v1.0.1.apk"
 mv -f "$signed" "$final"
-sha256sum "$final" | tee "$RELEASE/RhythmOverlay-v1.0.0.apk.sha256"
+sha256sum "$final" | tee "$RELEASE/RhythmOverlay-v1.0.1.apk.sha256"
 "$AAPT2" dump badging "$final" | sed -n '1,2p'
 unzip -tq "$final" >/dev/null
 echo
