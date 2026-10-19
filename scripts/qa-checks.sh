@@ -54,9 +54,11 @@ check "Fixed package identity and v1.2.0 version"
 APKSIGNER="$(find "${ANDROID_HOME:-/nonexistent}/build-tools" -type f -name apksigner 2>/dev/null | sort -V | tail -n 1 || true)"
 test -n "$APKSIGNER" && test -s "$KEYSTORE" || fail "Persistent signing identity is missing"
 "$APKSIGNER" verify --verbose "$APK" >/dev/null || fail "APK signature verification failed"
-key_fingerprint="$(keytool -list -v -keystore "$KEYSTORE" -storepass rhythm-overlay-persistent-2026 -alias rhythm-overlay 2>/dev/null | awk -F': ' '/SHA256:/{gsub(":", "", $2); print $2; exit}')"
-apk_fingerprint="$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null | awk -F': ' '/certificate SHA-256 digest:/{gsub(":", "", $2); print $2; exit}')"
-test -n "$key_fingerprint" && test "$key_fingerprint" = "$apk_fingerprint" || fail "APK was not signed by the persistent keystore"
+# keytool exports the leaf certificate as DER bytes; its SHA-256 is the same value apksigner prints.
+# This avoids parsing locale-dependent formatting from `keytool -list -v`.
+key_fingerprint="$(keytool -exportcert -keystore "$KEYSTORE" -storepass rhythm-overlay-persistent-2026 -alias rhythm-overlay 2>/dev/null | sha256sum | awk '{print toupper($1)}')"
+apk_fingerprint="$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null | sed -n 's/.*certificate SHA-256 digest:[[:space:]]*//p' | head -n 1 | tr -d '[:space:]:' | tr '[:lower:]' '[:upper:]')"
+test -n "$key_fingerprint" && test -n "$apk_fingerprint" && test "$key_fingerprint" = "$apk_fingerprint" || fail "APK was not signed by the persistent keystore"
 grep -F "signingConfig signingConfigs.persistent" "$GRADLE" >/dev/null || fail "Persistent signing config is not assigned"
 check "Persistent APK signature matches the committed identity"
 
