@@ -173,9 +173,9 @@ public class EqualizerOverlayView extends View {
         float average = 0f;
         for (float value : shown) average += value;
         average /= shown.length;
-        float transient = Math.max(0f, bass - lastBass) * 1.8f;
+        float bassAttack = Math.max(0f, bass - lastBass) * 1.8f;
         lastBass += (bass - lastBass) * .22f;
-        float targetBeat = clamp(average * .56f + bass * .44f + transient, 0f, 1f);
+        float targetBeat = clamp(average * .56f + bass * .44f + bassAttack, 0f, 1f);
         smoothedBeat += (targetBeat - smoothedBeat) * .30f;
     }
 
