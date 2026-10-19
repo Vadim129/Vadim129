@@ -73,7 +73,7 @@ def load_lyrics():
 
 def load_cues():
     d = json.load(open(os.path.join(OUT, "timing.json"), encoding="utf-8"))
-    cues = [d["intro"]]
+    cues = []
     for p in d["passes"]:
         cues += p
     return cues
@@ -170,7 +170,7 @@ class RawVideo:
             raise SystemExit("кодировщик титров упал")
 
 
-def build_caption_video(cues, title_png):
+def build_caption_video(cues):
     path = os.path.join(WORK, "caps.mov")
     vid = RawVideo(path, W, CAP_H)
     blank = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
@@ -207,22 +207,7 @@ def build_caption_video(cues, title_png):
         vid.write(frame)
     vid.close()
 
-    # титул отдельным слоем
-    tpath = os.path.join(WORK, "title.mov")
-    tvid = RawVideo(tpath, W, H)
-    timg = Image.open(title_png).convert("RGBA")
-    for f in range(int(7.4 * FPS)):
-        t = f / FPS
-        a = min(1.0, t / 0.7, max(0.0, (7.2 - t) / 0.8))
-        if a <= 0:
-            tvid.write(Image.new("RGBA", (W, H), (0, 0, 0, 0)))
-            continue
-        im = timg.copy()
-        if a < 1:
-            im.putalpha(im.getchannel("A").point(lambda v: int(v * a)))
-        tvid.write(im)
-    tvid.close()
-    return path, tpath
+    return path
 
 
 # --------------------------------------------------------------- эквалайзер
@@ -304,12 +289,41 @@ def build_eq_video():
 
 # ------------------------------------------------------------------ видео
 
-DROP = ("03-", "17-", "25-", "34-")      # прогулки/футбол во дворе — в «Дельфине» такого нет
+# Порядок по смыслу песни: суд -> автозак/поезд -> ворота колонии -> камера,
+# коридор, «поза дельфинчика», прогулочный бокс -> фонтан.
+# Прогулки по двору и футбол убраны: в ИК-6 двора нет, прогулки — в боксе.
+SEQUENCE = [
+    # --- суд
+    "101-court-wide", "103-verdict-desk", "104-cuffs-folder", "102-cage-portrait",
+    "105-led-out", "106-cuffed-escort-h", "107-court-corridor",
+    # --- автозак
+    "108-van-loading", "109-van-inside", "110-van-road",
+    # --- этап, поезд
+    "111-railway-platform", "112-wagon-door", "113-wagon-interior", "114-wagon-window",
+    # --- дорога к колонии
+    "115-steppe-colony", "116-colony-approach", "117-gates-arrival",
+    "118-gate-threshold-h", "141-block-night",
+    # --- приём
+    "119-checkpoint", "120-undress-search",
+    # --- внутри: конвой, поверка
+    "121-dolphin-pose-h", "122-blindfold", "149-verification-line", "143-night-round",
+    # --- камера
+    "123-cell-cage", "124-cell-interior", "125-peephole", "126-food-hatch",
+    "127-inspection", "129-cell-search", "145-punishment-cell",
+    "142-cell-night", "147-hands-bars",
+    # --- быт: работа, баня, часовня, свидание, письма, церковь, прогулка
+    "130-sewing-workshop", "131-shower-cage", "132-chapel-cuffed",
+    "133-visit-glass", "134-letter-writing", "135-photo-wall",
+    "136-prison-church", "128-walkbox", "144-walkbox-sky",
+    # --- фонтан и финал (выхода нет)
+    "137-dolphin-sculpture", "138-dolphin-macro", "148-fountain-winter",
+    "140-finale-single-dolphin",
+]
 
 
 def shots():
-    files = sorted(f for f in os.listdir(FRAMES) if f.lower().endswith(".jpg")
-                   and not f.startswith(DROP))
+    files = [f"{n}.jpg" for n in SEQUENCE
+             if os.path.exists(os.path.join(FRAMES, f"{n}.jpg"))]
     assert len(files) >= 40, len(files)
     os.makedirs(os.path.join(WORK, "shots"), exist_ok=True)
     out = []
@@ -338,7 +352,7 @@ def shots():
                  "-vf", vf, "-frames:v", str(n), "-c:v", "libx264", "-preset", "veryfast",
                  "-crf", "16", "-pix_fmt", "yuv420p", dst])
         out.append(dst)
-        print(f"план {i+1:02d}: {name}", flush=True)
+        print(f"план {i+1:02d}/{len(files)}: {name}", flush=True)
     return out
 
 
@@ -354,19 +368,18 @@ def concat(paths):
     return dst
 
 
-def final(base, caps, title, eq, dst):
+def final(base, caps, eq, dst):
     fc = [
         "[1:a]afade=t=in:st=0:d=0.4,afade=t=out:st=203.6:d=5.0[a]",
-        "[0:v][2:v]overlay=0:790:eof_action=pass:repeatlast=0[c1]",
-        "[c1][3:v]overlay=0:0:eof_action=pass:repeatlast=0[c2]",
-        "[4:v]split[eq1][eq2]",
+        "[0:v][2:v]overlay=0:790:eof_action=pass:repeatlast=0[c2]",
+        "[3:v]split[eq1][eq2]",
         "[c2][eq1]overlay=70:720:eof_action=pass:repeatlast=0[c3]",
         "[eq2]hflip[eq2f]",
         f"[c3][eq2f]overlay={EQ_XR}:720:eof_action=pass:repeatlast=0,"
         "fade=t=in:st=0:d=0.8,fade=t=out:st=203.9:d=4.8,format=yuv420p[v]",
     ]
     cmd = [FF, "-y", "-v", "error", "-i", base, "-i", SONG,
-           "-i", caps, "-i", title, "-i", eq,
+           "-i", caps, "-i", eq,
            "-filter_complex", ";".join(fc), "-map", "[v]", "-map", "[a]",
            "-c:v", "libx264", "-preset", "veryfast", "-crf", "21",
            "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart",
@@ -377,24 +390,19 @@ def final(base, caps, title, eq, dst):
 
 def main():
     os.makedirs(WORK, exist_ok=True)
-    title, _ = load_lyrics()
     cues = load_cues()
     print(f"строк: {len(cues)}")
     if "--cues-only" in sys.argv:
-        tp = os.path.join(WORK, "title.png")
-        render_title(title).save(tp)
-        build_caption_video(cues, tp)
+        build_caption_video(cues)
         print("титры готовы")
         return
-    tp = os.path.join(WORK, "title.png")
-    render_title(title).save(tp)
-    caps, tmov = build_caption_video(cues, tp)
+    caps = build_caption_video(cues)
     print("титры: готово", flush=True)
     eq = build_eq_video()
     print("эквалайзер: готово", flush=True)
     base = concat(shots())
     dst = os.path.join(OUT, "fontanchik_s_chernym_delfinom_1080p.mp4")
-    final(base, caps, tmov, eq, dst)
+    final(base, caps, eq, dst)
     print("готово:", dst, round(os.path.getsize(dst) / 1e6, 1), "МБ")
 
 
