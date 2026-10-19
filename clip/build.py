@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Сборка клипа «Фонтанчик с чёрным дельфином».
 
-50 кадров 16:9 + движение камеры (только план, персонаж не анимируется) +
-титры шрифтом Ruslan Display + оригинальный трек.
+50 кадров 16:9 + движение камеры (только план, персонаж не анимируется),
+караоке-строка внизу (шрифт Ruslan Display), эквалайзер из пик и червей
+по бокам, оригинальный трек.
 """
+import json
 import os
 import subprocess
 import sys
+import wave
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,22 +22,34 @@ OUT = os.path.join(ROOT, "clip")
 WORK = "/tmp/clipwork"
 FONT_R = os.path.join(OUT, "fonts", "ruslan.ttf")
 FONT_S = os.path.join(OUT, "fonts", "oswald.ttf")
+FONT_SUIT = os.path.join(OUT, "fonts", "DejaVuSans.ttf")
 W, H, FPS = 1920, 1080, 25
 TOTAL = 208.744
+NFRAMES = round(TOTAL * FPS)
 
-IVORY = (245, 234, 211, 255)
-DIM = (158, 147, 131, 255)
+CAP_H = 220                      # полоса титров
+CAP_Y = 790
+CAP_MAXW = 1120
+
+EQ_W, EQ_H = 270, 330            # полоса эквалайзера
+EQ_Y = 720
+EQ_XL, EQ_XR = 70, W - 70 - EQ_W
+
+IVORY = (250, 241, 220, 255)
+DIM = (233, 222, 201, 132)
+SPADE = (238, 228, 207, 240)
+HEART = (198, 54, 50, 240)
 
 
 def run(cmd, **kw):
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
     if p.returncode:
         sys.stderr.write(p.stdout.decode("utf-8", "replace")[-4000:])
-        raise SystemExit(f"ffmpeg упал: {' '.join(cmd[:6])}…")
+        raise SystemExit("ffmpeg упал")
     return p.stdout
 
 
-# ---------------------------------------------------------------- текст
+# ------------------------------------------------------------------ текст
 
 def load_lyrics():
     title = ("ГИО ПИКА", "Фонтанчик с чёрным дельфином")
@@ -55,6 +71,11 @@ def load_lyrics():
     return title, blocks
 
 
+def load_cues():
+    data = json.load(open(os.path.join(OUT, "timing.json"), encoding="utf-8"))
+    return [(c["t0"], c["t1"], c["text"]) for c in data["cues"]]
+
+
 def gradient_plate():
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     px = img.load()
@@ -62,7 +83,7 @@ def gradient_plate():
         if y < 400:
             continue
         t = (y - 400) / (H - 400)
-        a = int(215 * (t ** 1.8))
+        a = int(150 * (t ** 1.8))
         for x in range(W):
             px[x, y] = (4, 4, 5, a)
     return img
@@ -81,102 +102,198 @@ def render_title(title):
     while d.textlength(tt, font=f_song) > W - 320:
         f_song = ImageFont.truetype(FONT_R, f_song.size - 4)
     tw = d.textlength(tt, font=f_song)
-    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).text(((W - tw) / 2, 378), tt, font=f_song, fill=(0, 0, 0, 210))
-    img.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(9)))
+    sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(sh).text(((W - tw) / 2, 378), tt, font=f_song, fill=(0, 0, 0, 210))
+    img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(8)))
     d.text(((W - tw) / 2, 378), tt, font=f_song, fill=IVORY)
     return img
 
 
-def wrap(d, text, font, maxw):
-    words, lines, cur = text.split(), [], ""
-    for w in words:
-        t = (cur + " " + w).strip()
-        if d.textlength(t, font=font) <= maxw or not cur:
-            cur = t
-        else:
-            lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    return lines
+def caption_layers(text):
+    """(тусклый слой, яркий слой, ширина текста) для одной строки."""
+    strip = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(strip)
+    size = 78
+    while True:
+        font = ImageFont.truetype(FONT_R, size)
+        if d.textlength(text, font=font) <= CAP_MAXW or size <= 34:
+            break
+        size -= 2
+    tw = d.textlength(text, font=font)
+    x = (W - tw) / 2
+    y = (CAP_H - size * 1.25) / 2
 
-
-def render_block(lines, active):
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    img.alpha_composite(gradient_plate())
-    d = ImageDraw.Draw(img)
-    size = 52 if len(lines) <= 3 else (48 if len(lines) == 4 else 44)
-    font = ImageFont.truetype(FONT_R, size)
-    wrapped, acts = [], []
-    for i, ln in enumerate(lines):
-        for p in wrap(d, ln, font, W - 460):
-            wrapped.append(p)
-            acts.append(i)
-    lh = int(size * 1.5)
-    total_h = lh * len(wrapped)
-    y0 = 1006 - total_h
-
-    # мягкая подложка под текстовый блок
-    plate = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    plate = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
     ImageDraw.Draw(plate).rounded_rectangle(
-        (W / 2 - 830, y0 - 46, W / 2 + 830, y0 + total_h + 26),
-        radius=34, fill=(6, 6, 7, 118))
-    img.alpha_composite(plate.filter(ImageFilter.GaussianBlur(26)))
+        (x - 46, 8, x + tw + 46, CAP_H - 8), radius=26, fill=(5, 5, 6, 96))
+    strip.alpha_composite(plate.filter(ImageFilter.GaussianBlur(18)))
+    dim = strip.copy()
+    ImageDraw.Draw(dim).text((x, y), text, font=font, fill=DIM,
+                             stroke_width=2, stroke_fill=(0, 0, 0, 60))
 
-    for i, (txt, a) in enumerate(zip(wrapped, acts)):
-        on = a == active
-        col = IVORY if on else (150, 139, 123, 255)
-        y = y0 + i * lh
-        tw = d.textlength(txt, font=font)
-        x = (W - tw) / 2
-        sh = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(sh).text((x, y), txt, font=font, fill=(0, 0, 0, 210),
-                                stroke_width=5, stroke_fill=(0, 0, 0, 210))
-        img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(4 if on else 3)))
-        if on:
-            d.text((x, y), txt, font=font, fill=col, stroke_width=2,
-                   stroke_fill=(20, 16, 12, 235))
-        else:
-            d.text((x, y), txt, font=font, fill=col)
-    return img
+    bright = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
+    shadow = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).text((x, y + 3), text, font=font, fill=(0, 0, 0, 200),
+                                stroke_width=5, stroke_fill=(0, 0, 0, 200))
+    bright.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(4)))
+    ImageDraw.Draw(bright).text((x, y), text, font=font, fill=IVORY,
+                                stroke_width=2, stroke_fill=(26, 20, 14, 230))
+    return dim, bright, int(round(tw)), x
 
 
-def make_cues():
-    """[(start, end, png, fade_in, fade_out)] — подсветка строки внутри блока."""
-    os.makedirs(WORK, exist_ok=True)
-    title, blocks = load_lyrics()
-    cues = []
-    p = os.path.join(WORK, "cue_title.png")
-    render_title(title).save(p)
-    cues.append((0.6, 7.6, p, True, True))
+class RawVideo:
+    """Поток кадров RGBA в ffmpeg (qtrle с альфой)."""
 
-    t0, t1 = 8.2, 203.4
-    total_lines = sum(len(b) for b in blocks)
-    per_line = (t1 - t0) / total_lines
-    t = t0
-    for bi, block in enumerate(blocks):
-        for li in range(len(block)):
-            path = os.path.join(WORK, f"cue_{bi}_{li}.png")
-            render_block(block, li).save(path)
-            cues.append((t, t + per_line, path, li == 0, li == len(block) - 1))
-            t += per_line
-    return cues
+    def __init__(self, path, w, h):
+        self.p = subprocess.Popen(
+            [FF, "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgba",
+             "-s", f"{w}x{h}", "-r", str(FPS), "-i", "-",
+             "-c:v", "qtrle", path],
+            stdin=subprocess.PIPE)
+
+    def write(self, img):
+        self.p.stdin.write(img.tobytes())
+
+    def close(self):
+        self.p.stdin.close()
+        if self.p.wait():
+            raise SystemExit("кодировщик титров упал")
 
 
-# ---------------------------------------------------------------- видео
+def build_caption_video(cues, title_png):
+    path = os.path.join(WORK, "caps.mov")
+    vid = RawVideo(path, W, CAP_H)
+    blank = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
+    cache = {}
+    idx = 0
+    for f in range(NFRAMES):
+        t = f / FPS
+        while idx + 1 < len(cues) and t >= cues[idx][1]:
+            idx += 1
+        t0, t1, text = cues[idx]
+        if t < t0 or t > t1:
+            vid.write(blank)
+            continue
+        if text not in cache:
+            cache[text] = caption_layers(text)
+        dim, bright, tw, x = cache[text]
+        frame = Image.new("RGBA", (W, CAP_H), (0, 0, 0, 0))
+        frame.alpha_composite(dim)
+        p = min(1.0, max(0.0, (t - t0) / max(0.01, t1 - t0)))
+        wv = int(round(tw * p))
+        if wv > 0:
+            crop = bright.crop((int(x), 0, int(x) + wv, CAP_H))
+            frame.alpha_composite(crop, (int(x), 0))
+        vid.write(frame)
+    vid.close()
+
+    # титул отдельным слоем
+    tpath = os.path.join(WORK, "title.mov")
+    tvid = RawVideo(tpath, W, H)
+    timg = Image.open(title_png).convert("RGBA")
+    for f in range(int(6.2 * FPS)):
+        t = f / FPS
+        a = min(1.0, t / 0.7, max(0.0, (6.0 - t) / 0.8))
+        if a <= 0:
+            tvid.write(Image.new("RGBA", (W, H), (0, 0, 0, 0)))
+            continue
+        im = timg.copy()
+        if a < 1:
+            al = im.getchannel("A").point(lambda v: int(v * a))
+            im.putalpha(al)
+        tvid.write(im)
+    tvid.close()
+    return path, tpath
+
+
+# --------------------------------------------------------------- эквалайзер
+
+def eq_levels(bands=10):
+    wav = "/tmp/song_eq.wav"
+    if not os.path.exists(wav):
+        run([FF, "-y", "-v", "error", "-i", SONG, "-ac", "1", "-ar", "22050", wav])
+    w = wave.open(wav)
+    sr, n = w.getframerate(), w.getnframes()
+    x = np.frombuffer(w.readframes(n), dtype=np.int16).astype(np.float32) / 32768
+    win, hop = 1024, 512
+    fb = np.fft.rfftfreq(win, 1 / sr)
+    edges = np.geomspace(55, 9000, bands + 1)
+    masks = [(fb >= edges[i]) & (fb < edges[i + 1]) for i in range(bands)]
+    wnd = np.hanning(win).astype(np.float32)
+    frames = (len(x) - win) // hop
+    E = np.zeros((frames, bands), dtype=np.float32)
+    for i in range(frames):
+        sp = np.abs(np.fft.rfft(x[i * hop:i * hop + win] * wnd)) ** 2
+        for b, m in enumerate(masks):
+            E[i, b] = np.sqrt(sp[m].mean() + 1e-12)
+    db = 20 * np.log10(E + 1e-9)
+    # динамика относительно медленной средней: столбики «играют», а не стоят
+    win = 86                                   # ~2 c при hop 512 / 22050
+    ker = np.ones(win) / win
+    base = np.stack([np.convolve(db[:, b], ker, "same") for b in range(bands)], 1)
+    rel = db - base
+    v = np.clip((rel + 5.5) / 11.0, 0, 1)
+    sm = np.zeros_like(v)
+    prev = v[0].astype(np.float32).copy()
+    for i in range(len(v)):
+        k = np.where(v[i] > prev, 0.65, 0.18)
+        prev = prev + (v[i] - prev) * k
+        sm[i] = prev
+    tf = np.arange(frames) * hop / sr
+    tt = np.arange(NFRAMES) / FPS
+    out = np.stack([np.interp(tt, tf, sm[:, b]) for b in range(bands)], 1)
+    lv = 1 + (out ** 1.25) * 7
+    return np.clip(lv.round().astype(int), 1, 8)
+
+
+def suit_patches(glyph=30):
+    font = ImageFont.truetype(FONT_SUIT, glyph)
+    patches = {}
+    for suit, color in (("s", SPADE), ("h", HEART)):
+        ch = "\u2660" if suit == "s" else "\u2665"
+        for lvl in range(1, 9):
+            im = Image.new("RGBA", (glyph + 6, lvl * (glyph + 4) + 8), (0, 0, 0, 0))
+            d = ImageDraw.Draw(im)
+            for i in range(lvl):
+                d.text((3, 4 + i * (glyph + 4)), ch, font=font, fill=color)
+            patches[(suit, lvl)] = im
+    return patches
+
+
+def build_eq_video():
+    cols, glyph, gap = 6, 30, 14
+    levels = eq_levels(cols)
+    patches = suit_patches()
+    path = os.path.join(WORK, "eq.mov")
+    vid = RawVideo(path, EQ_W, EQ_H)
+    total_w = cols * (glyph + gap) - gap
+    x0 = (EQ_W - total_w) // 2
+    for f in range(NFRAMES):
+        im = Image.new("RGBA", (EQ_W, EQ_H), (0, 0, 0, 0))
+        for c in range(cols):
+            lvl = int(levels[f, c])
+            if lvl <= 0:
+                continue
+            suit = "s" if c % 2 == 0 else "h"
+            patch = patches[(suit, lvl)]
+            x = x0 + c * (glyph + gap)
+            im.alpha_composite(patch, (x, EQ_H - 12 - patch.height))
+        vid.write(im)
+    vid.close()
+    return path
+
+
+# ------------------------------------------------------------------ видео
 
 def shots():
     files = sorted(f for f in os.listdir(FRAMES) if f.lower().endswith(".jpg"))
     assert len(files) == 50, len(files)
-    total_frames = round(TOTAL * FPS)
-    base = total_frames // len(files)
-    rest = total_frames - base * len(files)
-    out = []
     os.makedirs(os.path.join(WORK, "shots"), exist_ok=True)
+    out = []
+    base_n = NFRAMES // len(files)
+    rest = NFRAMES - base_n * len(files)
     for i, name in enumerate(files):
-        n = base + (1 if i < rest else 0)
-        d = n / FPS
+        n = base_n + (1 if i < rest else 0)
         mode = i % 5
         if mode == 0:
             z = f"1+0.085*on/{n-1}"; x = "iw/2-(iw/zoom/2)"; y = "ih/2-(ih/zoom/2)"
@@ -198,7 +315,7 @@ def shots():
                  "-vf", vf, "-frames:v", str(n), "-c:v", "libx264", "-preset", "veryfast",
                  "-crf", "16", "-pix_fmt", "yuv420p", dst])
         out.append(dst)
-        print(f"план {i+1:02d}: {name}  {d:.2f} c", flush=True)
+        print(f"план {i+1:02d}: {name}", flush=True)
     return out
 
 
@@ -208,60 +325,25 @@ def concat(paths):
         for p in paths:
             f.write(f"file '{p}'\n")
     dst = os.path.join(WORK, "base.mp4")
-    run([FF, "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
-         "-c", "copy", dst])
+    if not os.path.exists(dst) or os.path.getmtime(dst) < os.path.getmtime(lst):
+        run([FF, "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
+             "-c", "copy", dst])
     return dst
 
 
-def build_caps(cues):
-    """Дорожка титров с альфой: qtrle-клипы + прозрачные паузы, конкат."""
-    from PIL import Image as _I
-    blank = os.path.join(WORK, "blank.png")
-    _I.new("RGBA", (W, H), (0, 0, 0, 0)).save(blank)
-    parts, t = [], 0.0
-    for i, (s, e, png, fin, fout) in enumerate(cues):
-        if s > t + 0.02:
-            gap = os.path.join(WORK, f"gap_{i}.mov")
-            if not os.path.exists(gap):
-                run([FF, "-y", "-v", "error", "-loop", "1", "-framerate", "25",
-                     "-t", f"{s - t:.3f}", "-i", blank, "-c:v", "qtrle", gap])
-            parts.append(gap)
-        dur = e - s
-        clip = os.path.join(WORK, f"cap_{i:02d}.mov")
-        if not os.path.exists(clip):
-            vf = "format=rgba"
-            if fin:
-                vf += ",fade=t=in:st=0:d=0.45:alpha=1"
-            if fout:
-                vf += f",fade=t=out:st={max(0.0, dur-0.5):.3f}:d=0.5:alpha=1"
-            run([FF, "-y", "-v", "error", "-loop", "1", "-framerate", "25",
-                 "-t", f"{dur:.3f}", "-i", png, "-vf", vf,
-                 "-c:v", "qtrle", clip])
-        parts.append(clip)
-        t = e
-        print(f"  титр {i+1}/{len(cues)}: {s:.2f}–{e:.2f}", flush=True)
-    if t < TOTAL:
-        tail = os.path.join(WORK, "gap_tail.mov")
-        if not os.path.exists(tail):
-            run([FF, "-y", "-v", "error", "-loop", "1", "-framerate", "25",
-                 "-t", f"{TOTAL - t:.3f}", "-i", blank, "-c:v", "qtrle", tail])
-        parts.append(tail)
-    lst = os.path.join(WORK, "caps_list.txt")
-    with open(lst, "w") as f:
-        for p in parts:
-            f.write(f"file '{p}'\n")
-    dst = os.path.join(WORK, "caps.mov")
-    run([FF, "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
-         "-c", "copy", dst])
-    return dst
-
-
-def final(base, cues, dst):
-    caps = build_caps(cues)
-    fc = ["[1:a]afade=t=in:st=0:d=0.4,afade=t=out:st=203.6:d=5.0[a]",
-          "[0:v][2:v]overlay=0:0:format=auto,"
-          "fade=t=in:st=0:d=0.8,fade=t=out:st=203.9:d=4.8,format=yuv420p[v]"]
-    cmd = [FF, "-y", "-v", "error", "-i", base, "-i", SONG, "-i", caps,
+def final(base, caps, title, eq, dst):
+    fc = [
+        "[1:a]afade=t=in:st=0:d=0.4,afade=t=out:st=203.6:d=5.0[a]",
+        "[0:v][2:v]overlay=0:790:eof_action=pass:repeatlast=0[c1]",
+        "[c1][3:v]overlay=0:0:eof_action=pass:repeatlast=0[c2]",
+        "[4:v]split[eq1][eq2]",
+        "[c2][eq1]overlay=70:720:eof_action=pass:repeatlast=0[c3]",
+        "[eq2]hflip[eq2f]",
+        f"[c3][eq2f]overlay={EQ_XR}:720:eof_action=pass:repeatlast=0,"
+        "fade=t=in:st=0:d=0.8,fade=t=out:st=203.9:d=4.8,format=yuv420p[v]",
+    ]
+    cmd = [FF, "-y", "-v", "error", "-i", base, "-i", SONG,
+           "-i", caps, "-i", title, "-i", eq,
            "-filter_complex", ";".join(fc), "-map", "[v]", "-map", "[a]",
            "-c:v", "libx264", "-preset", "veryfast", "-crf", "21",
            "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart",
@@ -272,14 +354,25 @@ def final(base, cues, dst):
 
 def main():
     os.makedirs(WORK, exist_ok=True)
-    cues = make_cues()
-    print(f"титров: {len(cues)}")
+    title, _ = load_lyrics()
+    cues = load_cues()
+    print(f"строк: {len(cues)}")
     if "--cues-only" in sys.argv:
+        tp = os.path.join(WORK, "title.png")
+        render_title(title).save(tp)
+        build_caption_video(cues, tp)
+        print("титры готовы")
         return
+    tp = os.path.join(WORK, "title.png")
+    render_title(title).save(tp)
+    caps, tmov = build_caption_video(cues, tp)
+    print("титры: готово", flush=True)
+    eq = build_eq_video()
+    print("эквалайзер: готово", flush=True)
     base = concat(shots())
     dst = os.path.join(OUT, "fontanchik_s_chernym_delfinom_1080p.mp4")
-    final(base, cues, dst)
-    print("готово:", dst, os.path.getsize(dst) / 1e6, "МБ")
+    final(base, caps, tmov, eq, dst)
+    print("готово:", dst, round(os.path.getsize(dst) / 1e6, 1), "МБ")
 
 
 if __name__ == "__main__":
