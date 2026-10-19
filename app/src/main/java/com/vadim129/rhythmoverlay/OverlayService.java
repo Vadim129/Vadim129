@@ -26,6 +26,8 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
 
     private static final int NOTIFICATION_ID = 8021;
     private static final String CHANNEL_ID = "rhythm_overlay";
+    private static final String PREF_WIDTH = "overlay_width";
+    private static final String PREF_HEIGHT = "overlay_height";
 
     private WindowManager windowManager;
     private WindowManager.LayoutParams params;
@@ -72,8 +74,10 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
     private void showOverlay() {
         if (overlay != null) return;
         int scale = Skin.scale(this);
-        int width = dp(286) * scale / 100;
-        int height = dp(174) * scale / 100;
+        int defaultWidth = dp(286) * scale / 100;
+        int defaultHeight = dp(174) * scale / 100;
+        int width = clampWidth(preferences.getInt(PREF_WIDTH, defaultWidth));
+        int height = clampHeight(preferences.getInt(PREF_HEIGHT, defaultHeight));
         params = new WindowManager.LayoutParams(width, height,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -97,8 +101,12 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
                 } catch (Exception ignored) { }
             }
 
-            @Override public void onClose() {
-                stopOverlay();
+            @Override public void onResize(float scaleFactor) {
+                resizeOverlay(scaleFactor);
+            }
+
+            @Override public void onOpenSettings() {
+                openSettings();
             }
         });
         try {
@@ -112,16 +120,49 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
         }
     }
 
-    private void updateWindow() {
+    private void updateWindow(boolean resetSizeFromSettings) {
         if (overlay == null || params == null) return;
-        int scale = Skin.scale(this);
-        params.width = dp(286) * scale / 100;
-        params.height = dp(174) * scale / 100;
+        if (resetSizeFromSettings) {
+            int scale = Skin.scale(this);
+            params.width = clampWidth(dp(286) * scale / 100);
+            params.height = clampHeight(dp(174) * scale / 100);
+            preferences.edit().putInt(PREF_WIDTH, params.width).putInt(PREF_HEIGHT, params.height).apply();
+        }
         params.alpha = Math.max(.55f, Math.min(1f, Skin.opacity(this) / 100f));
         try {
             windowManager.updateViewLayout(overlay, params);
             overlay.invalidate();
         } catch (Exception ignored) { }
+    }
+
+    private void resizeOverlay(float scaleFactor) {
+        if (overlay == null || params == null) return;
+        float ratio = params.height / (float) Math.max(1, params.width);
+        int width = clampWidth(Math.round(params.width * scaleFactor));
+        int height = clampHeight(Math.round(width * ratio));
+        params.width = width;
+        params.height = height;
+        preferences.edit().putInt(PREF_WIDTH, width).putInt(PREF_HEIGHT, height).apply();
+        try {
+            windowManager.updateViewLayout(overlay, params);
+            overlay.invalidate();
+        } catch (Exception ignored) { }
+    }
+
+    private void openSettings() {
+        Intent settings = new Intent(this, SettingsActivity.class);
+        settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        try {
+            startActivity(settings);
+        } catch (Exception ignored) { }
+    }
+
+    private int clampWidth(int value) {
+        return Math.max(dp(150), Math.min(dp(720), value));
+    }
+
+    private int clampHeight(int value) {
+        return Math.max(dp(90), Math.min(dp(480), value));
     }
 
     private void ensureForeground(boolean usesProjection) {
@@ -159,7 +200,7 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentTitle("Ритм-виджет включён")
-                .setContentText("Перетащите виджет за верхнюю панель")
+                .setContentText("Тяните одним пальцем · удерживайте для настроек · щипок меняет размер")
                 .setOngoing(true)
                 .setContentIntent(openIntent)
                 .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Закрыть", stopIntent).build())
@@ -172,7 +213,12 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
 
     private void stopOverlay() {
         if (params != null) {
-            preferences.edit().putInt("overlay_x", params.x).putInt("overlay_y", params.y).apply();
+            preferences.edit()
+                    .putInt("overlay_x", params.x)
+                    .putInt("overlay_y", params.y)
+                    .putInt(PREF_WIDTH, params.width)
+                    .putInt(PREF_HEIGHT, params.height)
+                    .apply();
         }
         if (overlay != null) {
             try { windowManager.removeView(overlay); } catch (Exception ignored) { }
@@ -190,9 +236,10 @@ public class OverlayService extends Service implements SharedPreferences.OnShare
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (Skin.PREF_SKIN.equals(key) || Skin.PREF_OPACITY.equals(key) || Skin.PREF_SCALE.equals(key)
-                || Skin.PREF_SENSITIVITY.equals(key)) {
-            updateWindow();
+        if (Skin.PREF_SCALE.equals(key)) {
+            updateWindow(true);
+        } else if (Skin.PREF_SKIN.equals(key) || Skin.PREF_OPACITY.equals(key) || Skin.PREF_SENSITIVITY.equals(key)) {
+            updateWindow(false);
         }
         if (Skin.PREF_AUDIO_MODE.equals(key) && overlay != null) {
             audioMonitor.start(null, 0);

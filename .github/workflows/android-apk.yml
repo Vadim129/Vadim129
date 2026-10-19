@@ -47,8 +47,10 @@ jobs:
           /tmp/gradle-8.10.2/bin/gradle --no-daemon --stacktrace :app:assembleDebug 2>&1 | tee /tmp/rhythm-gradle.log
           mkdir -p release
           rm -f release/*.apk release/*.sha256
-          cp app/build/outputs/apk/debug/app-debug.apk release/RhythmOverlay-v1.0.1.apk
-          sha256sum release/RhythmOverlay-v1.0.1.apk > release/RhythmOverlay-v1.0.1.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk release/RhythmOverlay-v1.1.0.apk
+          sha256sum release/RhythmOverlay-v1.1.0.apk > release/RhythmOverlay-v1.1.0.apk.sha256
+          chmod +x scripts/qa-checks.sh
+          bash scripts/qa-checks.sh release/RhythmOverlay-v1.1.0.apk 2>&1 | tee -a /tmp/rhythm-gradle.log
 
       # The sandbox cannot retrieve the hosted Actions log URL, so a failed build leaves a concise
       # diagnostic in this branch for the maintainer. This path is ignored by the trigger above.
@@ -79,5 +81,5 @@ jobs:
           git config user.name "Arena APK Builder"
           git config user.email "arena-apk-builder@users.noreply.github.com"
           git add -f release
-          git commit -m "build: Rhythm Overlay APK v1.0.1" || exit 0
+          git commit -m "build: Rhythm Overlay APK v1.1.0" || exit 0
           git push origin "HEAD:${GITHUB_REF_NAME}"

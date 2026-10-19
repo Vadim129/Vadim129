@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
         header.addView(settings, new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 46)));
         content.addView(header);
 
-        TextView intro = Ui.subtitle(this, "Прямоугольный эквалайзер поверх экрана — перетаскивается за верхнюю панель.");
+        TextView intro = Ui.subtitle(this, "Прозрачный эквалайзер поверх экрана: тяните одним пальцем, щипком меняйте размер.");
         Ui.addMargin(content, intro, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 9, 0, 17);
 
         FrameLayout visualCard = new FrameLayout(this);
@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
         skinCard.addView(skinSection);
         skinName = Ui.subtitle(this, "");
         Ui.addMargin(skinCard, skinName, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 4, 0, 10);
-        TextView chooseSkin = Ui.button(this, "Открыть коллекцию скинов  ›", 0xFF222942, Ui.TEXT);
+        TextView chooseSkin = Ui.button(this, "Открыть 100 скинов  ›", 0xFF222942, Ui.TEXT);
         chooseSkin.setGravity(Gravity.CENTER_VERTICAL);
         chooseSkin.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) {
@@ -169,7 +169,7 @@ public class MainActivity extends Activity {
         TextView guideTitle = Ui.text(this, "Как пользоваться", 14, Ui.TEXT);
         guideTitle.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
         guideCard.addView(guideTitle);
-        TextView guide = Ui.subtitle(this, "1. Разрешите показ поверх других окон.\n2. Включите виджет.\n3. Тяните его за верхнюю полосу; крестик на ней закрывает виджет.\n4. В настройках меняются размер, прозрачность, чувствительность и источник звука.");
+        TextView guide = Ui.subtitle(this, "1. Разрешите показ поверх других окон.\n2. Включите виджет.\n3. Тяните его одним пальцем; раздвигайте или сдвигайте двумя пальцами, чтобы изменить размер.\n4. Удерживайте виджет — откроются настройки. Закрыть его можно здесь или через уведомление.");
         Ui.addMargin(guideCard, guide, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 7, 0, 0);
         Ui.addMargin(content, guideCard, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, 0, 14, 0, 0);
 
