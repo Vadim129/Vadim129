@@ -1,0 +1,353 @@
+# Android build diagnostic
+Run: https://github.com/Vadim129/Vadim129/actions/runs/39221528453
+
+        for (int i = 0; i < count; i++) {
+                                   ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:232: error: class, interface, or enum expected
+            float x = margin + i * (width + gap);
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:233: error: class, interface, or enum expected
+            int color = bandColor(spec, i, count);
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:234: error: class, interface, or enum expected
+            paint.setColor(alpha(color, 215));
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:235: error: class, interface, or enum expected
+            float radius = Math.min(width * .45f, dp(4));
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:236: error: class, interface, or enum expected
+            if (spec.variant == 2 || spec.variant == 7) {
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:238: error: class, interface, or enum expected
+                canvas.drawRect(x, center + dp(1), x + width, center + extent, paint);
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:239: error: class, interface, or enum expected
+            } else {
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:241: error: class, interface, or enum expected
+                canvas.drawRoundRect(x, center + dp(1), x + width, center + extent, radius, radius, paint);
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:242: error: class, interface, or enum expected
+            }
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:245: error: class, interface, or enum expected
+                stroke.setColor(alpha(spec.accent, 120));
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:246: error: class, interface, or enum expected
+                canvas.drawLine(x + width * .5f, center - extent - dp(4), x + width * .5f, center + extent + dp(4), stroke);
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:247: error: class, interface, or enum expected
+            }
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:250: error: class, interface, or enum expected
+        stroke.setColor(alpha(spec.secondary, 115));
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:251: error: class, interface, or enum expected
+        canvas.drawLine(margin, center, w - margin, center, stroke);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:252: error: class, interface, or enum expected
+    }
+    ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:256: error: class, interface, or enum expected
+        float margin = dp(11);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:257: error: class, interface, or enum expected
+        float colWidth = (w - margin * 2f) / count;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:258: error: class, interface, or enum expected
+        int segments = 7 + spec.variant;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:259: error: class, interface, or enum expected
+        float gap = dp(spec.variant % 2 == 0 ? 2f : 1f);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:260: error: class, interface, or enum expected
+        float segmentHeight = (h * .64f - gap * (segments - 1)) / segments;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:261: error: class, interface, or enum expected
+        float bottom = h - dp(10);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:262: error: class, interface, or enum expected
+        for (int i = 0; i < count; i++) {
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:262: error: class, interface, or enum expected
+        for (int i = 0; i < count; i++) {
+                        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:262: error: class, interface, or enum expected
+        for (int i = 0; i < count; i++) {
+                                   ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:264: error: class, interface, or enum expected
+            float x = margin + i * colWidth + gap * .5f;
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:265: error: class, interface, or enum expected
+            float cellWidth = Math.max(dp(2), colWidth - gap);
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:266: error: class, interface, or enum expected
+            for (int s = 0; s < segments; s++) {
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:266: error: class, interface, or enum expected
+            for (int s = 0; s < segments; s++) {
+                            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:266: error: class, interface, or enum expected
+            for (int s = 0; s < segments; s++) {
+                                          ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:268: error: class, interface, or enum expected
+                boolean on = s < lit;
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:269: error: class, interface, or enum expected
+                int color = bandColor(spec, i + s, count + segments);
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:270: error: class, interface, or enum expected
+                paint.setColor(alpha(color, on ? 230 : 37));
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:271: error: class, interface, or enum expected
+                if (spec.variant == 1 || spec.variant == 6) {
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:273: error: class, interface, or enum expected
+                } else {
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:275: error: class, interface, or enum expected
+                    canvas.drawRoundRect(x, y, x + cellWidth, y + segmentHeight, radius, radius, paint);
+                    ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:276: error: class, interface, or enum expected
+                }
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:283: error: class, interface, or enum expected
+        int rows = 8 + spec.variant % 3;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:284: error: class, interface, or enum expected
+        float margin = dp(11);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:285: error: class, interface, or enum expected
+        float stepX = (w - margin * 2f) / columns;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:286: error: class, interface, or enum expected
+        float stepY = (h * .62f) / rows;
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:287: error: class, interface, or enum expected
+        float bottom = h - dp(10);
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:288: error: class, interface, or enum expected
+        for (int i = 0; i < columns; i++) {
+        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:288: error: class, interface, or enum expected
+        for (int i = 0; i < columns; i++) {
+                        ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:288: error: class, interface, or enum expected
+        for (int i = 0; i < columns; i++) {
+                                     ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:290: error: class, interface, or enum expected
+            for (int row = 0; row < rows; row++) {
+            ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:290: error: class, interface, or enum expected
+            for (int row = 0; row < rows; row++) {
+                              ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:290: error: class, interface, or enum expected
+            for (int row = 0; row < rows; row++) {
+                                          ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:292: error: class, interface, or enum expected
+                float y = bottom - row * stepY;
+                ^
+/home/runner/work/Vadim129/Vadim129/app/src/main/java/com/vadim129/rhythmoverlay/EqualizerOverlayView.java:293: error: class, interface, or enum expected
+                boolean on = row < lit;
+                ^
+100 errors
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugJavaWithJavac'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler error output for details.
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:79)
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:46)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.delegateAndHandleErrors(NormalizingJavaCompiler.java:98)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler.execute(NormalizingJavaCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.AnnotationProcessorDiscoveringCompiler.execute(AnnotationProcessorDiscoveringCompiler.java:38)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:46)
+	at org.gradle.api.internal.tasks.compile.ModuleApplicationNameWritingCompiler.execute(ModuleApplicationNameWritingCompiler.java:36)
+	at org.gradle.jvm.toolchain.internal.DefaultToolchainJavaCompiler.execute(DefaultToolchainJavaCompiler.java:57)
+	at org.gradle.api.tasks.compile.JavaCompile.lambda$createToolchainCompiler$3(JavaCompile.java:204)
+	at org.gradle.api.internal.tasks.compile.CleaningJavaCompiler.execute(CleaningJavaCompiler.java:53)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalCompilerFactory.lambda$createRebuildAllCompiler$0(IncrementalCompilerFactory.java:52)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:70)
+	at org.gradle.api.internal.tasks.compile.incremental.SelectiveCompiler.execute(SelectiveCompiler.java:44)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:66)
+	at org.gradle.api.internal.tasks.compile.incremental.IncrementalResultStoringCompiler.execute(IncrementalResultStoringCompiler.java:52)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:64)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler$1.call(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.compile.CompileJavaBuildOperationReportingCompiler.execute(CompileJavaBuildOperationReportingCompiler.java:48)
+	at org.gradle.api.tasks.compile.JavaCompile.performCompilation(JavaCompile.java:222)
+	at org.gradle.api.tasks.compile.JavaCompile.performIncrementalCompilation(JavaCompile.java:163)
+	at org.gradle.api.tasks.compile.JavaCompile.compile(JavaCompile.java:148)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:29)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:26)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:47)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+	at org.gradle.internal.Either$Right.fold(Either.java:175)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:107)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:56)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:61)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:61)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:209)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:204)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:66)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:166)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:59)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:53)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+
+
+BUILD FAILED in 27s
+27 actionable tasks: 27 executed
