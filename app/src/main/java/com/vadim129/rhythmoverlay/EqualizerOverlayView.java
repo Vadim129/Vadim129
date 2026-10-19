@@ -255,7 +255,7 @@ public class EqualizerOverlayView extends View {
     private void drawDancer(Canvas canvas, Skin.Spec spec, float baseY, float time, float beat) {
         float headY = baseY - dp(79);
         float sway = (float) Math.sin(time * 4.2f) * dp(8 + beat * 5);
-        float skin = "luna".equals(spec.id) ? 0xFFF0B899 : 0xFFD99A72;
+        int skin = "luna".equals(spec.id) ? 0xFFF0B899 : 0xFFD99A72;
         // back arm and hair
         stroke.setStrokeWidth(dp(5));
         stroke.setColor("luna".equals(spec.id) ? 0xFF6B3B98 : 0xFF241B35);
