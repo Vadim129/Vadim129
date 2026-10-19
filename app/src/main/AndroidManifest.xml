@@ -10,7 +10,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="Ритм-виджет"
+        android:label="@string/app_name"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
 
@@ -31,7 +31,7 @@
 
         <service
             android:name=".OverlayService"
-            android:description="Плавающий пользовательский музыкальный визуализатор"
+            android:description="@string/service_description"
             android:exported="false"
             android:foregroundServiceType="specialUse|mediaProjection">
             <property
