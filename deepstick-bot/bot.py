@@ -264,9 +264,27 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
     webm = job / "sticker.webm"
     status = await message.answer(
         f"🎬 Генерирую: {scenario.emoji} «{custom_text or scenario.title}»…\n"
-        "Обычно 5–15 секунд." + ("\n🧠 Нейросеть может думать несколько минут."
-                                  if ai_enabled() else ""),
+        + ("🧠 Нейросеть создаёт движения персонажа по твоему сценарию.\n"
+           "Бесплатная очередь: обычно 1–10 минут, не пугайся."
+           if ai_enabled() else "Обычно 5–15 секунд."),
         reply_markup=generating_kb())
+
+    progress_task: asyncio.Task | None = None
+    if ai_enabled():
+        async def _progress() -> None:
+            started = time.monotonic()
+            while True:
+                await asyncio.sleep(45)
+                mins = (time.monotonic() - started) / 60
+                try:
+                    await status.edit_text(
+                        f"🧠 Нейросеть всё ещё работает… прошло {mins:.1f} мин.\n"
+                        "Она рисует движения персонажа кадр за кадром.",
+                        reply_markup=generating_kb())
+                except Exception:
+                    pass
+
+        progress_task = asyncio.create_task(_progress())
     try:
         await message.bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
         settings = DB.get_settings(user.id)
@@ -285,7 +303,11 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
                 raise
             except Exception:
                 log.exception("AI-режим упал — откатываюсь на локальную анимацию")
-                await status.edit_text("⚠️ Нейросеть недоступна — делаю локальную анимацию…")
+                if progress_task:
+                    progress_task.cancel()
+                    progress_task = None
+                await status.edit_text("⚠️ Нейросеть сейчас недоступна (очередь/лимит) — "
+                                       "делаю обычную анимацию…")
                 await asyncio.to_thread(_render_local, photo, style_id, scenario.effect,
                                         webm, CFG.remove_bg and settings["remove_bg"])
         else:
@@ -306,6 +328,8 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
         except TelegramBadRequest:
             await message.answer(f"😖 Не получилось: {e}")
     finally:
+        if progress_task:
+            progress_task.cancel()
         shutil.rmtree(job, ignore_errors=True)
         _tasks.pop(user.id, None)
 

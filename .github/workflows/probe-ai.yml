@@ -1,0 +1,55 @@
+name: Probe free AI (image-to-video)
+
+# Проверка бесплатной нейросети движений персонажа (HF Space Wan 2.1 I2V).
+# Результат — аннотации в этом запуске (::notice/::error от tools/probe_ai.py)
+# и видео-артефакт probe-result.
+
+on:
+  push:
+    branches: ["arena/1d4df997-vadim129"]
+    paths:
+      - "deepstick-bot/tools/probe_ai.py"
+      - "deepstick-bot/app/ai_video.py"
+      - ".github/workflows/probe-ai.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probe-ai
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: deepstick-bot/requirements.txt
+
+      - name: Зависимости пробы
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q -r deepstick-bot/requirements.txt
+
+      - name: Проба нейросети (реальная генерация видео)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: cd deepstick-bot && python tools/probe_ai.py
+
+      - name: Артефакт с результатом
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-result
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            /tmp/probe_output.mp4
+            /tmp/probe_sticker.webm

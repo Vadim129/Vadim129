@@ -43,6 +43,17 @@ def test_all_styles():
         assert out.size == (60, 60), st.id
 
 
+def test_extract_video_file(tmp_path):
+    from app.ai_video import _extract_video_file
+
+    src = tmp_path / "gen.mp4"
+    src.write_bytes(b"0" * 2048)
+    out = tmp_path / "out.mp4"
+    # формат ответа multimodalart/wan2-1-fast: ({video: {...path}}, seed)
+    _extract_video_file(({"video": {"path": str(src)}}, 42), out)
+    assert out.read_bytes() == b"0" * 2048
+
+
 def test_new_keywords():
     assert match_scenario("хочу дождь из денег").id == "money"
     assert match_scenario("я так устал, сплю").id == "sleep"

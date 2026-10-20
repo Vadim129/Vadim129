@@ -84,7 +84,10 @@ jobs:
       - name: Бот (поллинг Telegram)
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          AI_PROVIDER: none
+          # Бесплатная image-to-video нейросеть (движения персонажа, Wan 2.1).
+          # При недоступности/лимитах спейса бот сам откатывается на локальную анимацию.
+          AI_PROVIDER: hf
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
           REMOVE_BG: auto
           DATA_DIR: data
         run: |

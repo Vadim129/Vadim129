@@ -102,6 +102,71 @@ async def _via_fal(image: Path, prompt: str, out: Path) -> None:
     raise AIError("fal.ai: таймаут генерации")
 
 
+def _extract_video_file(result, out: Path) -> None:
+    """Вытащить видеофайл из любого ответа Gradio (вложенные dict/list/tuple)."""
+    candidates: list[str] = []
+
+    def walk(node) -> None:  # noqa: ANN001
+        if isinstance(node, str):
+            candidates.append(node)
+        elif isinstance(node, dict):
+            for key in ("video", "path", "url", "output"):
+                if key in node:
+                    walk(node[key])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, (list, tuple)):
+            for v in node:
+                walk(v)
+
+    walk(result)
+    video_exts = (".mp4", ".webm", ".mov", ".gif")
+    for cand in candidates:
+        if Path(cand).exists() and cand.lower().endswith(video_exts):
+            out.write_bytes(Path(cand).read_bytes())
+            return
+    for cand in candidates:
+        if cand.startswith("http") and cand.split("?")[0].lower().endswith(video_exts):
+            with httpx.Client(timeout=300, follow_redirects=True) as c:
+                r = c.get(cand)
+                r.raise_for_status()
+                out.write_bytes(r.content)
+            return
+    raise AIError(f"Не нашёл видеофайл в ответе нейросети: {str(result)[:200]}")
+
+
+def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
+    """БЕСПЛАТНАЯ image-to-video нейросеть: публичный HF Space (движения персонажа).
+
+    По умолчанию multimodalart/wan2-1-fast (Wan 2.1 I2V + CausVid LoRA):
+    эндпоинт /generate_video(input_image, prompt, height, width,
+    duration_seconds, steps...). Персонаж на видео реально двигается по промпту:
+    прыгает, плачет, танцует — а не качается целиком, как в локальных эффектах.
+    Спейс может попросить HF_TOKEN (бесплатный аккаунт HF, токен Read) для
+    ZeroGPU-квоты. При любой ошибке вызывающий код откатится на локальную анимацию.
+    """
+    try:
+        from gradio_client import Client, handle_file  # type: ignore
+    except Exception as exc:
+        raise AIError("gradio_client не установлен (pip install gradio_client)") from exc
+    space = os.getenv("HF_SPACE", "multimodalart/wan2-1-fast")
+    api_name = os.getenv("HF_API_NAME", "/generate_video")
+    client = Client(space, token=os.getenv("HF_TOKEN") or None)
+    if "wan2-1-fast" in space or api_name == "/generate_video":
+        result = client.predict(
+            input_image=handle_file(str(image)),
+            prompt=prompt,
+            height=512,
+            width=512,
+            duration_seconds=float(os.getenv("HF_DURATION", "2.9")),
+            steps=int(os.getenv("HF_STEPS", "6")),
+            api_name="/generate_video",
+        )
+    else:
+        result = client.predict(handle_file(str(image)), prompt, api_name=api_name)
+    _extract_video_file(result, out)
+
+
 async def generate_ai_video(image: Path, prompt: str, out_mp4: Path) -> Path:
     provider = os.getenv("AI_PROVIDER", "none").lower()
     log.info("AI-генерация через %s: %s", provider, prompt[:120])
@@ -109,6 +174,10 @@ async def generate_ai_video(image: Path, prompt: str, out_mp4: Path) -> Path:
         await _via_replicate(image, prompt, out_mp4)
     elif provider == "fal":
         await _via_fal(image, prompt, out_mp4)
+    elif provider == "hf":
+        timeout = float(os.getenv("AI_TIMEOUT", "900"))  # бесплатная очередь бывает долгой
+        await asyncio.wait_for(asyncio.to_thread(_via_hf_sync, image, prompt, out_mp4),
+                               timeout=timeout)
     else:
         raise AIError(f"Неизвестный AI_PROVIDER={provider}")
     if not out_mp4.exists() or out_mp4.stat().st_size == 0:
