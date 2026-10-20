@@ -155,6 +155,10 @@ def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
     spaces = [primary] + [s for s in ("multimodalart/wan2-1-fast",
                                       "multimodalart/wan-2-2-first-last-frame")
                           if s != primary]
+    # С личным токеном first-last-frame надёжнее: анонимом ему не хватило
+    # только ZeroGPU-квоты, а wan-fast падал с RuntimeError самого приложения.
+    if token and primary == "multimodalart/wan2-1-fast":
+        spaces.sort(key=lambda s: 0 if "first-last" in s else 1)
     errors: list[str] = []
     for space in spaces:
         try:

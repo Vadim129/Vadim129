@@ -94,6 +94,11 @@ ATTEMPTS = [
     ("Wan-AI/Wan2.1", attempt_wan_official),
 ]
 
+# С личным токеном первым пробуем first-last-frame: анонимом ему не хватило
+# только ZeroGPU-квоты, а wan-fast падал с RuntimeError самого приложения.
+if os.getenv("HF_TOKEN"):
+    ATTEMPTS.sort(key=lambda a: 0 if "first-last" in a[0] else 1)
+
 
 def main() -> int:
     note("notice", "AI probe start",
