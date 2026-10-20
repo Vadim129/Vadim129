@@ -149,22 +149,45 @@ def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
         from gradio_client import Client, handle_file  # type: ignore
     except Exception as exc:
         raise AIError("gradio_client не установлен (pip install gradio_client)") from exc
-    space = os.getenv("HF_SPACE", "multimodalart/wan2-1-fast")
-    api_name = os.getenv("HF_API_NAME", "/generate_video")
-    client = Client(space, token=os.getenv("HF_TOKEN") or None)
-    if "wan2-1-fast" in space or api_name == "/generate_video":
-        result = client.predict(
-            input_image=handle_file(str(image)),
-            prompt=prompt,
-            height=512,
-            width=512,
-            duration_seconds=float(os.getenv("HF_DURATION", "2.9")),
-            steps=int(os.getenv("HF_STEPS", "6")),
-            api_name="/generate_video",
-        )
-    else:
-        result = client.predict(handle_file(str(image)), prompt, api_name=api_name)
-    _extract_video_file(result, out)
+    token = os.getenv("HF_TOKEN") or None
+    primary = os.getenv("HF_SPACE", "multimodalart/wan2-1-fast")
+    # Цепочка бесплатных спейсов: один упал/кончилась квота — пробуем следующий.
+    spaces = [primary] + [s for s in ("multimodalart/wan2-1-fast",
+                                      "multimodalart/wan-2-2-first-last-frame")
+                          if s != primary]
+    errors: list[str] = []
+    for space in spaces:
+        try:
+            client = Client(space, token=token)
+            if "wan-2-2-first-last-frame" in space:
+                result = client.predict(
+                    start_image_pil=handle_file(str(image)),
+                    end_image_pil=handle_file(str(image)),
+                    prompt=prompt,
+                    duration_seconds=2.1,
+                    steps=int(os.getenv("HF_STEPS", "8")),
+                    api_name="/generate_video",
+                )
+            elif "wan2-1-fast" in space:
+                result = client.predict(
+                    input_image=handle_file(str(image)),
+                    prompt=prompt,
+                    height=512,
+                    width=512,
+                    duration_seconds=float(os.getenv("HF_DURATION", "2.0")),
+                    steps=int(os.getenv("HF_STEPS", "4")),
+                    api_name="/generate_video",
+                )
+            else:
+                result = client.predict(handle_file(str(image)), prompt,
+                                        api_name=os.getenv("HF_API_NAME", "/generate_video"))
+            _extract_video_file(result, out)
+            log.info("AI-видео сгенерировал спейс %s", space)
+            return
+        except Exception as e:
+            log.warning("Спейс %s не смог: %s", space, e)
+            errors.append(f"{space}: {str(e)[:160]}")
+    raise AIError("Все бесплатные нейросети недоступны: " + " || ".join(errors))
 
 
 async def generate_ai_video(image: Path, prompt: str, out_mp4: Path) -> Path:
