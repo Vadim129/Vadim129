@@ -44,6 +44,17 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
           pip install -q -r deepstick-bot/requirements-rembg.txt
 
+      # История/настройки/последние фото переживают перезапуск раннера через cache.
+      # Стикерпак при этом вообще в Telegram хранится — он не теряется в любом случае.
+      - name: Восстановить данные бота
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            deepstick-bot/data
+            ~/.u2net
+          key: deepstick-data-${{ github.run_id }}
+          restore-keys: deepstick-data-
+
       - name: Бот (поллинг Telegram)
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -56,6 +67,15 @@ jobs:
           # валим задачу, чтобы цепочка перезапуска не крутилась вхолостую.
           timeout 19800 python bot.py; code=$?
           if [ $code -ne 124 ]; then exit $code; fi
+
+      - name: Сохранить данные бота
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            deepstick-bot/data
+            ~/.u2net
+          key: deepstick-data-${{ github.run_id }}
 
       - name: Перезапустить себя
         if: ${{ github.event_name == 'push' || inputs.chain }}
