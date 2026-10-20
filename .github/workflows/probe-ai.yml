@@ -43,6 +43,7 @@ jobs:
       - name: Проба нейросети (реальная генерация видео)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKENS: ${{ secrets.HF_TOKENS }}
         run: cd deepstick-bot && python tools/probe_ai.py
 
       - name: Артефакт с результатом

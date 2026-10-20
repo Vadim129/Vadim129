@@ -427,9 +427,11 @@ async def cmd_cancel(message: Message, state: FSMContext) -> None:
 
 async def _quota_line() -> str:
     """Остаток бесплатной ZeroGPU-квоты HF (для админа): секунды и время сброса."""
-    token = os.getenv("HF_TOKEN")
-    if not token:
-        return ""
+    if not os.getenv("HF_TOKEN"):
+        extra = [t.strip() for t in os.getenv("HF_TOKENS", "").split(",") if t.strip()]
+        if not extra:
+            return ""
+        os.environ["HF_TOKEN"] = extra[0]  # get_zero_gpu_quota читает токен из окружения
     try:
         from huggingface_hub import get_zero_gpu_quota  # type: ignore
 

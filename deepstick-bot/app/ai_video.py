@@ -163,6 +163,14 @@ def _wan22_kwargs(image: Path, prompt: str, api_name: str = "/generate_video",
     return kwargs
 
 
+def _ltx23_kwargs(image: Path, prompt: str) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    return dict(
+        input_image=handle_file(str(image)), prompt=prompt, duration=2.5,
+        enhance_prompt=False, height=512, width=512, api_name="/generate_video")
+
+
 def _hunyuan_kwargs(image: Path, prompt: str) -> dict:
     from gradio_client import handle_file  # type: ignore
 
@@ -195,6 +203,7 @@ def _firstlast_kwargs(image: Path, prompt: str) -> dict:
 # кончилась одна квота, переключаемся на следующую нейросеть/пул.
 SPACE_SPECS: list[dict] = [
     {"id": "Lightricks/ltx-video-distilled", "kwargs": _ltx_kwargs},
+    {"id": "Upsampler/ltx-video", "kwargs": _ltx23_kwargs},
     {"id": "Upsampler/wan-2-2-14b-image-to-video", "kwargs": _wan22_kwargs},
     {"id": "preSalesAIAutomation/imagetovideo",
      "kwargs": lambda i, p: _wan22_kwargs(i, p, api_name="/generate_video_sync")},
@@ -228,26 +237,42 @@ def _call_space_sync(spec: dict, image: Path, prompt: str, out: Path,
     tmp.replace(out)
 
 
+def _hf_identities() -> list[tuple[str, str | None]]:
+    """Пулы бесплатной квоты: каждый HF-токен = отдельный аккаунт со своими
+    300 c/сутки, плюс анонимный гостевой пул. Токены: HF_TOKEN и/или
+    HF_TOKENS (несколько через запятую — ротация аккаунтов)."""
+    tokens: list[str] = []
+    for t in os.getenv("HF_TOKENS", "").split(","):
+        t = t.strip()
+        if t and t not in tokens:
+            tokens.append(t)
+    single = os.getenv("HF_TOKEN", "").strip()
+    if single and single not in tokens:
+        tokens.insert(0, single)
+    idents = [(f"token{i + 1}" if len(tokens) > 1 else "token", t)
+              for i, t in enumerate(tokens)]
+    idents.append(("anon", None))
+    return idents
+
+
 async def _via_hf(image: Path, prompt: str, out: Path) -> None:
     """БЕСПЛАТНЫЕ image-to-video нейросети: реестр публичных HF Spaces.
 
     Персонаж на видео реально двигается по промпту: прыгает, плачет, танцует.
-    Идём по реестру спейсов; каждый пробуем с токеном и анонимно (разные пулы
-    бесплатной ZeroGPU-квоты). Спейс упал/кончилась квота — следующий.
-    При полной неудаче вызывающий код откатится на локальную анимацию.
+    Идём по реестру спейсов; каждый пробуем по очереди со всеми пулами квоты
+    (токены аккаунтов + анонимный). Спейс упал/кончилась квота — переключаемся
+    на следующую нейросеть. При полной неудаче — локальная анимация.
     """
-    token = os.getenv("HF_TOKEN") or None
     attempt_timeout = float(os.getenv("HF_ATTEMPT_TIMEOUT", "420"))
     specs = list(SPACE_SPECS)
     override = os.getenv("HF_SPACE", "").strip()
     if override and all(s["id"] != override for s in specs):
         specs.insert(0, {"id": override, "kwargs": _wan22_kwargs})
+    identities = _hf_identities()
     dead: set[str] = set()  # пулы квоты, которые уже исчерпаны
     errors: list[str] = []
     for spec in specs:
-        for ident, tok in (("token", token), ("anon", None)):
-            if ident == "token" and not token:
-                continue
+        for ident, tok in identities:
             if ident in dead:
                 continue
             try:

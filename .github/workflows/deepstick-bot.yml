@@ -92,6 +92,7 @@ jobs:
           # При недоступности/лимитах спейса бот сам откатывается на локальную анимацию.
           AI_PROVIDER: hf
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKENS: ${{ secrets.HF_TOKENS }}
           REMOVE_BG: auto
           DATA_DIR: data
         run: |

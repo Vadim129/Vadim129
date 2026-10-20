@@ -126,7 +126,8 @@ def check_matting_synthetic(sample: Path) -> None:
 
 
 def main() -> int:
-    from app.ai_video import SPACE_SPECS, _call_space_sync, _is_quota_error
+    from app.ai_video import (SPACE_SPECS, _call_space_sync, _hf_identities,
+                              _is_quota_error)
 
     note("notice", "AI probe start",
          f"HF_TOKEN задан: {bool(os.getenv('HF_TOKEN'))}; спейсов: {len(SPACE_SPECS)}")
@@ -140,18 +141,19 @@ def main() -> int:
         note("notice", "AI probe ZeroGPU quota", f"не удалось узнать: {e}")
 
     sample = make_sample(Path("/tmp/probe_input.jpg"))
-    token = os.getenv("HF_TOKEN") or None
+    identities = _hf_identities()
+    note("notice", "AI probe pools", f"пулы квоты: {[i for i, _ in identities]}")
     dead: set[str] = set()
     verified: list[str] = []
     checked_pipeline = False
+    skipped = 0
 
     for spec in SPACE_SPECS:
         if len(verified) >= MAX_VERIFIED:
             break
-        for ident, tok in (("token", token), ("anon", None)):
-            if ident == "token" and not token:
-                continue
+        for ident, tok in identities:
             if ident in dead or len(verified) >= MAX_VERIFIED:
+                skipped += 1 if ident in dead else 0
                 continue
             out = Path(f"/tmp/probe_{spec['id'].replace('/', '_')}_{ident}.mp4")
             t0 = time.time()
@@ -189,7 +191,8 @@ def main() -> int:
             break  # этот спейс работает — следующий
 
     note("notice", "AI probe verified",
-         f"рабочих спейсов подтверждено: {len(verified)}: {', '.join(verified) or 'нет'}")
+         f"рабочих спейсов подтверждено: {len(verified)}: {', '.join(verified) or 'нет'}; "
+         f"пропущено попыток (квота пула исчерпана): {skipped}")
     if verified:
         return 0
     check_matting_synthetic(sample)
