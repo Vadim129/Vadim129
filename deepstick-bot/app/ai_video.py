@@ -155,10 +155,9 @@ def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
     spaces = [primary] + [s for s in ("multimodalart/wan2-1-fast",
                                       "multimodalart/wan-2-2-first-last-frame")
                           if s != primary]
-    # С личным токеном first-last-frame надёжнее: анонимом ему не хватило
-    # только ZeroGPU-квоты, а wan-fast падал с RuntimeError самого приложения.
-    if token and primary == "multimodalart/wan2-1-fast":
-        spaces.sort(key=lambda s: 0 if "first-last" in s else 1)
+    # Основной — настоящий image-to-video (wan2-1-fast): он создаёт движения.
+    # first-last-frame только запасной: с одинаковыми кадрами он даёт почти
+    # статичное видео (одно моргание), поэтому первым его не ставим.
     errors: list[str] = []
     for space in spaces:
         try:
@@ -178,8 +177,8 @@ def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
                     prompt=prompt,
                     height=512,
                     width=512,
-                    duration_seconds=float(os.getenv("HF_DURATION", "2.0")),
-                    steps=int(os.getenv("HF_STEPS", "4")),
+                    duration_seconds=float(os.getenv("HF_DURATION", "2.5")),
+                    steps=int(os.getenv("HF_STEPS", "6")),
                     api_name="/generate_video",
                 )
             else:

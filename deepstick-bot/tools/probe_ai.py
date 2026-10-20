@@ -41,12 +41,14 @@ def make_sample(path: Path) -> Path:
 
 
 def attempt_wan_fast(sample: Path, out: Path) -> None:
+    # Параметры ровно как у бота: квадрат 512, 2.5 c, 6 шагов.
     from gradio_client import Client, handle_file
 
     client = Client("multimodalart/wan2-1-fast", token=os.getenv("HF_TOKEN") or None)
     result = client.predict(
         input_image=handle_file(str(sample)), prompt=PROMPT,
-        duration_seconds=2.0, steps=4, api_name="/generate_video")
+        height=512, width=512, duration_seconds=2.5, steps=6,
+        api_name="/generate_video")
     from app.ai_video import _extract_video_file
 
     _extract_video_file(result, out)
@@ -94,11 +96,6 @@ ATTEMPTS = [
     ("Wan-AI/Wan2.1", attempt_wan_official),
 ]
 
-# С личным токеном первым пробуем first-last-frame: анонимом ему не хватило
-# только ZeroGPU-квоты, а wan-fast падал с RuntimeError самого приложения.
-if os.getenv("HF_TOKEN"):
-    ATTEMPTS.sort(key=lambda a: 0 if "first-last" in a[0] else 1)
-
 
 def main() -> int:
     note("notice", "AI probe start",
@@ -127,6 +124,20 @@ def main() -> int:
             note("notice", "AI probe sticker OK", str(probe(webm)))
         except Exception as e:
             note("error", "AI probe sticker FAIL", str(e))
+            return 1
+        # Главное требование: стикер должен быть вырезанной фигуркой на прозрачности
+        try:
+            from app.matting import matte_encode
+
+            matted = Path("/tmp/probe_matted.webm")
+            if not matte_encode(out, matted):
+                note("error", "AI probe matting FAIL", "matte_encode вернул False")
+                return 1
+            from app.encode import probe as probe2
+
+            note("notice", "AI probe matting OK", str(probe2(matted)))
+        except Exception as e:
+            note("error", "AI probe matting FAIL", str(e))
             return 1
         return 0
     note("error", "AI probe ALL FAILED", "ни один бесплатный спейс не сработал")

@@ -51,11 +51,13 @@ from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
 from app.db import Database  # noqa: E402
 from app.effects import prepare_subject, render_frames  # noqa: E402
 from app.encode import convert_video, encode_frames  # noqa: E402
+from app.matting import matte_encode  # noqa: E402
 from app.scenarios import (  # noqa: E402
     SCENARIOS,
     SCENARIOS_BY_ID,
     STYLES,
     STYLES_BY_ID,
+    build_prompt,
     match_scenario,
 )
 from config import Config  # noqa: E402
@@ -289,16 +291,23 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
         await message.bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
         settings = DB.get_settings(user.id)
         if ai_enabled():
-            prompt = (
-                f"{style.ai_prompt}. The main character from the photo: "
-                f"{custom_text or scenario.ai_prompt}. "
-                "Keep the face and appearance of the person from the photo, "
-                "short seamless loop, no text, no watermark."
-            )
+            prompt = build_prompt(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
                 await generate_ai_video(photo, prompt, mp4)
-                await asyncio.to_thread(convert_video, mp4, webm)
+                # Стикер = вырезанная фигурка на прозрачности, а не прямоугольник:
+                # вырезаем фон из сгенерированного видео покадрово.
+                if progress_task:
+                    progress_task.cancel()
+                    progress_task = None
+                try:
+                    await status.edit_text("✂️ Видео готово — вырезаю фон у фигурки…")
+                except TelegramBadRequest:
+                    pass
+                matted = await asyncio.to_thread(matte_encode, mp4, webm)
+                if not matted:
+                    log.warning("Вырезание фона не удалось — делаю прямоугольный стикер")
+                    await asyncio.to_thread(convert_video, mp4, webm)
             except asyncio.CancelledError:
                 raise
             except Exception:

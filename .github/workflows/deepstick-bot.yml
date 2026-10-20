@@ -55,6 +55,7 @@ jobs:
           path: |
             deepstick-bot/data
             ~/.u2net
+            ~/.rembg
           key: deepstick-data-${{ github.run_id }}
           restore-keys: deepstick-data-
 
@@ -102,7 +103,7 @@ jobs:
 
       - name: Подготовить папки данных
         if: always()
-        run: mkdir -p deepstick-bot/data ~/.u2net
+        run: mkdir -p deepstick-bot/data ~/.u2net ~/.rembg
 
       - name: Сохранить данные бота
         if: always()
@@ -111,6 +112,7 @@ jobs:
           path: |
             deepstick-bot/data
             ~/.u2net
+            ~/.rembg
           key: deepstick-data-${{ github.run_id }}
 
       - name: Перезапустить себя

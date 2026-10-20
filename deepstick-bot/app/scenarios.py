@@ -21,58 +21,63 @@ class Scenario:
 
 SCENARIOS: list[Scenario] = [
     Scenario("rocket", "🚀", "Лечу на ракете", "rocket",
-             "the character happily rides a small cartoon rocket flying up through "
-             "stars, wind in hair, excited smile, seamless loop, centred composition"),
+             "rides a small rocket flying upward: body bounces from acceleration, one arm waves, other holds on tight, legs dangling and kicking, hair and clothes flutter in the wind, mouth open in an excited cheer, continuous strong full-body motion"),
     Scenario("laugh", "😂", "Дикий смех", "shake",
-             "the character bursts out laughing, shoulders shaking, tears of joy, "
-             "exaggerated funny expression, seamless loop"),
+             "laughs uncontrollably: head throws back and shakes, shoulders shake hard, mouth wide open laughing, eyes squeezed shut, hands slap knees, belly shaking, continuous strong motion"),
     Scenario("love", "😍", "Влюблён", "love",
-             "the character falls in love, hearts floating around, dreamy smile, "
-             "heart-eyes, seamless loop"),
+             "falls in love: hands press to the chest then blow kisses to the camera, head tilts dreamily side to side, eyes turn to hearts, wide happy smile, swaying body, continuous expressive motion"),
     Scenario("wow", "😮", "Шок / вау", "zoom",
-             "the character is shocked and amazed, jaw drops, camera quickly zooms "
-             "in on the surprised face, seamless loop"),
+             "is shocked: eyes go wide, eyebrows jump up, jaw drops open, both hands fly to the cheeks, body recoils back then leans in again, exaggerated surprise, continuous strong facial and body motion"),
     Scenario("dance", "💃", "Танцую", "dance",
-             "the character dances joyfully to music, rhythmic body moves, "
-             "party mood, seamless loop"),
+             "dances energetically: arms wave above the head and swing side to side, hips sway, shoulders bounce to the rhythm, spins half-way and back, big smile, continuous strong full-body dancing"),
     Scenario("fire", "🔥", "Я в огне / крут", "fire",
-             "the character looks cool and confident with stylised flames around, "
-             "sunglasses vibe, epic pose, seamless loop"),
+             "acts cool and epic: puts on sunglasses with one hand, nods confidently, crosses arms, then points at the camera, smirk, flames-like energy around, rhythmic confident movements"),
     Scenario("portal", "🌀", "Открываю портал", "portal",
-             "the character opens a glowing magical portal, swirling energy vortex "
-             "behind, amazed look, seamless loop"),
+             "opens a magical portal: both arms draw big circles in the air, palms push forward opening a swirling vortex, hair blows back, amazed expression, continuous strong arm and body motion"),
     Scenario("hello", "👋", "Привет!", "wave",
-             "the character waves hello friendly at the camera, big smile, "
-             "seamless loop"),
+             "waves hello enthusiastically: one arm raised high waving left-right, other hand beckons, head nods, huge friendly smile, bouncing in place, continuous strong motion"),
     Scenario("yes", "✅", "Да / согласен", "nod",
-             "the character nods yes approvingly, thumbs up, confident smile, "
-             "seamless loop"),
+             "nods yes vigorously: head nods up-down repeatedly, thumbs up with both hands, approving smile, shoulders bounce happily, continuous clear motion"),
     Scenario("no", "🚫", "Нет / ни за что", "no",
-             "the character shakes head no decisively, arms crossed, firm "
-             "expression, seamless loop"),
+             "shakes head no decisively: head shakes left-right repeatedly, arms crossed then one finger wags no-no, firm frown, body turns side to side, continuous clear motion"),
     Scenario("spin", "🌀", "Кружусь", "spin",
-             "the character spins around joyfully full 360 degrees, playful, "
-             "seamless loop"),
+             "spins around joyfully: full body turns 360 degrees again and again, arms spread wide, laughing, hair and clothes flying, continuous spinning motion"),
     Scenario("bounce", "🤪", "Прыгаю от радости", "bounce",
-             "the character jumps up and down happily, pure joy, seamless loop"),
+             "jumps up and down with joy: knees bend and whole body leaps high repeatedly, arms pump up at every jump, huge smile, hair bouncing, continuous strong jumping"),
     Scenario("money", "💸", "Дождь из денег", "money",
-             "money bills rain down around the happy character, rich vibes, "
-             "seamless loop"),
+             "celebrates in money rain: throws banknotes up with both hands, catches falling bills, laughs, dances in place, head thrown back happily, continuous strong motion"),
     Scenario("sleep", "😴", "Сплю / устал", "sleep",
-             "the character is sleepy, yawning, Zzz floating, cozy mood, "
-             "seamless loop"),
+             "is very sleepy: yawns widely covering mouth with a hand, eyes slowly close and open, head nods down and jerks up, body sways, rubbing eyes, continuous slow motion"),
     Scenario("angry", "😡", "Бесит!", "angry",
-             "the character is furious, shaking with anger, comic rage, "
-             "seamless loop"),
+             "is furious: face turns red, eyebrows frown hard, shakes fists, stomps, head shakes in rage, mouth shouts silently, body trembling with anger, continuous strong motion"),
     Scenario("winner", "🏆", "Я победил!", "winner",
-             "the character celebrates victory, golden stars, trophy energy, "
-             "jumping with joy, seamless loop"),
+             "celebrates victory: jumps with both arms raised in a V, pumps fists, cheers with mouth wide open, chest out proudly, bouncing triumphantly, continuous strong motion"),
     Scenario("cry", "😭", "Плачу", "cry",
-             "the character cries dramatically with cartoon tears, sad but funny, "
-             "seamless loop"),
+             "cries hard: tears stream down both cheeks, shoulders sob up and down, hands wipe tears and cover the face then drop, mouth trembles open in sobs, head bows and shakes, continuous strong motion"),
 ]
 
 SCENARIOS_BY_ID = {s.id: s for s in SCENARIOS}
+
+# Обязательный хвост любого промпта в image-to-video. Без него бесплатные
+# модели любят возвращать почти статичную картинку с одним морганием.
+MOTION_SUFFIX = (
+    " The person performs this action with BIG, CLEAR, CONTINUOUS movements of "
+    "the head, face, arms and whole body during the entire video. "
+    "It must be a real moving video, NOT a still photo, NOT only blinking, "
+    "NOT only a camera zoom or shake. Exaggerated facial expression matching "
+    "the action. Keep the exact face, hairstyle and identity of the person "
+    "from the photo. The character stays centered and fully visible. "
+    "Seamless loop, no text, no watermark, no other people."
+)
+
+
+def build_prompt(style: Style, scenario: Scenario, custom_text: str | None) -> str:
+    """Финальный промпт нейросети: стиль + действие + (текст юзера) + движения."""
+    parts = [f"{style.ai_prompt}. The main character from the photo {scenario.ai_prompt}."]
+    if custom_text:
+        parts.append(f"User's own scenario (may be in Russian, follow its meaning): {custom_text}.")
+    parts.append(MOTION_SUFFIX)
+    return " ".join(parts)
 
 
 @dataclass(frozen=True)

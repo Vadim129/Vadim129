@@ -54,6 +54,16 @@ def test_extract_video_file(tmp_path):
     assert out.read_bytes() == b"0" * 2048
 
 
+def test_build_prompt_strong_motion():
+    from app.scenarios import SCENARIOS_BY_ID, STYLES_BY_ID, build_prompt
+
+    p = build_prompt(STYLES_BY_ID["original"], SCENARIOS_BY_ID["cry"], "плачу навзрыд")
+    assert "NOT only blinking" in p          # запрет «одного моргания»
+    assert "BIG, CLEAR, CONTINUOUS" in p     # требование больших движений
+    assert "плачу навзрыд" in p              # текст пользователя не потерян
+    assert "tears stream down" in p          # прописное движение сценария
+
+
 def test_new_keywords():
     assert match_scenario("хочу дождь из денег").id == "money"
     assert match_scenario("я так устал, сплю").id == "sleep"
