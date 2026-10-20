@@ -6,6 +6,11 @@ name: DeepStick Bot (запуск)
 # Для постоянной работы на своём сервере лучше Docker: deepstick-bot/README.md.
 
 on:
+  push:
+    branches: ["arena/1d4df997-vadim129"]
+    paths:
+      - "deepstick-bot/**"
+      - ".github/workflows/deepstick-bot.yml"
   workflow_dispatch:
     inputs:
       chain:
@@ -50,7 +55,7 @@ jobs:
           timeout 19800 python bot.py || true   # 5.5 часа, дальше — перезапуск ниже
 
       - name: Перезапустить себя
-        if: ${{ inputs.chain }}
+        if: ${{ github.event_name == 'push' || inputs.chain }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deepstick-bot.yml --ref "$GITHUB_REF_NAME" -f chain=true
