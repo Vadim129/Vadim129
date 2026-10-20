@@ -55,6 +55,32 @@ jobs:
           key: deepstick-data-${{ github.run_id }}
           restore-keys: deepstick-data-
 
+      # Диагностика без раскрытия секрета: виден ли токен и принимает ли его Telegram.
+      # По тому, какой шаг красный, причина понятна даже без доступа к логам.
+      - name: Диагностика — секрет задан?
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "::error title=Секрет не виден::BOT_TOKEN пуст. Секрет должен быть именно Repository secret во вкладке Actions (Settings -> Secrets and variables -> Actions), имя — BOT_TOKEN."
+            exit 1
+          fi
+          echo "BOT_TOKEN задан (длина: ${#BOT_TOKEN})"
+
+      - name: Диагностика — токен принимает Telegram?
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          resp=$(curl -s "https://api.telegram.org/bot${BOT_TOKEN}/getMe")
+          echo "$resp" | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          if not d.get('ok'):
+              print('::error title=Токен отклонён::Telegram не принял BOT_TOKEN:', d.get('description'))
+              sys.exit(1)
+          r = d['result']
+          print(f\"::notice title=Бот онлайн::@{r.get('username')} ({r.get('first_name')})\")"
+
       - name: Бот (поллинг Telegram)
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -67,6 +93,10 @@ jobs:
           # валим задачу, чтобы цепочка перезапуска не крутилась вхолостую.
           timeout 19800 python bot.py; code=$?
           if [ $code -ne 124 ]; then exit $code; fi
+
+      - name: Подготовить папки данных
+        if: always()
+        run: mkdir -p deepstick-bot/data ~/.u2net
 
       - name: Сохранить данные бота
         if: always()
