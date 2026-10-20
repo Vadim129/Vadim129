@@ -235,9 +235,9 @@ async def _deliver(message: Message, webm: Path, emoji: str, kind: str,
     user = message.from_user
     assert user
     settings = DB.get_settings(user.id)
-    pack_url, file_id = None, None
+    pack_url, file_id, pack_err = None, None, None
     if settings["auto_pack"]:
-        pack_url, file_id = await packs.add_to_pack(
+        pack_url, file_id, pack_err = await packs.add_to_pack(
             message.bot, user.id, user.first_name, webm, emoji)
     if file_id:
         await message.bot.send_sticker(message.chat.id, file_id)
@@ -253,6 +253,10 @@ async def _deliver(message: Message, webm: Path, emoji: str, kind: str,
     text = "✅ Готово!"
     if pack_url:
         text += f"\nТвой пак: {pack_url}"
+    elif pack_err:
+        text += ("\n⚠️ Стикер сделал, но в пак не добавился. "
+                 f"Причина Telegram: {pack_err}\n"
+                 "Попробуй 📦 Стикерпаки → стикер можно добавить вручную кнопкой ниже.")
     await message.answer(text, reply_markup=after_kb(pack_url, gen_id if file_id else None))
 
 
@@ -570,7 +574,8 @@ async def on_pack_title(message: Message, state: FSMContext) -> None:
     await state.set_state(Flow.waiting_photo)
     name, rec = await _resolve_pack(message.bot, user.id, str(target))
     title = message.text or ""
-    ok = bool(name) and await packs.rename_pack_by_name(message.bot, name, title)
+    ok, _err = (await packs.rename_pack_by_name(message.bot, name, title)
+                if name else (False, "пак не найден"))
     if ok and rec is not None:
         DB.rename_pack_rec(user.id, rec["id"], title[:64])
     await message.answer("✅ Пак переименован." if ok else "😖 Не вышло — возможно, пака ещё нет.")
@@ -653,7 +658,7 @@ async def cb_pack_del_sticker(cb: CallbackQuery) -> None:
     if not rec:
         await cb.answer("Этот стикер уже удалён", show_alert=True)
         return
-    ok = await packs.delete_sticker(cb.bot, rec["file_id"])
+    ok, _err = await packs.delete_sticker(cb.bot, rec["file_id"])
     if ok:
         DB.delete_ref(ref)
         try:
@@ -695,9 +700,9 @@ async def _do_add_to_pack(cb: CallbackQuery, target: str, gen_id: int) -> None:
     if target == "main" and await packs.get_pack_by_name(cb.bot, name) is None:
         await cb.answer("Основного пака ещё нет — сделай первый стикер", show_alert=True)
         return
-    ok = await packs.add_file_to_pack(cb.bot, cb.from_user.id, name,
-                                      row["file_id"], row["emoji"] or "🔥")
-    await cb.answer("✅ Добавлено в пак" if ok else "😖 Не вышло — попробуй ещё раз",
+    ok, err = await packs.add_file_to_pack(cb.bot, cb.from_user.id, name,
+                                           row["file_id"], row["emoji"] or "🔥")
+    await cb.answer("✅ Добавлено в пак" if ok else f"😖 Telegram отказал: {err}",
                     show_alert=True)
 
 
@@ -760,10 +765,10 @@ async def cb_pack_new_first(cb: CallbackQuery, state: FSMContext) -> None:
         return
     me = await cb.bot.get_me()
     name = packs.custom_pack_name(user.id, me.username or "bot", uuid.uuid4().hex[:6])
-    ok = await packs.create_pack_with_file(cb.bot, user.id, name, title,
-                                           row["file_id"], row["emoji"] or "🔥")
+    ok, err = await packs.create_pack_with_file(cb.bot, user.id, name, title,
+                                                row["file_id"], row["emoji"] or "🔥")
     if not ok:
-        await cb.answer("😖 Не удалось создать пак — попробуй ещё раз", show_alert=True)
+        await cb.answer(f"😖 Telegram отказал в создании пака: {err}", show_alert=True)
         return
     pack_id = DB.add_pack(user.id, name, title)
     url = f"https://t.me/addstickers/{name}"
@@ -805,7 +810,7 @@ async def cb_pack_delete_do(cb: CallbackQuery) -> None:
     if not rec:
         await cb.answer("Пак не найден", show_alert=True)
         return
-    ok = await packs.delete_pack(cb.bot, rec["name"])
+    ok, _err = await packs.delete_pack(cb.bot, rec["name"])
     DB.delete_pack_rec(user.id, rec["id"])
     await cb.message.edit_text(
         "🗑 Пак удалён." if ok else "🗑 Убрал пак из списка (в Telegram он мог уже отсутствовать).")

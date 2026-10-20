@@ -37,9 +37,13 @@ async def get_pack(bot: Bot, user_id: int) -> StickerSet | None:
         return None
 
 
+def _err(e: Exception) -> str:
+    return f"{type(e).__name__}: {e}"[:220]
+
+
 async def add_to_pack(bot: Bot, user_id: int, first_name: str,
-                      webm: Path, emoji: str) -> tuple[str | None, str | None]:
-    """Добавить стикер (создать пак при первом разе) -> (ссылка, file_id стикера)."""
+                      webm: Path, emoji: str) -> tuple[str | None, str | None, str | None]:
+    """Добавить стикер (создать пак при первом разе) -> (ссылка, file_id, ошибка)."""
     name = await _name(bot, user_id)
     sticker = InputSticker(sticker=FSInputFile(webm), format="video", emoji_list=[emoji])
     try:
@@ -53,15 +57,15 @@ async def add_to_pack(bot: Bot, user_id: int, first_name: str,
                     title=f"🎬 Мои стикеры — {first_name}"[:64],
                     stickers=[sticker], sticker_type="regular",
                 )
-            except TelegramBadRequest:
+            except TelegramBadRequest as e2:
                 log.exception("Не удалось создать стикерпак %s", name)
-                return None, None
+                return None, None, _err(e2)
         else:
             log.exception("Не удалось добавить стикер в пак %s", name)
-            return None, None
+            return None, None, _err(e)
     pack = await get_pack(bot, user_id)
     file_id = pack.stickers[-1].file_id if pack and pack.stickers else None
-    return f"https://t.me/addstickers/{name}", file_id
+    return f"https://t.me/addstickers/{name}", file_id, None
 
 
 async def delete_last_sticker(bot: Bot, user_id: int) -> bool:
@@ -76,7 +80,7 @@ async def delete_last_sticker(bot: Bot, user_id: int) -> bool:
         return False
 
 
-async def rename_pack(bot: Bot, user_id: int, title: str) -> bool:
+async def rename_pack(bot: Bot, user_id: int, title: str) -> tuple[bool, str | None]:
     return await rename_pack_by_name(bot, await _name(bot, user_id), title)
 
 
@@ -96,55 +100,81 @@ async def get_pack_by_name(bot: Bot, name: str) -> StickerSet | None:
 
 
 async def create_pack_with_file(bot: Bot, user_id: int, name: str, title: str,
-                                file_id: str, emoji: str) -> bool:
+                                file_id: str, emoji: str) -> tuple[bool, str | None]:
     """Создать пак, первый стикер — уже существующий file_id (пак не бывает пустым)."""
     sticker = InputSticker(sticker=file_id, format="video", emoji_list=[emoji])
     try:
         await bot.create_new_sticker_set(
             user_id=user_id, name=name, title=title[:64],
             stickers=[sticker], sticker_type="regular")
-        return True
-    except TelegramBadRequest:
+        return True, None
+    except TelegramBadRequest as e:
         log.exception("Не удалось создать пак %s", name)
-        return False
+        return False, _err(e)
+
+
+async def create_pack_webm(bot: Bot, user_id: int, name: str, title: str,
+                           webm: Path, emoji: str) -> tuple[bool, str | None]:
+    """Создать пак, первый стикер — видеофайл webm."""
+    sticker = InputSticker(sticker=FSInputFile(webm), format="video", emoji_list=[emoji])
+    try:
+        await bot.create_new_sticker_set(
+            user_id=user_id, name=name, title=title[:64],
+            stickers=[sticker], sticker_type="regular")
+        return True, None
+    except TelegramBadRequest as e:
+        log.exception("Не удалось создать пак %s", name)
+        return False, _err(e)
 
 
 async def add_file_to_pack(bot: Bot, user_id: int, name: str,
-                           file_id: str, emoji: str) -> bool:
+                           file_id: str, emoji: str) -> tuple[bool, str | None]:
     """Добавить в пак копию стикера по его file_id."""
     sticker = InputSticker(sticker=file_id, format="video", emoji_list=[emoji])
     try:
         await bot.add_sticker_to_set(user_id=user_id, name=name, sticker=sticker)
-        return True
-    except TelegramBadRequest:
+        return True, None
+    except TelegramBadRequest as e:
         log.exception("Не удалось добавить стикер в пак %s", name)
-        return False
+        return False, _err(e)
 
 
-async def delete_sticker(bot: Bot, file_id: str) -> bool:
+async def add_webm_to_pack(bot: Bot, user_id: int, name: str,
+                           webm: Path, emoji: str) -> tuple[bool, str | None]:
+    """Добавить в пак стикер видеофайлом webm."""
+    sticker = InputSticker(sticker=FSInputFile(webm), format="video", emoji_list=[emoji])
+    try:
+        await bot.add_sticker_to_set(user_id=user_id, name=name, sticker=sticker)
+        return True, None
+    except TelegramBadRequest as e:
+        log.exception("Не удалось добавить стикер в пак %s", name)
+        return False, _err(e)
+
+
+async def delete_sticker(bot: Bot, file_id: str) -> tuple[bool, str | None]:
     """Удалить конкретный стикер из его пака."""
     try:
         await bot.delete_sticker_from_set(file_id)
-        return True
-    except TelegramBadRequest:
+        return True, None
+    except TelegramBadRequest as e:
         log.exception("Не удалось удалить стикер из пака")
-        return False
+        return False, _err(e)
 
 
-async def delete_pack(bot: Bot, name: str) -> bool:
+async def delete_pack(bot: Bot, name: str) -> tuple[bool, str | None]:
     """Удалить пак целиком (Bot API: deleteStickerSet)."""
     try:
         await bot.delete_sticker_set(name)
-        return True
-    except (TelegramBadRequest, AttributeError):
+        return True, None
+    except (TelegramBadRequest, AttributeError) as e:
         log.exception("Не удалось удалить пак %s", name)
-        return False
+        return False, _err(e)
 
 
-async def rename_pack_by_name(bot: Bot, name: str, title: str) -> bool:
+async def rename_pack_by_name(bot: Bot, name: str, title: str) -> tuple[bool, str | None]:
     try:
         await bot.set_sticker_set_title(name, title[:64])
-        return True
-    except TelegramBadRequest:
+        return True, None
+    except TelegramBadRequest as e:
         log.exception("Не удалось переименовать пак %s", name)
-        return False
+        return False, _err(e)

@@ -1,0 +1,52 @@
+name: Probe sticker packs (Telegram API)
+
+# Живая проверка стикерпаков на реальном Bot API: создать пак, добавить
+# стикеры, удалить стикер, переименовать, удалить пак + основной флоу
+# личного пака. Результат — аннотации в этом запуске.
+
+on:
+  push:
+    branches: ["arena/1d4df997-vadim129"]
+    paths:
+      - "deepstick-bot/app/packs.py"
+      - "deepstick-bot/tools/probe_packs.py"
+      - ".github/workflows/probe-packs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probe-packs
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: deepstick-bot/requirements.txt
+
+      - name: Зависимости пробы
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install -q -r deepstick-bot/requirements.txt
+
+      - name: БД бота (владелец паков — первый пользователь)
+        uses: actions/cache/restore@v4
+        with:
+          path: deepstick-bot/data
+          key: probe-packs-data-${{ github.run_id }}
+          restore-keys: deepstick-data-
+
+      - name: Проба паков (реальный Telegram API)
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          PROBE_USER_ID: ${{ secrets.PROBE_USER_ID }}
+        run: cd deepstick-bot && python tools/probe_packs.py
