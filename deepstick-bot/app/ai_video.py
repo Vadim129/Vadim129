@@ -138,9 +138,9 @@ def _extract_video_file(result, out: Path) -> None:
 def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
     """БЕСПЛАТНАЯ image-to-video нейросеть: публичный HF Space (движения персонажа).
 
-    По умолчанию multimodalart/wan2-1-fast (Wan 2.1 I2V + CausVid LoRA):
-    эндпоинт /generate_video(input_image, prompt, height, width,
-    duration_seconds, steps...). Персонаж на видео реально двигается по промпту:
+    Основной — Lightricks/ltx-video-distilled (настоящий image-to-video):
+    эндпоинт /image_to_video(prompt, negative_prompt, input_image_filepath,
+    height_ui, width_ui, duration_ui...). Персонаж реально двигается по промпту:
     прыгает, плачет, танцует — а не качается целиком, как в локальных эффектах.
     Спейс может попросить HF_TOKEN (бесплатный аккаунт HF, токен Read) для
     ZeroGPU-квоты. При любой ошибке вызывающий код откатится на локальную анимацию.
@@ -150,35 +150,40 @@ def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
     except Exception as exc:
         raise AIError("gradio_client не установлен (pip install gradio_client)") from exc
     token = os.getenv("HF_TOKEN") or None
-    primary = os.getenv("HF_SPACE", "multimodalart/wan2-1-fast")
     # Цепочка бесплатных спейсов: один упал/кончилась квота — пробуем следующий.
-    spaces = [primary] + [s for s in ("multimodalart/wan2-1-fast",
-                                      "multimodalart/wan-2-2-first-last-frame")
-                          if s != primary]
-    # Основной — настоящий image-to-video (wan2-1-fast): он создаёт движения.
-    # first-last-frame только запасной: с одинаковыми кадрами он даёт почти
-    # статичное видео (одно моргание), поэтому первым его не ставим.
+    # Основной — Lightricks/ltx-video-distilled: настоящий image-to-video,
+    # персонаж реально выполняет движение из промпта (проверено пробой:
+    # видео за ~4 c). first-last-frame — только запасной: с одинаковыми
+    # стартовым и конечным кадрами он даёт почти статичное видео.
+    # (multimodalart/wan2-1-fast из цепочки убран: спейс стабильно падает
+    #  с RuntimeError при любом API-вызове.)
+    spaces = ["Lightricks/ltx-video-distilled",
+              "multimodalart/wan-2-2-first-last-frame"]
+    override = os.getenv("HF_SPACE", "").strip()
+    if override and override not in spaces:
+        spaces.insert(0, override)
     errors: list[str] = []
     for space in spaces:
         try:
             client = Client(space, token=token)
-            if "wan-2-2-first-last-frame" in space:
+            if "ltx" in space.lower():
+                result = client.predict(
+                    prompt=prompt,
+                    negative_prompt=("worst quality, inconsistent motion, blurry, jittery, "
+                                     "distorted, still photo, frozen pose, no motion"),
+                    input_image_filepath=handle_file(str(image)),
+                    height_ui=512,
+                    width_ui=512,
+                    duration_ui=float(os.getenv("HF_DURATION", "2.5")),
+                    api_name="/image_to_video",
+                )
+            elif "wan-2-2-first-last-frame" in space:
                 result = client.predict(
                     start_image_pil=handle_file(str(image)),
                     end_image_pil=handle_file(str(image)),
                     prompt=prompt,
                     duration_seconds=2.1,
                     steps=int(os.getenv("HF_STEPS", "8")),
-                    api_name="/generate_video",
-                )
-            elif "wan2-1-fast" in space:
-                result = client.predict(
-                    input_image=handle_file(str(image)),
-                    prompt=prompt,
-                    height=512,
-                    width=512,
-                    duration_seconds=float(os.getenv("HF_DURATION", "2.5")),
-                    steps=int(os.getenv("HF_STEPS", "6")),
                     api_name="/generate_video",
                 )
             else:

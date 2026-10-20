@@ -160,6 +160,44 @@ def main() -> int:
             note("error", "AI probe matting FAIL", str(e))
             return 1
         return 0
+    # Видео нет (например, суточная ZeroGPU-квота исчерпана) — всё равно
+    # проверяем вырезание фона на синтетическом видео из тестового фото:
+    # маттинг обязан работать независимо от нейросети.
+    try:
+        import subprocess
+
+        synth = Path("/tmp/probe_synth.mp4")
+        subprocess.run(
+            ["ffmpeg", "-y", "-loop", "1", "-i", str(sample), "-t", "2",
+             "-vf", "scale=512:512:force_original_aspect_ratio=increase,crop=512:512,"
+                    "zoompan=z='1+0.1*on/50':d=50:s=512x512:fps=25",
+             "-c:v", "libx264", "-pix_fmt", "yuv420p", str(synth)],
+            check=True, capture_output=True, timeout=120)
+        from app import matting
+        from app.encode import probe as probe_fn
+        from app.matting import matte_encode
+
+        session = matting._get_session()
+        note("notice", "AI probe matting session (synthetic)",
+             f"session={session!r}; errors={matting.LAST_SESSION_ERRORS}")
+        matted = Path("/tmp/probe_matted.webm")
+        if matte_encode(synth, matted):
+            note("notice", "AI probe matting OK (synthetic)", str(probe_fn(matted)))
+            # Замеряем реальную прозрачность первого кадра результата
+            frame_png = Path("/tmp/probe_matted_frame.png")
+            subprocess.run(["ffmpeg", "-y", "-i", str(matted), "-frames:v", "1",
+                            str(frame_png)], capture_output=True, timeout=60)
+            from PIL import Image
+
+            alpha = Image.open(frame_png).convert("RGBA").split()[3]
+            hist = alpha.histogram()
+            transparent = sum(hist[:128]) / (512 * 512) * 100
+            note("notice", "AI probe matting alpha",
+                 f"прозрачных пикселей в кадре: {transparent:.0f}%")
+        else:
+            note("error", "AI probe matting FAIL (synthetic)", "matte_encode вернул False")
+    except Exception as e:
+        note("error", "AI probe matting FAIL (synthetic)", f"{type(e).__name__}: {e}")
     note("error", "AI probe ALL FAILED", "ни один бесплатный спейс не сработал")
     return 1
 
