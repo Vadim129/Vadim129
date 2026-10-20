@@ -40,8 +40,9 @@ def _get_session():
     _SESSION_TRIED = True
     try:
         from rembg import new_session  # type: ignore
-    except Exception:
+    except Exception as e:
         log.info("rembg не установлен — вырезание фона из видео недоступно")
+        LAST_SESSION_ERRORS.append(f"import rembg: {type(e).__name__}: {str(e)[:300]}")
         return None
     for model in _MODELS:
         try:

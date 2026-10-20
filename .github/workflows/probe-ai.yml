@@ -10,6 +10,8 @@ on:
     paths:
       - "deepstick-bot/tools/probe_ai.py"
       - "deepstick-bot/app/ai_video.py"
+      - "deepstick-bot/app/matting.py"
+      - "deepstick-bot/requirements-rembg.txt"
       - ".github/workflows/probe-ai.yml"
   workflow_dispatch:
 
@@ -36,7 +38,7 @@ jobs:
       - name: Зависимости пробы
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-          pip install -q -r deepstick-bot/requirements.txt
+          pip install -q -r deepstick-bot/requirements.txt -r deepstick-bot/requirements-rembg.txt
 
       - name: Проба нейросети (реальная генерация видео)
         env:
@@ -53,3 +55,4 @@ jobs:
           path: |
             /tmp/probe_output.mp4
             /tmp/probe_sticker.webm
+            /tmp/probe_matted.webm
