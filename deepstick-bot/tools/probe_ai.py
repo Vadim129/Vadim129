@@ -107,9 +107,7 @@ def attempt_wan_official(sample: Path, out: Path) -> None:
 
 ATTEMPTS = [
     ("Lightricks/ltx-video-distilled", attempt_ltx),
-    ("multimodalart/wan2-1-fast", attempt_wan_fast),
     ("multimodalart/wan-2-2-first-last-frame", attempt_first_last),
-    ("Wan-AI/Wan2.1", attempt_wan_official),
 ]
 
 
@@ -156,6 +154,19 @@ def main() -> int:
             from app.encode import probe as probe2
 
             note("notice", "AI probe matting OK", str(probe2(matted)))
+            import subprocess
+
+            frame_png = Path("/tmp/probe_matted_frame.png")
+            subprocess.run(["ffmpeg", "-y", "-c:v", "libvpx-vp9", "-i", str(matted),
+                            "-frames:v", "1", str(frame_png)],
+                           capture_output=True, timeout=60)
+            from PIL import Image
+
+            alpha = Image.open(frame_png).convert("RGBA").split()[3]
+            hist = alpha.histogram()
+            transparent = sum(hist[:128]) / (512 * 512) * 100
+            note("notice", "AI probe matting alpha",
+                 f"прозрачных пикселей в кадре: {transparent:.0f}%")
         except Exception as e:
             note("error", "AI probe matting FAIL", str(e))
             return 1
@@ -183,10 +194,13 @@ def main() -> int:
         matted = Path("/tmp/probe_matted.webm")
         if matte_encode(synth, matted):
             note("notice", "AI probe matting OK (synthetic)", str(probe_fn(matted)))
-            # Замеряем реальную прозрачность первого кадра результата
+            # Замеряем реальную прозрачность первого кадра результата.
+            # Декодировать обязательно libvpx-vp9: нативный декодер ffmpeg
+            # игнорирует альфа-канал VP9 и всегда показывает 0% прозрачности.
             frame_png = Path("/tmp/probe_matted_frame.png")
-            subprocess.run(["ffmpeg", "-y", "-i", str(matted), "-frames:v", "1",
-                            str(frame_png)], capture_output=True, timeout=60)
+            subprocess.run(["ffmpeg", "-y", "-c:v", "libvpx-vp9", "-i", str(matted),
+                            "-frames:v", "1", str(frame_png)],
+                           capture_output=True, timeout=60)
             from PIL import Image
 
             alpha = Image.open(frame_png).convert("RGBA").split()[3]
