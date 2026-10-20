@@ -1,0 +1,31 @@
+{
+  // Cloudflare Containers: Worker (cloudflare/src/index.ts) + контейнер с ботом (./Dockerfile).
+  // Нужен тариф Workers Paid — на бесплатном Containers не деплоятся.
+  // Подробнее: deepstick-bot/CLOUDFLARE.md
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "deepstick-bot",
+  "main": "cloudflare/src/index.ts",
+  "compatibility_date": "2026-10-20",
+  "observability": { "enabled": true },
+  "containers": [
+    {
+      "class_name": "BotContainer",
+      "image": "./Dockerfile",
+      // standard-1: 0.5 vCPU / 4 GiB — rembg + ffmpeg меньше не хватит
+      "instance_type": "standard-1",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "BOT_CONTAINER", "class_name": "BotContainer" }
+    ]
+  },
+  "exports": {
+    "BotContainer": { "type": "durable-object", "storage": "sqlite" }
+  },
+  "triggers": {
+    // keep-alive: не даём контейнеру уснуть (бот должен слушать Telegram 24/7)
+    "crons": ["*/5 * * * *"]
+  }
+}

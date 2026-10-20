@@ -81,7 +81,13 @@
 1. Напиши [@BotFather](https://t.me/BotFather) → `/newbot` → получи токен.
 2. Скопируй конфиг: `cp .env.example .env` и впиши `BOT_TOKEN`.
 
-### 3.2. Вариант 0 — без сервера, на GitHub Actions (уже настроено в этом репо)
+### 3.2. Вариант 0 — Cloudflare Containers
+
+Воркер + контейнер с этим же Docker-образом на Cloudflare (нужен Workers Paid).
+Полная инструкция со ссылками, куда вставлять ключи: **[CLOUDFLARE.md](CLOUDFLARE.md)**.
+Деплой одной кнопкой из GitHub Actions: workflow `Deploy DeepStick to Cloudflare`.
+
+### 3.3. Вариант 0.5 — без сервера, на GitHub Actions (уже настроено в этом репо)
 
 В репозитории лежит workflow `.github/workflows/deepstick-bot.yml`, а токен
 бота хранится в секрете репозитория `BOT_TOKEN` (Settings → Secrets and
@@ -94,13 +100,13 @@ Run workflow** (ветка `arena/1d4df997-vadim129`, `chain=true` — бот
 при этом не теряется). Остановить: Actions → текущий запуск → Cancel, и/или
 отключить workflow.
 
-### 3.2. Вариант A — Docker (рекомендуется для постоянной работы)
+### 3.4. Вариант A — Docker (рекомендуется для постоянной работы)
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3.2. Вариант B — просто Python
+### 3.5. Вариант B — просто Python
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
@@ -112,7 +118,7 @@ python bot.py
 ffmpeg не обязателен: если его нет в системе, возьмётся бинарь из пакета
 `imageio-ffmpeg` (VP9 в нём есть — проверено).
 
-### 3.3. Нейро-режим (необязательно)
+### 3.6. Нейро-режим (необязательно)
 
 Бесплатный вариант нейросети — публичный Hugging Face Space (очереди и
 доступность не гарантируются, при ошибке бот сам сделает локальную анимацию):

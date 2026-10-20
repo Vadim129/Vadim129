@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import shutil
 import tempfile
 import time
@@ -773,10 +774,61 @@ async def _setup_commands(bot: Bot) -> None:
              me.username, ai_enabled(), DB.stats()["users"])
 
 
-def main() -> None:
-    bot = Bot(CFG.token)
+async def _polling_supervisor() -> None:
+    """Поллинг с автопереподключением: сеть моргнула — бот не умирает, а ждёт и снова.
+
+    (Голый start_polling падает на самом первом getMe, если Telegram в этот
+    момент недоступен, — для контейнера 24/7 это недопустимо.)
+    """
+    while True:
+        bot = Bot(CFG.token)
+        try:
+            await dp.start_polling(bot)
+            return  # штатная остановка поллинга
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            log.exception("Поллинг упал — перезапуск через 10 секунд")
+            await asyncio.sleep(10)
+        finally:
+            try:
+                await bot.session.close()
+            except Exception:
+                pass
+
+
+async def _amain() -> None:
+    """PORT задан (Cloudflare Containers/PaaS) — рядом с поллингом живёт healthcheck.
+
+    Контейнеру нужен слушающий порт, иначе платформа его не поднимет/усыпит.
+    Health отвечает, даже пока Telegram временно недоступен.
+    """
     dp.startup.register(_on_startup)
-    dp.run_polling(bot)
+    if not os.getenv("PORT"):
+        await _polling_supervisor()
+        return
+    from aiohttp import web
+
+    async def health(_request):  # noqa: ANN001, ANN202
+        return web.json_response({"ok": True, "service": "deepstick-bot"})
+
+    app = web.Application()
+    app.router.add_get("/", health)
+    app.router.add_get("/health", health)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner, "0.0.0.0", int(os.environ["PORT"])).start()
+    log.info("Healthcheck слушает порт %s", os.environ["PORT"])
+    poll_task = asyncio.create_task(_polling_supervisor())
+    try:
+        await asyncio.Event().wait()  # держим процесс (и health) живым всегда
+    finally:
+        poll_task.cancel()
+        await runner.cleanup()
+
+
+def main() -> None:
+    asyncio.run(_amain())
 
 
 if __name__ == "__main__":

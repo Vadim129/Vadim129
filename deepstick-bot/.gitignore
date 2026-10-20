@@ -7,3 +7,5 @@ examples/*.gif
 !examples/sticker.gif
 examples/subject.png
 examples/sample.jpg
+node_modules/
+.wrangler/

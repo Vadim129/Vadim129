@@ -1,0 +1,18 @@
+{
+  "name": "deepstick-bot-cloudflare",
+  "private": true,
+  "description": "Cloudflare Worker + Container для DeepStick-бота (сам бот — bot.py)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "secret:token": "wrangler secret put BOT_TOKEN",
+    "secret:admins": "wrangler secret put ADMIN_IDS",
+    "logs": "wrangler tail"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}
