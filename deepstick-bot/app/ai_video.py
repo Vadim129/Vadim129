@@ -28,7 +28,7 @@ class AIError(RuntimeError):
 
 
 def ai_enabled() -> bool:
-    return os.getenv("AI_PROVIDER", "none").lower() in ("replicate", "fal")
+    return os.getenv("AI_PROVIDER", "none").lower() in ("replicate", "fal", "hf")
 
 
 def _data_uri(path: Path) -> str:

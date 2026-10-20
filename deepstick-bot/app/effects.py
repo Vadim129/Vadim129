@@ -12,7 +12,7 @@ import math
 import random
 from collections.abc import Iterator
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
 from .rembg_wrap import remove_background
 
@@ -37,6 +37,17 @@ def stylize(img: Image.Image, style: str) -> Image.Image:
         edges = ImageEnhance.Color(edges).enhance(2.0)
         rgb = Image.blend(rgb, Image.blend(rgb, edges, 0.65), 0.75)
         rgb = ImageEnhance.Color(rgb).enhance(1.5)
+    elif style == "anime":
+        rgb = ImageOps.posterize(rgb, bits=3)
+        rgb = rgb.filter(ImageFilter.SMOOTH_MORE).filter(ImageFilter.EDGE_ENHANCE_MORE)
+        rgb = ImageEnhance.Color(rgb).enhance(1.7)
+        rgb = ImageEnhance.Sharpness(rgb).enhance(1.6)
+    elif style == "vintage":
+        gray = ImageOps.grayscale(rgb)
+        rgb = ImageOps.colorize(gray, black=(35, 25, 10), white=(255, 235, 200))
+        rgb = ImageEnhance.Contrast(rgb).enhance(1.05)
+    elif style == "bw":
+        rgb = ImageOps.autocontrast(ImageOps.grayscale(rgb)).convert("RGB")
     return rgb
 
 
@@ -132,6 +143,38 @@ def _draw_decor(canvas: Image.Image, effect: str, t: float, frame: int) -> None:
             a0 = t * 360 * (1 if k % 2 == 0 else -1) + k * 40
             d.arc([cx - r, cy - r, cx + r, cy + r], a0, a0 + 240,
                   fill=(150, 90, 255, 200), width=9)
+    elif effect == "money":
+        for i in range(16):  # купюры падают сверху
+            x = (i * 67 + (i % 3) * 20) % 480
+            y = (rng.uniform(0, CANVAS) + t * CANVAS + i * 43) % CANVAS
+            d.rectangle([x, y, x + 44, y + 22], fill=(70, 190, 90, 225),
+                        outline=(30, 120, 50, 255), width=2)
+            d.ellipse([x + 17, y + 6, x + 27, y + 16], outline=(230, 255, 230, 255), width=2)
+    elif effect == "sleep":
+        try:
+            font = ImageFont.load_default(size=44)
+            font_s = ImageFont.load_default(size=30)
+        except Exception:
+            font = font_s = ImageFont.load_default()
+        for i, (fnt, off) in enumerate(((font_s, 0), (font, 46), (font, 96))):
+            y = 120 - ((t * 90 + off) % 140) + i * 8
+            d.text((398 + i * 26, y), "Z", font=fnt, fill=(150, 200, 255, 230))
+    elif effect == "angry":
+        for i in range(14):
+            x = 50 + rng.uniform(0, 410)
+            y = (rng.uniform(0, CANVAS) - t * CANVAS * 1.4 + i * 31) % CANVAS
+            d.ellipse([x, y, x + 6, y + 6], fill=(255, 60, 40, 210))
+    elif effect == "winner":
+        for i in range(18):
+            x = rng.uniform(10, CANVAS - 10)
+            y = rng.uniform(10, CANVAS - 10)
+            s = 6 + (i % 4) * 3 + 3 * math.sin(t * 6.28 + i)
+            _star(d, x, y, max(3, s), (255, 215, 60, 230))
+    elif effect == "cry":
+        for i in range(16):  # капли вниз
+            x = 40 + (i * 61) % 430
+            y = (rng.uniform(0, CANVAS) + t * CANVAS * 1.6 + i * 37) % CANVAS
+            d.ellipse([x, y, x + 7, y + 11], fill=(90, 170, 255, 210))
 
 
 def _draw_flame(canvas: Image.Image, subj_box, t: float, frame: int) -> None:
@@ -175,6 +218,16 @@ def _motion(effect: str, t: float) -> tuple[float, float, float, float]:
         return math.sin(w * 8 * t) * 4, math.sin(w * t) * 6, math.sin(w * 4 * t) * 3, 1.02
     if effect == "portal":
         return 0, math.sin(w * t) * 18, math.sin(w * t) * 5, 1 + 0.03 * math.sin(w * t)
+    if effect == "money":
+        return math.sin(w * t) * 8, -abs(math.sin(w * 2 * t)) * 26, math.sin(w * t) * 5, 1.0
+    if effect == "sleep":
+        return math.sin(w * t) * 6, math.sin(w * t) * 12, math.sin(w * t) * 6, 0.97
+    if effect == "angry":
+        return math.sin(w * 11 * t) * 11, math.sin(w * 9 * t) * 5, math.sin(w * 11 * t) * 6, 1.04
+    if effect == "winner":
+        return 0, -abs(math.sin(w * 2 * t)) * 54, math.sin(w * t) * 3, 1.02
+    if effect == "cry":
+        return math.sin(w * 7 * t) * 5, abs(math.sin(w * 2 * t)) * 10, math.sin(w * 7 * t) * 4, 1.0
     return 0, math.sin(w * t) * 10, math.sin(w * t) * 4, 1.0  # float по умолчанию
 
 
@@ -198,6 +251,6 @@ def render_frames(subject: Image.Image, effect: str, fps: int = 30,
         frame.alpha_composite(obj, (x, y))
         if effect == "rocket":
             _draw_flame(frame, (x, y, x + obj.size[0], y + obj.size[1]), t, i)
-        elif effect in ("love", "dance", "fire"):  # часть декора поверх объекта
-            _draw_decor(frame, effect, t, i)
+        elif effect in ("love", "dance", "fire", "money", "cry", "winner", "angry"):
+            _draw_decor(frame, effect, t, i)  # часть декора поверх объекта
         yield frame

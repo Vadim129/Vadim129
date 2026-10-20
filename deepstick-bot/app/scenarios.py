@@ -55,6 +55,21 @@ SCENARIOS: list[Scenario] = [
              "seamless loop"),
     Scenario("bounce", "🤪", "Прыгаю от радости", "bounce",
              "the character jumps up and down happily, pure joy, seamless loop"),
+    Scenario("money", "💸", "Дождь из денег", "money",
+             "money bills rain down around the happy character, rich vibes, "
+             "seamless loop"),
+    Scenario("sleep", "😴", "Сплю / устал", "sleep",
+             "the character is sleepy, yawning, Zzz floating, cozy mood, "
+             "seamless loop"),
+    Scenario("angry", "😡", "Бесит!", "angry",
+             "the character is furious, shaking with anger, comic rage, "
+             "seamless loop"),
+    Scenario("winner", "🏆", "Я победил!", "winner",
+             "the character celebrates victory, golden stars, trophy energy, "
+             "jumping with joy, seamless loop"),
+    Scenario("cry", "😭", "Плачу", "cry",
+             "the character cries dramatically with cartoon tears, sad but funny, "
+             "seamless loop"),
 ]
 
 SCENARIOS_BY_ID = {s.id: s for s in SCENARIOS}
@@ -73,6 +88,9 @@ STYLES: list[Style] = [
     Style("cartoon", "🎨", "Мультяшный", "bright cartoon style, bold colours"),
     Style("pixel", "👾", "Пиксель-арт", "retro pixel-art style"),
     Style("neon", "🌆", "Неон", "cyberpunk neon glow style"),
+    Style("anime", "⛩️", "Аниме", "anime style, clean line art"),
+    Style("vintage", "🎞️", "Винтаж", "vintage sepia film photo style"),
+    Style("bw", "🖤", "Ч/Б", "dramatic black and white style"),
 ]
 
 STYLES_BY_ID = {s.id: s for s in STYLES}
@@ -88,9 +106,14 @@ _KEYWORDS: list[tuple[tuple[str, ...], str]] = [
     (("огон", "горю", "горит", "fire", "крут", "эпич"), "fire"),
     (("портал", "маги", "волшеб", "portal", "magic", "холодильник"), "portal"),
     (("привет", "здравствуй", "hello", "hi", "маш"), "hello"),
-    (("соглас", "одобря", "yes", "да,", "окей", "ок "), "yes"),
+    (("соглас", "одобря", "yes", "окей"), "yes"),
     (("нет", "отказ", "ни за что", " no "), "no"),
     (("круж", "крути", "spin", "верч"), "spin"),
+    (("денег", "деньги", "богат", "money", "зарплат", "миллион"), "money"),
+    (("сплю", "спать", "устал", "сон", "sleep", "спит"), "sleep"),
+    (("бесит", "злю", "злость", "angry", "ненавиж", "раздража"), "angry"),
+    (("побед", "выигра", "чемпион", "winner", "лучший"), "winner"),
+    (("плач", "груст", "слёз", "слез", "cry", "печал", "обид"), "cry"),
 ]
 
 

@@ -3,3 +3,5 @@ services:
     build: .
     env_file: .env
     restart: unless-stopped
+    volumes:
+      - ./data:/app/data   # SQLite (юзеры, настройки, история) и последние фото
