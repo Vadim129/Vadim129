@@ -40,6 +40,21 @@ def make_sample(path: Path) -> Path:
     return path
 
 
+def attempt_ltx(sample: Path, out: Path) -> None:
+    # Официальный спейс Lightricks, настоящий image-to-video (LTX distilled).
+    from gradio_client import Client, handle_file
+
+    client = Client("Lightricks/ltx-video-distilled", token=os.getenv("HF_TOKEN") or None)
+    result = client.predict(
+        prompt=PROMPT,
+        input_image_filepath=handle_file(str(sample)),
+        height_ui=512, width_ui=512, duration_ui=2.5,
+        api_name="/image_to_video")
+    from app.ai_video import _extract_video_file
+
+    _extract_video_file(result, out)
+
+
 def attempt_wan_fast(sample: Path, out: Path) -> None:
     # Параметры ровно как у бота: квадрат 512, 2.5 c, 6 шагов.
     from gradio_client import Client, handle_file
@@ -91,6 +106,7 @@ def attempt_wan_official(sample: Path, out: Path) -> None:
 
 
 ATTEMPTS = [
+    ("Lightricks/ltx-video-distilled", attempt_ltx),
     ("multimodalart/wan2-1-fast", attempt_wan_fast),
     ("multimodalart/wan-2-2-first-last-frame", attempt_first_last),
     ("Wan-AI/Wan2.1", attempt_wan_official),
@@ -127,8 +143,12 @@ def main() -> int:
             return 1
         # Главное требование: стикер должен быть вырезанной фигуркой на прозрачности
         try:
+            from app import matting
             from app.matting import matte_encode
 
+            session = matting._get_session()
+            note("notice", "AI probe matting session",
+                 f"session={session!r}; errors={matting.LAST_SESSION_ERRORS}")
             matted = Path("/tmp/probe_matted.webm")
             if not matte_encode(out, matted):
                 note("error", "AI probe matting FAIL", "matte_encode вернул False")

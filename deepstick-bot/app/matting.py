@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 _SESSION = None
 _SESSION_TRIED = False
+LAST_SESSION_ERRORS: list[str] = []  # для диагностики из пробы/админки
 
 # Сначала модель сегментации именно людей, потом универсальные.
 _MODELS = ("u2net_human_seg", "u2net", "isnet-general-use")
@@ -47,8 +48,9 @@ def _get_session():
             _SESSION = new_session(model)  # модель качается 1 раз в ~/.u2net
             log.info("Вырезание фона из видео: модель %s", model)
             return _SESSION
-        except Exception:
+        except Exception as e:
             log.warning("Модель %s не загрузилась, пробую следующую", model)
+            LAST_SESSION_ERRORS.append(f"{model}: {type(e).__name__}: {str(e)[:200]}")
     return None
 
 
