@@ -135,66 +135,132 @@ def _extract_video_file(result, out: Path) -> None:
     raise AIError(f"Не нашёл видеофайл в ответе нейросети: {str(result)[:200]}")
 
 
-def _via_hf_sync(image: Path, prompt: str, out: Path) -> None:
-    """БЕСПЛАТНАЯ image-to-video нейросеть: публичный HF Space (движения персонажа).
+_NEG = ("worst quality, inconsistent motion, blurry, jittery, distorted, "
+        "still photo, frozen pose, no motion, static image")
 
-    Основной — Lightricks/ltx-video-distilled (настоящий image-to-video):
-    эндпоинт /image_to_video(prompt, negative_prompt, input_image_filepath,
-    height_ui, width_ui, duration_ui...). Персонаж реально двигается по промпту:
-    прыгает, плачет, танцует — а не качается целиком, как в локальных эффектах.
-    Спейс может попросить HF_TOKEN (бесплатный аккаунт HF, токен Read) для
-    ZeroGPU-квоты. При любой ошибке вызывающий код откатится на локальную анимацию.
-    """
+
+def _ltx_kwargs(image: Path, prompt: str) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    return dict(
+        prompt=prompt, negative_prompt=_NEG,
+        input_image_filepath=handle_file(str(image)),
+        height_ui=512, width_ui=512,
+        duration_ui=float(os.getenv("HF_DURATION", "2.5")),
+        api_name="/image_to_video")
+
+
+def _wan22_kwargs(image: Path, prompt: str, api_name: str = "/generate_video",
+                  last_image: bool = False) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    kwargs = dict(
+        input_image=handle_file(str(image)), prompt=prompt,
+        steps=int(os.getenv("HF_STEPS", "4")), duration_seconds=2.5,
+        api_name=api_name)
+    if last_image:
+        kwargs["last_image"] = None
+    return kwargs
+
+
+def _hunyuan_kwargs(image: Path, prompt: str) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    return dict(
+        input_image=handle_file(str(image)), prompt=prompt,
+        length=49, steps=6, do_rewrite=False, api_name="/generate")
+
+
+def _cogvideo_kwargs(image: Path, prompt: str) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    return dict(
+        prompt=prompt, image_input=handle_file(str(image)), video_input=None,
+        api_name="/generate")
+
+
+def _firstlast_kwargs(image: Path, prompt: str) -> dict:
+    from gradio_client import handle_file  # type: ignore
+
+    return dict(
+        start_image_pil=handle_file(str(image)),
+        end_image_pil=handle_file(str(image)),
+        prompt=prompt, duration_seconds=2.1, steps=8,
+        api_name="/generate_video")
+
+
+# Реестр БЕСПЛАТНЫХ image-to-video спейсов (настоящие движения персонажа).
+# Порядок — по качеству/скорости. Каждый спейс пробуется дважды: с HF_TOKEN
+# (пул квоты аккаунта, 300 c/сутки) и анонимно (отдельный гостевой пул) —
+# кончилась одна квота, переключаемся на следующую нейросеть/пул.
+SPACE_SPECS: list[dict] = [
+    {"id": "Lightricks/ltx-video-distilled", "kwargs": _ltx_kwargs},
+    {"id": "Upsampler/wan-2-2-14b-image-to-video", "kwargs": _wan22_kwargs},
+    {"id": "preSalesAIAutomation/imagetovideo",
+     "kwargs": lambda i, p: _wan22_kwargs(i, p, api_name="/generate_video_sync")},
+    {"id": "multimodalart/Hunyuan-Video-1-5", "kwargs": _hunyuan_kwargs},
+    {"id": "DeepRat/LTX-Video-ZeroGPU-Optimized", "kwargs": _ltx_kwargs},
+    {"id": "makiblek/Wan_2.2_I2V_14B_Custom_Lora_Wow",
+     "kwargs": lambda i, p: _wan22_kwargs(i, p, last_image=True)},
+    {"id": "zai-org/CogVideoX-5B-Space", "kwargs": _cogvideo_kwargs},
+    {"id": "multimodalart/wan-2-2-first-last-frame", "kwargs": _firstlast_kwargs},
+]
+
+_QUOTA_HINTS = ("quota", "exceeded", "runs limit", "gpu time", "credit")
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(h in msg for h in _QUOTA_HINTS)
+
+
+def _call_space_sync(spec: dict, image: Path, prompt: str, out: Path,
+                     token: str | None) -> None:
+    """Один вызов одного спейса. Результат — сначала во временный файл."""
     try:
-        from gradio_client import Client, handle_file  # type: ignore
+        from gradio_client import Client  # type: ignore
     except Exception as exc:
         raise AIError("gradio_client не установлен (pip install gradio_client)") from exc
+    client = Client(spec["id"], token=token)
+    result = client.predict(**spec["kwargs"](image, prompt))
+    tmp = out.with_name(out.stem + ".part.mp4")
+    _extract_video_file(result, tmp)
+    tmp.replace(out)
+
+
+async def _via_hf(image: Path, prompt: str, out: Path) -> None:
+    """БЕСПЛАТНЫЕ image-to-video нейросети: реестр публичных HF Spaces.
+
+    Персонаж на видео реально двигается по промпту: прыгает, плачет, танцует.
+    Идём по реестру спейсов; каждый пробуем с токеном и анонимно (разные пулы
+    бесплатной ZeroGPU-квоты). Спейс упал/кончилась квота — следующий.
+    При полной неудаче вызывающий код откатится на локальную анимацию.
+    """
     token = os.getenv("HF_TOKEN") or None
-    # Цепочка бесплатных спейсов: один упал/кончилась квота — пробуем следующий.
-    # Основной — Lightricks/ltx-video-distilled: настоящий image-to-video,
-    # персонаж реально выполняет движение из промпта (проверено пробой:
-    # видео за ~4 c). first-last-frame — только запасной: с одинаковыми
-    # стартовым и конечным кадрами он даёт почти статичное видео.
-    # (multimodalart/wan2-1-fast из цепочки убран: спейс стабильно падает
-    #  с RuntimeError при любом API-вызове.)
-    spaces = ["Lightricks/ltx-video-distilled",
-              "multimodalart/wan-2-2-first-last-frame"]
+    attempt_timeout = float(os.getenv("HF_ATTEMPT_TIMEOUT", "420"))
+    specs = list(SPACE_SPECS)
     override = os.getenv("HF_SPACE", "").strip()
-    if override and override not in spaces:
-        spaces.insert(0, override)
+    if override and all(s["id"] != override for s in specs):
+        specs.insert(0, {"id": override, "kwargs": _wan22_kwargs})
+    dead: set[str] = set()  # пулы квоты, которые уже исчерпаны
     errors: list[str] = []
-    for space in spaces:
-        try:
-            client = Client(space, token=token)
-            if "ltx" in space.lower():
-                result = client.predict(
-                    prompt=prompt,
-                    negative_prompt=("worst quality, inconsistent motion, blurry, jittery, "
-                                     "distorted, still photo, frozen pose, no motion"),
-                    input_image_filepath=handle_file(str(image)),
-                    height_ui=512,
-                    width_ui=512,
-                    duration_ui=float(os.getenv("HF_DURATION", "2.5")),
-                    api_name="/image_to_video",
-                )
-            elif "wan-2-2-first-last-frame" in space:
-                result = client.predict(
-                    start_image_pil=handle_file(str(image)),
-                    end_image_pil=handle_file(str(image)),
-                    prompt=prompt,
-                    duration_seconds=2.1,
-                    steps=int(os.getenv("HF_STEPS", "8")),
-                    api_name="/generate_video",
-                )
-            else:
-                result = client.predict(handle_file(str(image)), prompt,
-                                        api_name=os.getenv("HF_API_NAME", "/generate_video"))
-            _extract_video_file(result, out)
-            log.info("AI-видео сгенерировал спейс %s", space)
-            return
-        except Exception as e:
-            log.warning("Спейс %s не смог: %s", space, e)
-            errors.append(f"{space}: {str(e)[:160]}")
+    for spec in specs:
+        for ident, tok in (("token", token), ("anon", None)):
+            if ident == "token" and not token:
+                continue
+            if ident in dead:
+                continue
+            try:
+                await asyncio.wait_for(
+                    asyncio.to_thread(_call_space_sync, spec, image, prompt, out, tok),
+                    timeout=attempt_timeout)
+                log.info("AI-видео сгенерировал спейс %s (%s)", spec["id"], ident)
+                return
+            except Exception as e:
+                if _is_quota_error(e):
+                    dead.add(ident)
+                log.warning("Спейс %s (%s) не смог: %s", spec["id"], ident, e)
+                errors.append(f"{spec['id']}[{ident}]: {str(e)[:140]}")
     raise AIError("Все бесплатные нейросети недоступны: " + " || ".join(errors))
 
 
@@ -206,9 +272,8 @@ async def generate_ai_video(image: Path, prompt: str, out_mp4: Path) -> Path:
     elif provider == "fal":
         await _via_fal(image, prompt, out_mp4)
     elif provider == "hf":
-        timeout = float(os.getenv("AI_TIMEOUT", "900"))  # бесплатная очередь бывает долгой
-        await asyncio.wait_for(asyncio.to_thread(_via_hf_sync, image, prompt, out_mp4),
-                               timeout=timeout)
+        timeout = float(os.getenv("AI_TIMEOUT", "1500"))  # реестр спейсов + очереди
+        await asyncio.wait_for(_via_hf(image, prompt, out_mp4), timeout=timeout)
     else:
         raise AIError(f"Неизвестный AI_PROVIDER={provider}")
     if not out_mp4.exists() or out_mp4.stat().st_size == 0:
