@@ -31,7 +31,7 @@ load_dotenv()
 
 from aiogram import Bot, Dispatcher, F  # noqa: E402
 from aiogram.enums import ChatAction  # noqa: E402
-from aiogram.exceptions import TelegramBadRequest  # noqa: E402
+from aiogram.exceptions import TelegramBadRequest, TelegramUnauthorizedError  # noqa: E402
 from aiogram.filters import Command, CommandStart  # noqa: E402
 from aiogram.fsm.context import FSMContext  # noqa: E402
 from aiogram.fsm.state import State, StatesGroup  # noqa: E402
@@ -787,6 +787,10 @@ async def _polling_supervisor() -> None:
             return  # штатная остановка поллинга
         except asyncio.CancelledError:
             raise
+        except TelegramUnauthorizedError:
+            # Токен невалиден/отозван — ретраить бессмысленно, падаем громко и сразу
+            log.critical("Telegram отклонил токен (Unauthorized). Проверь BOT_TOKEN.")
+            raise SystemExit(2) from None
         except Exception:
             log.exception("Поллинг упал — перезапуск через 10 секунд")
             await asyncio.sleep(10)
