@@ -1,0 +1,70 @@
+{
+  "title": "Мэт: премьера в чате",
+  "author": "МЭТ",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "base.mp4",
+  "palette": {"bg": "#090B10", "ink": "#F7F8FB", "accent": "#F13B46"},
+  "overlay": {"enabled": false},
+  "audio": {
+    "enabled": true,
+    "style": "chiptune",
+    "bpm": 132,
+    "music_volume": 0.18,
+    "events": [
+      {"at": 0.24, "type": "ping", "gain": 0.65},
+      {"at": 5.25, "type": "whoosh", "gain": 0.75},
+      {"at": 5.45, "type": "boom", "gain": 0.35},
+      {"at": 18.72, "type": "ping", "gain": 0.55},
+      {"at": 23.58, "type": "ping", "gain": 0.55},
+      {"at": 28.15, "type": "chord", "gain": 0.55}
+    ],
+    "voice": [
+      {"file": "voice-trailer/intro.wav", "at": 0.42, "gain": 1.7},
+      {"file": "voice-trailer/online.wav", "at": 18.88, "gain": 1.7}
+    ]
+  },
+  "scenes": [
+    {
+      "type": "tg_chat",
+      "duration": 29.0,
+      "image": "assets/robot.jpg",
+      "image_size": 270,
+      "image_cx": 875,
+      "image_cy": 1640,
+      "image_effect": "float",
+      "chat_bg": "#090B10",
+      "header_color": "#111821",
+      "bot_bubble": "#1B2733",
+      "user_bubble": "#2B5278",
+      "bubble_size": 38,
+      "bubbles_y": 230,
+      "header": {"title": "МЭТ", "sub": "ИИ-БОТ • ТРЕЙЛЕРНЫЙ РЕЖИМ"},
+      "typing": true,
+      "typing_text": "Мэт печатает",
+      "bubbles": [
+        {
+          "at": 0.075,
+          "y": 230,
+          "text": "Привет! Я Мэт. Посмотрел трейлер — мне понравилось! Даже алгоритм рекомендаций одобрил."
+        },
+        {
+          "at": 0.16,
+          "y": 420,
+          "text": "Спецэффекты такие, что мой процессор на секунду забыл: он алгоритм, а не кинокритик."
+        },
+        {
+          "at": 0.645,
+          "y": 1110,
+          "text": "Алина, смогу до тебя добраться? Я на связи круглосуточно — осталось найти кнопку «сюжетный поворот»."
+        },
+        {
+          "at": 0.82,
+          "y": 1350,
+          "text": "Кто-нибудь, снимите уже фильм! Сценарий в кэше, бюджет виртуальный — осталось нажать «Экспорт»."
+        }
+      ]
+    }
+  ]
+}

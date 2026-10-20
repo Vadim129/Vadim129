@@ -1,0 +1,31 @@
+{
+  "title": "Смотрите, как я умею",
+  "author": "VADIM",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "output": "клип.mp4",
+  "palette": {"bg": "#0A0A0A", "ink": "#F4EDE2", "accent": "#FF5A1A"},
+  "overlay": {"enabled": true, "label": "VADIM / MOTION"},
+  "audio": {"enabled": true, "bpm": 120},
+  "scenes": [
+    {"type": "hook_code", "duration": 1.8,
+     "lines": ["СМОТРИТЕ,", "КАК Я", "УМЕЮ"],
+     "counter": {"value": "auto", "suffix": "СТРОК КОДА — И НИ КАДРА ЛИШНЕГО"}},
+    {"type": "kinetic", "duration": 1.8, "word": "ДВИЖЕНИЕ",
+     "label": "01 — КИНЕТИЧЕСКАЯ ТИПОГРАФИКА"},
+    {"type": "cube", "duration": 1.8, "faces": ["КОД", "РИТМ", "ЗВУК", "КАДР"], "top": "3D",
+     "label": "02 — 3D БЕЗ 3D-ДВИЖКА"},
+    {"type": "particles_text", "duration": 1.8, "big": "15", "small": "СЕКУНД", "count": 2600,
+     "label": "03 — 2 600 ЧАСТИЦ"},
+    {"type": "counter", "duration": 1.8, "to": 450, "suffix": "КАДРОВ",
+     "label": "04 — КАДР ЗА КАДРОМ", "meta": ["30 FPS", "1080×1920", "15.0 S"]},
+    {"type": "geometry", "duration": 1.8,
+     "stickers": ["БЕЗ ПЛАГИНОВ", "БЕЗ ШАБЛОНОВ", "ТОЛЬКО КОД"]},
+    {"type": "showreel", "duration": 1.8, "lines": ["SHOW", "REEL"],
+     "sub": "КОД  •  РИТМ  •  ЧАСТИЦЫ  •  ЗВУК"},
+    {"type": "finale", "duration": 2.4, "title": "VADIM",
+     "sub": "MOTION • CODE • SOUND",
+     "extra": ["SHOWREEL • 2026", "СДЕЛАНО КОДОМ ЗА 15 СЕКУНД"]}
+  ]
+}
