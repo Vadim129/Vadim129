@@ -45,6 +45,7 @@ from aiogram.types import (  # noqa: E402
     KeyboardButton,
     Message,
     ReplyKeyboardMarkup,
+    User,
 )
 
 from app import packs  # noqa: E402
@@ -229,11 +230,13 @@ def _render_local(photo: Path, style: str, effect: str, out: Path, remove_bg: bo
     )
 
 
-async def _deliver(message: Message, webm: Path, emoji: str, kind: str,
+async def _deliver(message: Message, user: User, webm: Path, emoji: str, kind: str,
                    scenario_title: str, style_id: str) -> None:
-    """Отправить готовый стикер (+в пак по настройке) и записать в историю."""
-    user = message.from_user
-    assert user
+    """Отправить готовый стикер (+в пак по настройке) и записать в историю.
+
+    user передаётся явно: message может быть сообщением самого бота (когда
+    генерацию запустили кнопкой), и message.from_user тогда — бот (USER_IS_BOT).
+    """
     settings = DB.get_settings(user.id)
     pack_url, file_id, pack_err = None, None, None
     if settings["auto_pack"]:
@@ -261,10 +264,8 @@ async def _deliver(message: Message, webm: Path, emoji: str, kind: str,
 
 
 # ------------------------------------------------------------------ генерация
-async def _generate(message: Message, src_photo: Path, style_id: str,
+async def _generate(message: Message, user: User, src_photo: Path, style_id: str,
                     scenario_id: str | None, custom_text: str | None, emoji_choice: str) -> None:
-    user = message.from_user
-    assert user
     style = STYLES_BY_ID[style_id]
     scenario = SCENARIOS_BY_ID[scenario_id] if scenario_id else match_scenario(custom_text or "")
     emoji = scenario.emoji if emoji_choice == "auto" else emoji_choice
@@ -332,7 +333,7 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
             await asyncio.to_thread(_render_local, photo, style_id, scenario.effect,
                                     webm, CFG.remove_bg and settings["remove_bg"])
         await status.delete()
-        await _deliver(message, webm, emoji, "photo", custom_text or scenario.title, style_id)
+        await _deliver(message, user, webm, emoji, "photo", custom_text or scenario.title, style_id)
     except asyncio.CancelledError:
         try:
             await status.edit_text("⏹ Генерация отменена. Пришли фото, если хочешь ещё.")
@@ -352,15 +353,13 @@ async def _generate(message: Message, src_photo: Path, style_id: str,
         _tasks.pop(user.id, None)
 
 
-def _start_generation(message: Message, src_photo: Path, style_id: str,
+def _start_generation(message: Message, user: User, src_photo: Path, style_id: str,
                       scenario_id: str | None, custom_text: str | None,
                       emoji_choice: str) -> None:
-    user = message.from_user
-    assert user
     if user.id in _tasks and not _tasks[user.id].done():
         return  # вызывающий хендлер уже сказал «занято»
     task = asyncio.create_task(
-        _generate(message, src_photo, style_id, scenario_id, custom_text, emoji_choice))
+        _generate(message, user, src_photo, style_id, scenario_id, custom_text, emoji_choice))
     _tasks[user.id] = task
 
 
@@ -953,7 +952,7 @@ async def on_sticker_in(message: Message, state: FSMContext) -> None:
         src = job / "in.webm"
         await message.bot.download(st, destination=src)
         try:
-            await _deliver(message, src, st.emoji or "🎬", "sticker", "видеостикер", "original")
+            await _deliver(message, user, src, st.emoji or "🎬", "sticker", "видеостикер", "original")
         finally:
             shutil.rmtree(job, ignore_errors=True)
         return
@@ -1034,7 +1033,7 @@ async def on_emoji(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.answer("⏳ Уже генерирую предыдущий стикер…", show_alert=True)
         return
     await cb.answer("Генерирую…")
-    _start_generation(cb.message, Path(data["photo"]), data.get("style", "original"),
+    _start_generation(cb.message, user, Path(data["photo"]), data.get("style", "original"),
                       data.get("scenario_id"), data.get("custom_text"),
                       cb.data.split(":", 1)[1])
 
@@ -1053,7 +1052,7 @@ async def cb_again(cb: CallbackQuery, state: FSMContext) -> None:
             await cb.answer("⏳ Уже генерирую…", show_alert=True)
             return
         await cb.answer("Повторяю…")
-        _start_generation(cb.message, Path(last["photo"]), last["style"] or "original",
+        _start_generation(cb.message, user, Path(last["photo"]), last["style"] or "original",
                           last["scenario_id"], last["custom_text"], last["emoji"] or "auto")
     elif action == "scenario":
         await state.update_data(photo=last["photo"], style=last["style"] or "original")
@@ -1109,7 +1108,7 @@ async def on_video(message: Message, state: FSMContext) -> None:
             await message.bot.download(media, destination=src)
             await asyncio.to_thread(convert_video, src, webm)
             await status.delete()
-            await _deliver(message, webm, "🎬", "video", "из видео", "original")
+            await _deliver(message, user, webm, "🎬", "video", "из видео", "original")
         except asyncio.CancelledError:
             try:
                 await status.edit_text("⏹ Конверсия отменена.")
