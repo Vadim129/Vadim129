@@ -1,0 +1,9 @@
+.env
+__pycache__/
+.venv/
+data/
+examples/*.webm
+examples/*.gif
+!examples/sticker.gif
+examples/subject.png
+examples/sample.jpg
