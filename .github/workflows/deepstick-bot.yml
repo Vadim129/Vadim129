@@ -52,12 +52,20 @@ jobs:
       - name: Восстановить данные бота
         uses: actions/cache/restore@v4
         with:
-          path: |
-            deepstick-bot/data
-            ~/.u2net
-            ~/.rembg
+          path: deepstick-bot/data
           key: deepstick-data-${{ github.run_id }}
           restore-keys: deepstick-data-
+
+      - name: Восстановить кэш моделей вырезания фона
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.u2net
+            ~/.rembg
+          key: deepstick-models-${{ github.run_id }}
+          restore-keys: |
+            deepstick-models-
+            deepstick-data-
 
       # Диагностика без раскрытия секрета: виден ли токен и принимает ли его Telegram.
       # По тому, какой шаг красный, причина понятна даже без доступа к логам.
@@ -117,15 +125,25 @@ jobs:
         if: always()
         run: mkdir -p deepstick-bot/data ~/.u2net ~/.rembg
 
+      # ВАЖНО: данные сохраняем ОТДЕЛЬНО и ПЕРВЫМИ — они маленькие и успевают
+      # залиться даже при отмене задачи. Модели (~500 МБ) — отдельным шагом:
+      # раньше всё одним архивом не успевало сохраниться при cancel, и БД
+      # с пользователями/историей терялась при каждом перезапуске.
       - name: Сохранить данные бота
         if: always()
         uses: actions/cache/save@v4
         with:
+          path: deepstick-bot/data
+          key: deepstick-data-${{ github.run_id }}
+
+      - name: Сохранить кэш моделей
+        if: always()
+        uses: actions/cache/save@v4
+        with:
           path: |
-            deepstick-bot/data
             ~/.u2net
             ~/.rembg
-          key: deepstick-data-${{ github.run_id }}
+          key: deepstick-models-${{ github.run_id }}
 
       - name: Перезапустить себя
         if: ${{ github.event_name == 'push' || inputs.chain }}

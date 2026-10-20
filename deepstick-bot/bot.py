@@ -510,6 +510,84 @@ async def cmd_pack(message: Message) -> None:
     await _show_pack(message)
 
 
+def _sample_webm(path: Path, color: tuple[int, int, int]) -> Path:
+    """Крошечный тестовый видеостикер для самопроверки паков."""
+    from PIL import Image, ImageDraw
+
+    def frames():
+        for i in range(10):
+            img = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+            d = ImageDraw.Draw(img)
+            d.ellipse([90 + i * 22, 150, 290 + i * 22, 350], fill=color + (255,))
+            yield img
+
+    encode_frames(frames, path, fps=10, duration=1.0)
+    return path
+
+
+@dp.message(Command("packtest"))
+async def cmd_packtest(message: Message) -> None:
+    """Самопроверка паков на живом Telegram: создать/добавить/удалить/удалить пак.
+
+    Всё делается на тестовом паке и откатывается; личный пак проверяется
+    добавлением тестового стикера с последующим удалением именно его.
+    """
+    user = message.from_user
+    assert user
+    bot = message.bot
+    lines = ["🧪 *Проверка стикерпаков*"]
+    job = _job_dir(user.id)
+    try:
+        w1 = await asyncio.to_thread(_sample_webm, job / "t1.webm", (220, 60, 60))
+        w2 = await asyncio.to_thread(_sample_webm, job / "t2.webm", (60, 160, 60))
+        me = await bot.get_me()
+        name = f"dstest{uuid.uuid4().hex[:8]}_by_{(me.username or 'bot').lower()}"
+
+        async def step(label: str, coro) -> bool:  # noqa: ANN001, ANN202
+            ok, err = await coro
+            lines.append(("✅ " if ok else "❌ ") + label
+                         + ("" if ok else f"\n   Telegram: {err}"))
+            return ok
+
+        if await step("Создание пака",
+                      packs.create_pack_webm(bot, user.id, name,
+                                             "🧪 DeepStick test", w1, "🧪")):
+            pack = await packs.get_pack_by_name(bot, name)
+            lines.append(f"ℹ️ Стикеров после создания: {len(pack.stickers) if pack else '—'}")
+            await step("Добавление стикера файлом",
+                       packs.add_webm_to_pack(bot, user.id, name, w2, "🔥"))
+            pack = await packs.get_pack_by_name(bot, name)
+            if pack and pack.stickers:
+                await step("Удаление отдельного стикера",
+                           packs.delete_sticker(bot, pack.stickers[0].file_id))
+            await step("Переименование пака",
+                       packs.rename_pack_by_name(bot, name, "🧪 DeepStick renamed"))
+            await step("Удаление пака целиком", packs.delete_pack(bot, name))
+
+        main_name = packs.pack_name(user.id, me.username or "bot")
+        before = await packs.get_pack_by_name(bot, main_name)
+        before_n = len(before.stickers) if before else 0
+        url, _fid, err = await packs.add_to_pack(bot, user.id, user.first_name, w1, "🧪")
+        after = await packs.get_pack_by_name(bot, main_name)
+        after_n = len(after.stickers) if after else 0
+        ok_main = bool(url) and after_n == before_n + 1
+        lines.append(("✅ " if ok_main else "❌ ")
+                     + f"Личный пак (добавление): стикеров {before_n} → {after_n}"
+                     + ("" if ok_main else f"\n   Telegram: {err}"))
+        if after and after_n > before_n:  # откатываем только свой тестовый стикер
+            if before is None:
+                await packs.delete_pack(bot, main_name)
+            else:
+                await packs.delete_sticker(bot, after.stickers[-1].file_id)
+            lines.append("ℹ️ Тестовый стикер из личного пака убрал за собой")
+    except Exception as e:
+        log.exception("packtest упал")
+        lines.append(f"❌ Проверка упала: {e}")
+    finally:
+        shutil.rmtree(job, ignore_errors=True)
+    await message.answer("\n".join(lines), parse_mode="Markdown")
+
+
 @dp.message(Command("history"))
 @dp.message(F.text == MENU_HISTORY)
 async def cmd_history(message: Message) -> None:
