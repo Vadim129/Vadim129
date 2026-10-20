@@ -52,7 +52,10 @@ jobs:
           DATA_DIR: data
         run: |
           cd deepstick-bot
-          timeout 19800 python bot.py || true   # 5.5 часа, дальше — перезапуск ниже
+          # 124 = timeout 5.5 ч (норма, ниже перезапуск). Любой другой код = краш:
+          # валим задачу, чтобы цепочка перезапуска не крутилась вхолостую.
+          timeout 19800 python bot.py; code=$?
+          if [ $code -ne 124 ]; then exit $code; fi
 
       - name: Перезапустить себя
         if: ${{ github.event_name == 'push' || inputs.chain }}
