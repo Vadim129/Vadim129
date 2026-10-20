@@ -29,6 +29,11 @@ class Database:
             CREATE TABLE IF NOT EXISTS last_job(
                 user_id INTEGER PRIMARY KEY, photo TEXT, style TEXT,
                 scenario_id TEXT, custom_text TEXT, emoji TEXT);
+            CREATE TABLE IF NOT EXISTS packs(
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER,
+                name TEXT UNIQUE, title TEXT, created_at REAL);
+            CREATE TABLE IF NOT EXISTS pack_refs(
+                ref TEXT PRIMARY KEY, user_id INTEGER, pack_name TEXT, file_id TEXT);
             """)
 
     def _db(self) -> sqlite3.Connection:
@@ -103,6 +108,56 @@ class Database:
         with self._db() as c:
             row = c.execute("SELECT * FROM last_job WHERE user_id=?", (user_id,)).fetchone()
         return dict(row) if row else None
+
+    # ------------------------------------------------------------- стикерпаки
+    def add_pack(self, user_id: int, name: str, title: str) -> int:
+        with self._db() as c:
+            cur = c.execute(
+                "INSERT INTO packs(user_id, name, title, created_at) VALUES(?,?,?,?)",
+                (user_id, name, title, time.time()))
+            return int(cur.lastrowid)
+
+    def list_packs(self, user_id: int) -> list[sqlite3.Row]:
+        with self._db() as c:
+            return list(c.execute(
+                "SELECT * FROM packs WHERE user_id=? ORDER BY id", (user_id,)))
+
+    def get_pack_rec(self, user_id: int, pack_id: int) -> sqlite3.Row | None:
+        with self._db() as c:
+            return c.execute("SELECT * FROM packs WHERE id=? AND user_id=?",
+                             (pack_id, user_id)).fetchone()
+
+    def rename_pack_rec(self, user_id: int, pack_id: int, title: str) -> None:
+        with self._db() as c:
+            c.execute("UPDATE packs SET title=? WHERE id=? AND user_id=?",
+                      (title, pack_id, user_id))
+
+    def delete_pack_rec(self, user_id: int, pack_id: int) -> bool:
+        with self._db() as c:
+            cur = c.execute("DELETE FROM packs WHERE id=? AND user_id=?",
+                            (pack_id, user_id))
+            return cur.rowcount > 0
+
+    # ------------------------------------------- короткие ссылки на стикеры пака
+    # file_id стикера не влезает в callback_data (<=64 байт), поэтому кнопкам
+    # удаления выдаём короткий ref, а file_id храним здесь.
+    def put_ref(self, user_id: int, pack_name: str, file_id: str, ref: str) -> str:
+        with self._db() as c:
+            c.execute(
+                "INSERT INTO pack_refs(ref, user_id, pack_name, file_id) VALUES(?,?,?,?) "
+                "ON CONFLICT(ref) DO UPDATE SET file_id=excluded.file_id, "
+                "pack_name=excluded.pack_name",
+                (ref, user_id, pack_name, file_id))
+        return ref
+
+    def get_ref(self, ref: str, user_id: int) -> sqlite3.Row | None:
+        with self._db() as c:
+            return c.execute("SELECT * FROM pack_refs WHERE ref=? AND user_id=?",
+                             (ref, user_id)).fetchone()
+
+    def delete_ref(self, ref: str) -> None:
+        with self._db() as c:
+            c.execute("DELETE FROM pack_refs WHERE ref=?", (ref,))
 
     # ------------------------------------------------------------------ админка
     def stats(self) -> dict:

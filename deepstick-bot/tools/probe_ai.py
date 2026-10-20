@@ -114,6 +114,14 @@ ATTEMPTS = [
 def main() -> int:
     note("notice", "AI probe start",
          f"HF_TOKEN задан: {bool(os.getenv('HF_TOKEN'))}; кандидатов: {len(ATTEMPTS)}")
+    try:
+        from huggingface_hub import get_zero_gpu_quota
+
+        q = get_zero_gpu_quota(os.getenv("HF_TOKEN") or None)
+        note("notice", "AI probe ZeroGPU quota",
+             f"осталось {q.remaining} c из {q.base}; сброс: {q.resets_at} UTC")
+    except Exception as e:
+        note("notice", "AI probe ZeroGPU quota", f"не удалось узнать: {e}")
     sample = make_sample(Path("/tmp/probe_input.jpg"))
     out = Path("/tmp/probe_output.mp4")
     for name, fn in ATTEMPTS:
