@@ -433,7 +433,7 @@ async def _quota_line() -> str:
     try:
         from huggingface_hub import get_zero_gpu_quota  # type: ignore
 
-        q = await asyncio.to_thread(get_zero_gpu_quota, token)
+        q = await asyncio.to_thread(get_zero_gpu_quota)  # HF_TOKEN из окружения
         reset = q.resets_at.strftime("%d.%m %H:%M UTC") if getattr(q, "resets_at", None) else "?"
         return (f"\n🧠 ZeroGPU: осталось {getattr(q, 'remaining', '?')} c "
                 f"из {getattr(q, 'base', '?')}, сброс: {reset}")

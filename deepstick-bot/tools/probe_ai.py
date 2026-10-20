@@ -117,7 +117,7 @@ def main() -> int:
     try:
         from huggingface_hub import get_zero_gpu_quota
 
-        q = get_zero_gpu_quota(os.getenv("HF_TOKEN") or None)
+        q = get_zero_gpu_quota()  # токен подхватывается из HF_TOKEN окружения
         note("notice", "AI probe ZeroGPU quota",
              f"осталось {q.remaining} c из {q.base}; сброс: {q.resets_at} UTC")
     except Exception as e:
