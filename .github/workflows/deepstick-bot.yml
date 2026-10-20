@@ -85,6 +85,17 @@ jobs:
           r = d['result']
           print(f\"::notice title=Бот онлайн::@{r.get('username')} ({r.get('first_name')})\")"
 
+      # Самопроверка стикерпаков на реальном Bot API (создать/добавить/удалить/
+      # переименовать/удалить пак + личный пак). Ошибки видны аннотациями;
+      # бот из-за пробы не падает (|| true), владелец — первый юзер из БД.
+      - name: Самопроверка стикерпаков
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          PROBE_USER_ID: ${{ secrets.PROBE_USER_ID }}
+        run: |
+          cd deepstick-bot && python tools/probe_packs.py || true
+          cd ..
+
       - name: Бот (поллинг Telegram)
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}

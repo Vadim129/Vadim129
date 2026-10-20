@@ -42,9 +42,12 @@ def resolve_user_id() -> int:
     if raw:
         return int(raw)
     db_path = Path(__file__).resolve().parent.parent / "data" / "bot.db"
+    note("notice", "Packs probe db", f"{db_path} exists={db_path.exists()}")
     if db_path.exists():
         conn = sqlite3.connect(str(db_path))
         try:
+            n = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            note("notice", "Packs probe db", f"пользователей в БД бота: {n}")
             row = conn.execute(
                 "SELECT user_id FROM users ORDER BY created_at LIMIT 1").fetchone()
             if row:
