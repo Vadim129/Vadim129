@@ -88,3 +88,13 @@ def test_parse_log_stream_helpers():
     blob = json.dumps([{"data": "one "}, {"data": "two"}, {"x": 1}])
     assert parse_log_blob(blob) == "one two"
     assert parse_log_blob("just text") == "just text"
+
+
+def test_workflow_sampler_and_matte_cap():
+    wf = build_workflow("prompt", "photo.png", seed=1)
+    assert wf["8"]["inputs"]["sampler_name"] == "uni_pc"
+    from app.matting import sticker_frame_cap
+
+    assert sticker_frame_cap(16) == 46  # 46/16 = 2.875 c < 3 c
+    assert sticker_frame_cap(30) == 87
+    assert sticker_frame_cap(1) >= 1

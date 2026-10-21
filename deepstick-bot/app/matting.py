@@ -65,6 +65,14 @@ def _cut_frame(png_bytes: bytes, session) -> Image.Image:  # noqa: ANN001
     return img  # без обводок и рамок
 
 
+MAX_STICKER_SECONDS = 2.9  # лимит Telegram — 3 c, берём с запасом
+
+
+def sticker_frame_cap(fps: int, max_seconds: float = MAX_STICKER_SECONDS) -> int:
+    """Сколько кадров можно оставить, чтобы WebM не превысил лимит Telegram."""
+    return max(1, int(max_seconds * fps))
+
+
 def matte_encode(mp4: Path, webm: Path, fps_cap: int = 16) -> bool:
     """MP4 от нейросети -> прозрачный WebM-стикер с вырезанной фигуркой."""
     session = _get_session()
@@ -89,6 +97,13 @@ def matte_encode(mp4: Path, webm: Path, fps_cap: int = 16) -> bool:
         raw_frames = sorted(frames_dir.glob("*.png"))
         if not raw_frames:
             return False
+        # Нейросети отдают 3+ секунды, а Telegram не берёт стикеры длиннее
+        # 3 c (STICKER_VIDEO_LONG) — обрезаем хвост до безопасных 2.9 c.
+        cap = sticker_frame_cap(fps)
+        if len(raw_frames) > cap:
+            log.info("Обрезаю стикер: %s -> %s кадров (лимит Telegram)",
+                     len(raw_frames), cap)
+            raw_frames = raw_frames[:cap]
 
         matted_dir = tmp / "matted"
         matted_dir.mkdir()
