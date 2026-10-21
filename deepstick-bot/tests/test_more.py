@@ -93,7 +93,14 @@ def test_image_prompt_builds_clean_start_frame():
     for st in STYLES:
         assert st.image_prompt, st.id  # у каждого стиля есть описание кадра
     p = build_image_prompt(STYLES_BY_ID["cartoon"])
-    assert "exact same person" in p          # сохранение идентичности
+    # Промпт начинается не с редактирования/трансформации, а с жёсткого
+    # требования сохранить внешность персонажа с референса.
+    assert p.startswith("Preserve the character's appearance")
+    assert "Transform the reference photo" not in p
+    assert "highest priority" in p
+    assert "identical face shape" in p
+    assert "Do not change, beautify" in p
+    assert "same recognizable character" in p  # сохранение идентичности
     assert "whole head fully" in p           # голова не обрезана
     assert "plain" in p and "solid" in p     # ровный фон под маттинг
     assert "do not invent" in p.lower() or "Do not add" in p
