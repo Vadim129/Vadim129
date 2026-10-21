@@ -59,8 +59,10 @@ from app.effects import prepare_subject, render_frames  # noqa: E402
 from app.encode import convert_video, encode_frames  # noqa: E402
 from app.matting import matte_encode  # noqa: E402
 from app.scenarios import (  # noqa: E402
+    CATEGORIES,
     SCENARIOS,
     scenario_for_emoji,
+    scenarios_in,
     SCENARIOS_BY_ID,
     STYLES,
     STYLES_BY_ID,
@@ -153,18 +155,42 @@ def styles_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def scenarios_kb() -> InlineKeyboardMarkup:
+def _cat_kb(prefix: str, cat_prefix: str, item_prefix: str) -> InlineKeyboardMarkup:
+    """Корень выбора сценария: кнопки категорий с числом сценариев."""
     rows, row = [], []
-    for s in SCENARIOS:
-        row.append(InlineKeyboardButton(text=f"{s.emoji} {s.title}", callback_data=f"scen:{s.id}"))
+    for cid, title in CATEGORIES:
+        row.append(InlineKeyboardButton(
+            text=f"{title} · {len(scenarios_in(cid))}", callback_data=f"{cat_prefix}{cid}"))
         if len(row) == 2:
             rows.append(row)
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton(text="✍️ Свой сценарий (текстом)", callback_data="scen:custom")])
+    rows.append([InlineKeyboardButton(text="✍️ Свой сценарий (текстом)",
+                                      callback_data=f"{item_prefix}custom")])
     rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _scen_kb(items, item_prefix: str, cat_prefix: str) -> InlineKeyboardMarkup:
+    rows, row = [], []
+    for sc in items:
+        row.append(InlineKeyboardButton(text=f"{sc.emoji} {sc.title}",
+                                        callback_data=f"{item_prefix}{sc.id}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(text="⬅️ Категории", callback_data=f"{cat_prefix}root")])
+    rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def scenarios_kb(category: str | None = None) -> InlineKeyboardMarkup:
+    if category is None:
+        return _cat_kb("scen", "scencat:", "scen:")
+    return _scen_kb(scenarios_in(category), "scen:", "scencat:")
 
 
 def emoji_kb(auto_emoji: str) -> InlineKeyboardMarkup:
@@ -487,7 +513,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         "Как пользоваться:\n"
         "1️⃣ Пришли фото\n"
         "2️⃣ Выбери стиль (7 вариантов)\n"
-        "3️⃣ Выбери сценарий (17 готовых) или опиши свой\n"
+        "3️⃣ Выбери сценарий (" + str(len(SCENARIOS)) + " готовых) или опиши свой\n"
         "4️⃣ Укажи эмодзи — и получи стикер в своём паке 📦\n\n"
         f"Режим: {mode}\nБез оплаты и платных лимитов.",
         parse_mode="Markdown", reply_markup=main_menu())
@@ -1127,6 +1153,19 @@ async def cb_back_scenarios(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
 
 
+@dp.callback_query(Flow.waiting_scenario, F.data.startswith("scencat:"))
+async def on_scen_category(cb: CallbackQuery, state: FSMContext) -> None:
+    cat = (cb.data or "").split(":", 1)[1]
+    if cat == "root":
+        await cb.message.edit_text("Выбери *категорию*, а в ней — сценарий, или опиши свой:",
+                                   parse_mode="Markdown", reply_markup=scenarios_kb())
+    else:
+        title = dict(CATEGORIES).get(cat, "Сценарии")
+        await cb.message.edit_text(f"*{title}* — выбери сценарий:",
+                                   parse_mode="Markdown", reply_markup=scenarios_kb(cat))
+    await cb.answer()
+
+
 @dp.callback_query(Flow.waiting_scenario, F.data == "scen:custom")
 async def on_custom(cb: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(Flow.waiting_custom_text)
@@ -1226,20 +1265,10 @@ async def cb_gen_cancel(cb: CallbackQuery) -> None:
 REVIVE_LIMIT_AI = 10  # первые N стикеров в нейро-режиме; остальные — локально
 
 
-def revive_scenarios_kb() -> InlineKeyboardMarkup:
-    rows, row = [], []
-    for sc in SCENARIOS:
-        row.append(InlineKeyboardButton(text=f"{sc.emoji} {sc.title}",
-                                        callback_data=f"rvs:{sc.id}"))
-        if len(row) == 2:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    rows.append([InlineKeyboardButton(text="✍️ Свой сценарий (текстом)",
-                                      callback_data="rvs:custom")])
-    rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
+def revive_scenarios_kb(category: str | None = None) -> InlineKeyboardMarkup:
+    if category is None:
+        return _cat_kb("rvs", "rvscat:", "rvs:")
+    return _scen_kb(scenarios_in(category), "rvs:", "rvscat:")
 
 
 def revive_mode_kb() -> InlineKeyboardMarkup:
@@ -1347,6 +1376,18 @@ async def cb_revive_mode(cb: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(revive_mode="emoji", revive_scenario=None,
                             revive_custom=None)
     await _revive_engine_or_start(cb.message, cb.from_user, state, edit=True)
+    await cb.answer()
+
+
+@dp.callback_query(F.data.startswith("rvscat:"))
+async def cb_revive_scen_category(cb: CallbackQuery, state: FSMContext) -> None:
+    cat = (cb.data or "").split(":", 1)[1]
+    if cat == "root":
+        await cb.message.edit_text("Выбери категорию, а в ней — одно движение для всех:",
+                                   reply_markup=revive_scenarios_kb())
+    else:
+        await cb.message.edit_text("Выбери одно движение для всех стикеров набора:",
+                                   reply_markup=revive_scenarios_kb(cat))
     await cb.answer()
 
 
