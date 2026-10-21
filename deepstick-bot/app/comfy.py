@@ -1,0 +1,175 @@
+"""Клиент ComfyUI (Kaggle-бэкенд нейрогенерации) + сборка ноутбука Kaggle.
+
+Схема: владелец запускает из бота Kaggle-кернел (kaggle/comfy_kernel.py):
+ComfyUI с Wan 2.2 TI2V-5B поднимается на бесплатной GPU, наружу выходит
+cloudflared-туннель, его URL кернел пишет в tunnel.json своих выходных
+файлов, бот забирает URL через Kaggle API и ходит в ComfyUI по HTTP:
+upload/image -> prompt -> history -> view. Всё остальное (маттинг,
+локальный откат) — как у HF-провайдера.
+"""
+from __future__ import annotations
+
+import base64
+import json
+import re
+import time
+import uuid
+from pathlib import Path
+
+import httpx
+
+NEGATIVE = (
+    "low quality, worst quality, blurry, static, still image, deformed, "
+    "distorted face, extra fingers, watermark, text, logo, jpeg artifacts"
+)
+
+_TUNNEL_RE = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
+
+
+def build_workflow(prompt_text: str, image_name: str, seed: int,
+                   width: int = 512, height: int = 512, length: int = 49,
+                   steps: int = 20, cfg: float = 5.0, fps: int = 16) -> dict:
+    """API-воркфлоу Wan 2.2 TI2V-5B: картинка + промпт -> mp4."""
+    return {
+        "1": {"class_type": "UNETLoader",
+              "inputs": {"unet_name": "wan2.2_ti2v_5B_fp16.safetensors",
+                         "weight_dtype": "default"}},
+        "2": {"class_type": "CLIPLoader",
+              "inputs": {"clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+                         "type": "wan", "device": "default"}},
+        "3": {"class_type": "VAELoader",
+              "inputs": {"vae_name": "wan2.2_vae.safetensors"}},
+        "4": {"class_type": "LoadImage", "inputs": {"image": image_name}},
+        "5": {"class_type": "CLIPTextEncode",
+              "inputs": {"clip": ["2", 0], "text": prompt_text}},
+        "6": {"class_type": "CLIPTextEncode",
+              "inputs": {"clip": ["2", 0], "text": NEGATIVE}},
+        "7": {"class_type": "WanImageToVideo",
+              "inputs": {"positive": ["5", 0], "negative": ["6", 0],
+                         "vae": ["3", 0], "width": width, "height": height,
+                         "length": length, "batch_size": 1,
+                         "start_image": ["4", 0]}},
+        "12": {"class_type": "ModelSamplingSD3",
+               "inputs": {"model": ["1", 0], "shift": 8.0}},
+        "8": {"class_type": "KSampler",
+              "inputs": {"model": ["12", 0], "seed": seed, "steps": steps,
+                         "cfg": cfg, "sampler_name": "euler",
+                         "scheduler": "simple", "positive": ["7", 0],
+                         "negative": ["7", 1], "latent_image": ["7", 2],
+                         "denoise": 1.0}},
+        "9": {"class_type": "VAEDecode",
+              "inputs": {"samples": ["8", 0], "vae": ["3", 0]}},
+        "10": {"class_type": "CreateVideo",
+               "inputs": {"images": ["9", 0], "fps": float(fps)}},
+        "11": {"class_type": "SaveVideo",
+               "inputs": {"video": ["10", 0], "filename_prefix": "deepstick",
+                          "format": "mp4", "codec": "h264"}},
+    }
+
+
+def find_tunnel_url(text: str) -> str | None:
+    """Достать URL cloudflared-туннеля из произвольного текста (лог кернела)."""
+    m = _TUNNEL_RE.search(text or "")
+    return m.group(0) if m else None
+
+
+def extract_tunnel(output: dict) -> str | None:
+    """URL туннеля из ответа Kaggle kernels/output: tunnel.json или лог.
+
+    Формат Kaggle API: {"files": [{"fileName": ..., "fileData": "<base64>"}],
+    "log": "..."} — поля могут отсутствовать, всё проверяем мягко.
+    """
+    for f in output.get("files") or []:
+        if f.get("fileName") == "tunnel.json" and f.get("fileData"):
+            try:
+                data = json.loads(base64.b64decode(f["fileData"]))
+                if data.get("url"):
+                    return str(data["url"])
+            except Exception:
+                pass
+    return find_tunnel_url(output.get("log") or "")
+
+
+def build_notebook(kernel_code: str) -> str:
+    """Код кернела (.py с маркерами '# CELL: ...') -> JSON ноутбука Kaggle."""
+    cells, cur = [], {"title": "main", "lines": []}
+    for line in kernel_code.splitlines():
+        if line.startswith("# CELL:"):
+            if cur["lines"]:
+                cells.append(cur)
+            cur = {"title": line.split(":", 1)[1].strip(), "lines": []}
+        else:
+            cur["lines"].append(line)
+    if cur["lines"]:
+        cells.append(cur)
+    nb_cells = [{
+        "cell_type": "code", "execution_count": None, "metadata": {},
+        "outputs": [],
+        "source": [ln + "\n" for ln in c["lines"]],
+    } for c in cells]
+    return json.dumps({
+        "cells": nb_cells,
+        "metadata": {
+            "kernelspec": {"display_name": "Python 3", "language": "python",
+                           "name": "python3"},
+            "language_info": {"name": "python", "version": "3.10"},
+        },
+        "nbformat": 4, "nbformat_minor": 5,
+    })
+
+
+async def comfy_generate(base_url: str, photo: Path, prompt: str, out: Path,
+                         timeout_s: float = 720.0) -> None:
+    """Сгенерировать mp4 через ComfyUI. Любая проблема — исключение наверх."""
+    base = base_url.rstrip("/")
+    deadline = time.monotonic() + timeout_s
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+        with open(photo, "rb") as fh:
+            r = await client.post(
+                f"{base}/upload/image",
+                files={"image": (photo.name, fh, "image/png")},
+                data={"overwrite": "true"})
+        r.raise_for_status()
+        image_name = r.json()["name"]
+
+        wf = build_workflow(prompt, image_name, seed=uuid.uuid4().int % (2 ** 31))
+        r = await client.post(f"{base}/prompt",
+                              json={"prompt": wf, "client_id": uuid.uuid4().hex})
+        r.raise_for_status()
+        prompt_id = r.json()["prompt_id"]
+
+        file_ref = None
+        while time.monotonic() < deadline:
+            await _sleep(10)
+            r = await client.get(f"{base}/history/{prompt_id}")
+            r.raise_for_status()
+            hist = r.json().get(prompt_id) or {}
+            status = (hist.get("status") or {}).get("status_str")
+            if status == "error":
+                raise RuntimeError(f"ComfyUI workflow error: {str(hist)[:300]}")
+            for node_out in (hist.get("outputs") or {}).values():
+                for key in ("gifs", "videos", "images", "video"):
+                    for item in node_out.get(key) or []:
+                        name = item.get("filename") or ""
+                        if name.lower().endswith((".mp4", ".webm")):
+                            file_ref = item
+            if file_ref:
+                break
+        if not file_ref:
+            raise RuntimeError("ComfyUI: видео не появилось за отведённое время")
+
+        r = await client.get(
+            f"{base}/view",
+            params={"filename": file_ref["filename"],
+                    "subfolder": file_ref.get("subfolder", ""),
+                    "type": file_ref.get("type", "output")})
+        r.raise_for_status()
+        out.write_bytes(r.content)
+        if out.stat().st_size < 10_000:
+            raise RuntimeError("ComfyUI: подозрительно пустой видеофайл")
+
+
+async def _sleep(seconds: float) -> None:
+    import asyncio
+
+    await asyncio.sleep(seconds)

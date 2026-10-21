@@ -115,6 +115,10 @@ jobs:
           AI_PROVIDER: hf
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_TOKENS: ${{ secrets.HF_TOKENS }}
+          # Опционально: Kaggle-ComfyUI (Wan 2.2) — владелец запускает
+          # сессию кнопкой в настройках бота; секреты от kaggle.com API.
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
           REMOVE_BG: auto
           DATA_DIR: data
         run: |

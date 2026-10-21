@@ -14,6 +14,8 @@ class Config:
     data_dir: Path = Path("data")
     sticker_fps: int = 30
     sticker_duration: float = 2.8
+    kaggle_username: str = ""  # опциональный Kaggle-ComfyUI бэкенд
+    kaggle_key: str = ""
 
     @classmethod
     def load(cls) -> "Config":
@@ -32,4 +34,6 @@ class Config:
             data_dir=Path(os.getenv("DATA_DIR", "data")),
             sticker_fps=int(os.getenv("STICKER_FPS", "30")),
             sticker_duration=float(os.getenv("STICKER_DURATION", "2.8")),
+            kaggle_username=os.getenv("KAGGLE_USERNAME", "").strip(),
+            kaggle_key=os.getenv("KAGGLE_KEY", "").strip(),
         )

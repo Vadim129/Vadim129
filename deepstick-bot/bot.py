@@ -54,6 +54,8 @@ from aiogram.types import (  # noqa: E402
 
 from app import packs  # noqa: E402
 from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
+from app.comfy import build_notebook, comfy_generate, extract_tunnel  # noqa: E402
+import httpx  # noqa: E402
 from app.db import Database  # noqa: E402
 from app.effects import prepare_subject, render_frames  # noqa: E402
 from app.encode import convert_video, encode_frames  # noqa: E402
@@ -93,16 +95,65 @@ def _ai_scope() -> str:
     return "off" if DB.get_global("ai_enabled", "1") == "0" else "all"  # legacy
 
 
-def _ai_on(user_id: int | None = None) -> bool:
-    """Нейросеть доступна этому пользователю прямо сейчас."""
-    if not ai_enabled():
-        return False
+def _scope_allows(user_id: int | None) -> bool:
+    """Разрешает ли текущий охват (all/owner/off) нейросеть этому юзеру."""
     scope = _ai_scope()
     if scope == "off":
         return False
     if scope == "owner":
         return user_id is not None and _is_admin(user_id)
     return True
+
+
+def _ai_on(user_id: int | None = None) -> bool:
+    """Нейросеть доступна этому пользователю прямо сейчас."""
+    return ai_enabled() and _scope_allows(user_id)
+
+
+# ------------------------------------------------- Kaggle-ComfyUI (Wan 2.2)
+COMFY_TTL = 11.5 * 3600  # сессия Kaggle живёт максимум 12 часов
+_comfy_health = {"ok": False, "checked": 0.0}
+
+
+def _comfy_url() -> str | None:
+    """Адрес живого (по возрасту) ComfyUI-туннеля или None."""
+    url = DB.get_global("comfy_url", "")
+    try:
+        ts = float(DB.get_global("comfy_ts", "0") or 0)
+    except ValueError:
+        ts = 0.0
+    return url if url and time.time() - ts < COMFY_TTL else None
+
+
+async def _comfy_alive() -> bool:
+    """Жив ли ComfyUI прямо сейчас (проверка с кэшем на минуту)."""
+    url = _comfy_url()
+    if not url:
+        return False
+    now = time.monotonic()
+    if now - _comfy_health["checked"] < 60:
+        return _comfy_health["ok"]
+    ok = False
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(8.0)) as client:
+            ok = (await client.get(f"{url}/system_stats")).status_code == 200
+    except Exception:
+        ok = False
+    _comfy_health.update(ok=ok, checked=now)
+    if not ok:
+        DB.set_global("comfy_url", "")
+    return ok
+
+
+def _comfy_status_text() -> str:
+    if not (CFG.kaggle_username and CFG.kaggle_key):
+        return "нужны секреты Kaggle"
+    return "🟢 онлайн" if _comfy_url() else "⚪ выключена"
+
+
+def _neuro_advertised(user_id: int | None) -> bool:
+    """Показывать ли юзеру нейро-режим: HF задан или Kaggle онлайн."""
+    return _scope_allows(user_id) and (ai_enabled() or bool(_comfy_url()))
 DB = Database(CFG.data_dir / "bot.db")
 dp = Dispatcher()
 BASE = Path(tempfile.gettempdir()) / "deepstick_jobs"
@@ -244,6 +295,9 @@ def settings_kb(user_id: int) -> InlineKeyboardMarkup:
                        "off": "❌ выключена"}[_ai_scope()]
         rows.append([InlineKeyboardButton(
             text=f"🧠 Нейросеть: {scope_label}", callback_data="adm:aiscope")])
+        rows.append([InlineKeyboardButton(
+            text=f"☁️ Kaggle-нейросеть: {_comfy_status_text()}",
+            callback_data="kg:open")])
     rows += [
         [InlineKeyboardButton(text=f"🎯 Пак для новых стикеров: {_active_title(user_id)}",
                               callback_data="pk:list")],
@@ -367,15 +421,16 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
     photo = job / "photo.jpg"
     shutil.copy(src_photo, photo)
     webm = job / "sticker.webm"
+    neuro = _ai_on(user.id) or (await _comfy_alive() and _scope_allows(user.id))
     status = await message.answer(
         f"🎬 Генерирую: {scenario.emoji} «{custom_text or scenario.title}»…\n"
         + ("🧠 Нейросеть создаёт движения персонажа по твоему сценарию.\n"
            "Бесплатная очередь: обычно 1–10 минут, не пугайся."
-           if _ai_on(user.id) else "Обычно 5–15 секунд."),
+           if neuro else "Обычно 5–15 секунд."),
         reply_markup=generating_kb())
 
     progress_task: asyncio.Task | None = None
-    if _ai_on(user.id):
+    if neuro:
         async def _progress() -> None:
             started = time.monotonic()
             while True:
@@ -393,11 +448,11 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
     try:
         await message.bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
         settings = DB.get_settings(user.id)
-        if _ai_on(user.id):
+        if neuro:
             prompt = build_prompt(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
-                await _ai_video_q(photo, prompt, mp4)
+                await _neuro_video_q(photo, prompt, mp4, user.id)
                 # Стикер = вырезанная фигурка на прозрачности, а не прямоугольник:
                 # вырезаем фон из сгенерированного видео покадрово.
                 if progress_task:
@@ -473,8 +528,18 @@ async def _matte_q(mp4: Path, webm: Path) -> bool:
         return await asyncio.to_thread(matte_encode, mp4, webm)
 
 
-async def _ai_video_q(photo: Path, prompt: str, out: Path) -> None:
+async def _neuro_video_q(photo: Path, prompt: str, out: Path, user_id: int) -> None:
+    """Нейрогенерация видео: живой Kaggle-ComfyUI первым, дальше HF-цепочка."""
     async with _AI_SEM:
+        url = _comfy_url()
+        if url and _scope_allows(user_id):
+            try:
+                await comfy_generate(url, photo, prompt, out)
+                return
+            except Exception:
+                log.warning("ComfyUI не справился — пробую HF-цепочку",
+                            exc_info=True)
+                DB.set_global("comfy_url", "")
         await generate_ai_video(photo, prompt, out)
 
 
@@ -504,6 +569,8 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         mode = "🆓 бесплатный локальный режим (нейросеть вырезания фона + анимация)"
     elif _ai_on(uid):
         mode = "🧠 нейро-режим включён"
+    elif _scope_allows(uid) and _comfy_url():
+        mode = "🧠 нейро-режим включён (Kaggle ComfyUI)"
     elif _ai_scope() == "owner":
         mode = "🆓 локальный режим (нейросеть — только у владельца бота)"
     else:
@@ -750,6 +817,8 @@ async def cmd_settings(message: Message) -> None:
         mode = "локальный бесплатный"
     elif _ai_on(user.id):
         mode = "нейро (AI)"
+    elif _scope_allows(user.id) and _comfy_url():
+        mode = "нейро (Kaggle ComfyUI)"
     elif _ai_scope() == "owner":
         mode = "локальный (нейросеть только у владельца)"
     else:
@@ -775,6 +844,161 @@ async def cb_admin_aiscope(cb: CallbackQuery) -> None:
     DB.set_global("ai_enabled", "0" if nxt == "off" else "1")  # legacy-ключ
     await cb.message.edit_reply_markup(reply_markup=settings_kb(cb.from_user.id))
     await cb.answer(_AI_SCOPE_TEXT[nxt], show_alert=True)
+
+
+# ------------------------------------------------------------- Kaggle ComfyUI
+KAGGLE_KERNEL_FILE = Path(__file__).resolve().parent / "kaggle" / "comfy_kernel.py"
+_kaggle_tasks: dict[int, asyncio.Task] = {}
+
+
+def _kaggle_ready() -> bool:
+    return bool(CFG.kaggle_username and CFG.kaggle_key)
+
+
+def _kaggle_slug() -> str:
+    return f"{CFG.kaggle_username}/deepstick-comfy"
+
+
+async def _kaggle_api(method: str, path: str, **kw):  # noqa: ANN202
+    async with httpx.AsyncClient(timeout=httpx.Timeout(180.0)) as client:
+        return await client.request(
+            method, f"https://www.kaggle.com/api/v1{path}",
+            auth=(CFG.kaggle_username, CFG.kaggle_key), **kw)
+
+
+def _kaggle_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="▶️ Запустить сессию (≈12 ч)",
+                              callback_data="kg:start")],
+        [InlineKeyboardButton(text="⏹ Отключить (забыть адрес)",
+                              callback_data="kg:stop")],
+    ])
+
+
+@dp.callback_query(F.data == "kg:open")
+async def cb_kaggle_open(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    if not _kaggle_ready():
+        await cb.answer(
+            "Нужны секреты Kaggle. Как получить: kaggle.com → аватар → "
+            "Settings → API → Create New Token (скачается kaggle.json: "
+            "оттуда username и key). Добавь в GitHub: Settings → Secrets "
+            "and variables → Actions → KAGGLE_USERNAME и KAGGLE_KEY. "
+            "И подтверди телефон в Kaggle — без этого GPU не дают.",
+            show_alert=True)
+        return
+    url = _comfy_url()
+    text = ("☁️ *Kaggle-нейросеть (ComfyUI, Wan 2.2)*\nСтатус: "
+            + ("🟢 онлайн. Генерации идут через Kaggle, пока жива сессия "
+               "(до ~12 ч с запуска)." if url else
+               "⚪ выключена. Запуск сессии занимает 5–10 минут (скачать "
+               "модели), живёт до 12 часов; квота Kaggle — ~30 GPU-часов "
+               "в неделю."))
+    await cb.message.answer(text, parse_mode="Markdown", reply_markup=_kaggle_kb())
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "kg:start")
+async def cb_kaggle_start(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    if _comfy_url():
+        await cb.answer("Уже онлайн 🟢", show_alert=True)
+        return
+    task = _kaggle_tasks.get(cb.from_user.id)
+    if task and not task.done():
+        await cb.answer("Уже запускаю, подожди…")
+        return
+    _kaggle_tasks[cb.from_user.id] = asyncio.create_task(
+        _kaggle_launch(cb.message, cb.from_user))
+    await cb.answer("Запускаю…")
+
+
+@dp.callback_query(F.data == "kg:stop")
+async def cb_kaggle_stop(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    DB.set_global("comfy_url", "")
+    _comfy_health.update(ok=False, checked=0.0)
+    await cb.answer("Отключил. Сама сессия в Kaggle доработает до конца "
+                    "лимита — мгновенно остановить её можно в интерфейсе "
+                    "Kaggle (My Code → deepstick-comfy → Stop).",
+                    show_alert=True)
+
+
+async def _kaggle_launch(message: Message, user: User) -> None:
+    status = await message.answer(
+        "☁️ Запускаю Kaggle-сессию с ComfyUI (Wan 2.2)…\n"
+        "Первый старт — 5–10 минут: скачать модели и поднять сервер.")
+    try:
+        body = {
+            "id": _kaggle_slug(),
+            "title": "DeepStick ComfyUI (Wan 2.2)",
+            "code": build_notebook(KAGGLE_KERNEL_FILE.read_text()),
+            "language": "python", "kernelType": "notebook",
+            "isPrivate": True, "enableGpu": True, "enableInternet": True,
+            "datasetDataSources": [], "competitionDataSources": [],
+            "kernelDataSources": [], "modelDataSources": [],
+        }
+        r = await _kaggle_api("POST", "/kernels/push", json=body)
+        if r.status_code >= 400:
+            await status.edit_text(
+                f"😖 Kaggle отклонил запуск: HTTP {r.status_code}\n"
+                f"{r.text[:280]}")
+            return
+        deadline = time.monotonic() + 25 * 60
+        seen = ""
+        while time.monotonic() < deadline:
+            await asyncio.sleep(45)
+            rs = await _kaggle_api("GET", f"/kernels/status/{_kaggle_slug()}")
+            st = ""
+            if rs.status_code == 200:
+                st = str(rs.json().get("status") or "")
+            low = st.lower().replace("_", "")
+            if low in ("error", "cancelacknowledged", "canceled", "failed"):
+                await status.edit_text(
+                    f"😖 Сессия Kaggle упала (статус {st}). Зайди в Kaggle → "
+                    "My Code → deepstick-comfy и глянь лог последней версии.")
+                return
+            if st and st != seen:
+                seen = st
+                try:
+                    await status.edit_text(
+                        f"☁️ Kaggle-сессия: статус {st}… жду готовности ComfyUI.")
+                except TelegramBadRequest:
+                    pass
+            ro = await _kaggle_api("GET", f"/kernels/output/{_kaggle_slug()}")
+            if ro.status_code == 200:
+                url = extract_tunnel(ro.json())
+                if url:
+                    DB.set_global("comfy_url", url)
+                    DB.set_global("comfy_ts", str(time.time()))
+                    _comfy_health.update(ok=True, checked=time.monotonic())
+                    await status.edit_text(
+                        "✅ *Нейросеть Kaggle онлайн!* ComfyUI (Wan 2.2) "
+                        "живёт до ~12 часов или пока не кончится недельная "
+                        "квота Kaggle.\nГенерации теперь идут через неё "
+                        "(охват — настройкой «🧠 Нейросеть» выше), откат на "
+                        "HF/локальную анимацию автоматический.",
+                        parse_mode="Markdown")
+                    return
+        await status.edit_text(
+            "😖 Не дождался готовности за 25 минут. Проверь в Kaggle "
+            "(My Code → deepstick-comfy), что сессия запустилась, и попробуй "
+            "ещё раз.")
+    except Exception as e:
+        log.exception("Запуск Kaggle упал")
+        try:
+            await status.edit_text(f"😖 Не удалось запустить Kaggle: {e}")
+        except TelegramBadRequest:
+            pass
+    finally:
+        _kaggle_tasks.pop(user.id, None)
+
 
 
 @dp.callback_query(F.data.startswith("set:"))
@@ -1172,7 +1396,7 @@ async def on_custom(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.message.edit_text(
         "✍️ Опиши сценарий одним предложением, например:\n"
         "«лечу на ракете», «открываю холодильник-портал», «дирижирую оркестром котов»\n\n"
-        + ("🧠 Нейросеть выполнит его буквально." if _ai_on(cb.from_user.id) else
+        + ("🧠 Нейросеть выполнит его буквально." if _neuro_advertised(cb.from_user.id) else
            "Подберу ближайший эффект по ключевым словам."))
     await cb.answer()
 
@@ -1530,10 +1754,10 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     if eng == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
-                            await _ai_video_q(
+                            await _neuro_video_q(
                                 src, build_prompt(style, per,
                                                   custom_text if mode == "single" else None),
-                                mp4)
+                                mp4, user.id)
                             if not await _matte_q(mp4, out):
                                 await asyncio.to_thread(convert_video, mp4, out)
                             used_ai = True
