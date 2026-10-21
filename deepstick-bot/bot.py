@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -1112,7 +1113,7 @@ async def cb_stats_open(cb: CallbackQuery) -> None:
 
 
 # ------------------------------------------------------------- Kaggle ComfyUI
-KAGGLE_KERNEL_FILE = Path(__file__).resolve().parent / "kaggle" / "comfy_kernel.py"
+KAGGLE_KERNEL_FILE = Path(__file__).resolve().parent / "notebooks" / "comfy_kernel.py"
 _kaggle_tasks: dict[int, asyncio.Task] = {}
 
 
@@ -1124,11 +1125,54 @@ def _kaggle_slug() -> str:
     return f"{CFG.kaggle_username}/deepstick-comfy"
 
 
-async def _kaggle_api(method: str, path: str, **kw):  # noqa: ANN202
-    async with httpx.AsyncClient(timeout=httpx.Timeout(180.0)) as client:
-        return await client.request(
-            method, f"https://www.kaggle.com/api/v1{path}",
-            auth=(CFG.kaggle_username, CFG.kaggle_key), **kw)
+# Kaggle ушёл со старого REST (/kernels/status|output отвечают 404) на RPC
+# через официальный пакет kaggle — ходим в API только им. Вызовы синхронные,
+# поэтому из async-кода дёргаем через asyncio.to_thread.
+def _kaggle_client():  # noqa: ANN202
+    from kaggle.api.kaggle_api_extended import KaggleApi
+
+    api = KaggleApi()
+    api.authenticate()  # KAGGLE_USERNAME / KAGGLE_KEY из окружения
+    return api
+
+
+def _kaggle_status_sync() -> str:
+    """Статус кернела строкой ('' — не вышло спросить)."""
+    try:
+        resp = _kaggle_client().kernels_status(_kaggle_slug())
+        return str(getattr(resp, "status", "") or "")
+    except Exception:
+        return ""
+
+
+def _kaggle_log_sync() -> str:
+    """Лог текущей/последней сессии кернела ('' — не вышло)."""
+    try:
+        return _kaggle_client().kernels_logs(_kaggle_slug()) or ""
+    except Exception:
+        return ""
+
+
+def _kaggle_push_sync() -> None:
+    """Залить кернел (новая версия + запуск) через SDK."""
+    folder = CFG.data_dir / "kaggle_kernel"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "kernel.ipynb").write_text(
+        build_notebook(KAGGLE_KERNEL_FILE.read_text()))
+    meta = {
+        "id": _kaggle_slug(),
+        "title": "DeepStick ComfyUI (Wan 2.2)",
+        "code_file": "kernel.ipynb",
+        "language": "python",
+        "kernel_type": "notebook",
+        "is_private": True,
+        "enable_gpu": True,
+        "enable_internet": True,
+        "dataset_sources": [], "competition_sources": [],
+        "kernel_sources": [], "model_sources": [],
+    }
+    (folder / "kernel-metadata.json").write_text(json.dumps(meta, indent=2))
+    _kaggle_client().kernels_push(str(folder))
 
 
 def _kaggle_kb() -> InlineKeyboardMarkup:
@@ -1204,53 +1248,27 @@ async def _comfy_quick(url: str) -> bool:
         return False
 
 
-async def _kaggle_state() -> str:
-    """Статус существующего кернела ('' — нет или API не ответил)."""
-    try:
-        rs = await _kaggle_api("GET", f"/kernels/status/{_kaggle_slug()}")
-        if rs.status_code == 200:
-            return str(rs.json().get("status") or "")
-    except Exception:
-        pass
-    return ""
-
-
 async def _kaggle_launch(message: Message, user: User) -> None:
     status = await message.answer(
         "☁️ Запускаю Kaggle-сессию с ComfyUI (Wan 2.2)…\n"
         "Первый старт — 5–10 минут: скачать модели и поднять сервер.")
     try:
-        state = await _kaggle_state()
-        running = state.lower() in ("running", "queued")
+        state = await asyncio.to_thread(_kaggle_status_sync)
+        running = "running" in state.lower() or "queued" in state.lower()
         if not running:
-            body = {
-                "slug": _kaggle_slug(),
-                "newTitle": "DeepStick ComfyUI (Wan 2.2)",
-                "text": build_notebook(KAGGLE_KERNEL_FILE.read_text()),
-                "language": "python", "kernelType": "notebook",
-                "isPrivate": True, "enableGpu": True, "enableInternet": True,
-                "datasetDataSources": [], "competitionDataSources": [],
-                "kernelDataSources": [], "modelDataSources": [],
-                "categoryIds": [],
-            }
-            r = await _kaggle_api("POST", "/kernels/push", json=body)
-            if r.status_code >= 400 and "already in use" in r.text:
-                # Кернел уже создан прошлой попыткой: обновляем код без
-                # смены названия (Kaggle ругается на дубль заголовка).
-                body.pop("newTitle", None)
-                r = await _kaggle_api("POST", "/kernels/push", json=body)
-            if r.status_code >= 400:
+            try:
+                await asyncio.to_thread(_kaggle_push_sync)
+            except Exception as e:
                 await status.edit_text(
-                    f"😖 Kaggle отклонил запуск: HTTP {r.status_code}\n"
-                    f"{r.text[:280]}")
+                    f"😖 Kaggle отклонил запуск:\n{str(e)[:280]}")
                 return
         deadline = time.monotonic() + 25 * 60
         seen = ""
         dead: set[str] = set()
         while time.monotonic() < deadline:
             await asyncio.sleep(45)
-            st = await _kaggle_state()
-            low = st.lower().replace("_", "")
+            st = await asyncio.to_thread(_kaggle_status_sync)
+            low = st.lower()
             if st and st != seen:
                 seen = st
                 try:
@@ -1258,9 +1276,10 @@ async def _kaggle_launch(message: Message, user: User) -> None:
                         f"☁️ Kaggle-сессия: статус {st}… жду готовности ComfyUI.")
                 except TelegramBadRequest:
                     pass
-            ro = await _kaggle_api("GET", f"/kernels/output/{_kaggle_slug()}")
-            url = extract_tunnel(ro.json(), exclude=dead) \
-                if ro.status_code == 200 else None
+            # Адрес туннеля кернел печатает в лог (COMFY_URL ...) — ищем там;
+            # файлы выходных данных Kaggle отдаёт только после завершения.
+            log_text = await asyncio.to_thread(_kaggle_log_sync)
+            url = extract_tunnel({"log": log_text}, exclude=dead)
             if url:
                 if await _comfy_quick(url):
                     DB.set_global("comfy_url", url)
@@ -1275,12 +1294,12 @@ async def _kaggle_launch(message: Message, user: User) -> None:
                         parse_mode="Markdown")
                     return
                 dead.add(url)  # адрес от прошлой, уже мёртвой сессии
-            if low in ("error", "cancelacknowledged", "canceled", "failed"):
+            if any(x in low for x in ("error", "cancel", "fail")):
                 await status.edit_text(
                     f"😖 Сессия Kaggle упала (статус {st}). Зайди в Kaggle → "
                     "My Code → deepstick-comfy и глянь лог последней версии.")
                 return
-            if low == "complete":
+            if "complete" in low:
                 await status.edit_text(
                     "😖 Сессия Kaggle завершилась, так и не опубликовав "
                     "адрес ComfyUI. Глянь лог: Kaggle → My Code → "
@@ -1298,7 +1317,6 @@ async def _kaggle_launch(message: Message, user: User) -> None:
             pass
     finally:
         _kaggle_tasks.pop(user.id, None)
-
 
 
 @dp.callback_query(F.data.startswith("set:"))
