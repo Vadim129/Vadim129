@@ -1443,7 +1443,16 @@ async def _revive_run(message: Message, user: User, src_name: str,
         sset = await bot.get_sticker_set(name=src_name)
         title = f"🎬 {sset.title} — оживлённые"[:64]
         me = await bot.me()
+        # Каждое оживление — СВЕЖИЙ пак: в существующий не дописываем,
+        # иначе повторные запуски забивают его до лимита Telegram (120)
+        # и дальше падают вообще все добавления.
         new_name = packs.alive_pack_name(src_name, me.username or "")
+        if await packs.get_pack_by_name(bot, new_name) is not None:
+            for v in range(2, 20):
+                cand = packs.alive_pack_name(f"{src_name}_v{v}", me.username or "")
+                if await packs.get_pack_by_name(bot, cand) is None:
+                    new_name = cand
+                    break
         url = f"https://t.me/addstickers/{new_name}"
         todo, gen_seen = [], 0
         for st in sset.stickers:
