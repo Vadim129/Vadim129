@@ -456,9 +456,10 @@ WAN_ACTIONS: dict[str, str] = {
 
 def build_prompt_wan(style: Style, scenario: Scenario,
                      custom_text: str | None) -> str:
-    """Промпт для Wan/FastWan: стиль уже в кадре, одно простое движение,
-    жёсткое сохранение персонажа. Отдельно от build_prompt: HF/LTX-моделям
-    по-прежнему нужен сильный MOTION_SUFFIX, а Wan он вредит."""
+    """Промпт для Wan/FastWan: стиль уже в сгенерированном стартовом кадре,
+    одно простое движение, жёсткое сохранение персонажа. Отдельно от
+    build_prompt: HF/LTX-моделям по-прежнему нужен сильный MOTION_SUFFIX,
+    а Wan он вредит."""
     style_note = style.wan_prompt or style.ai_prompt
     if custom_text:
         action = ("performs the user's requested action, interpreted as one "
@@ -470,32 +471,71 @@ def build_prompt_wan(style: Style, scenario: Scenario,
             f"The character {action}. {WAN_IDENTITY_SUFFIX}")
 
 
+def build_image_prompt(style: Style) -> str:
+    """Промпт первой стадии (FLUX Kontext): фото -> стартовый кадр стикера.
+
+    Пользовательское фото обычно не готово для видео: крупный план, обрезанная
+    голова, пёстрый фон. Поэтому сначала генерируем чистый кадр: тот же
+    человек, узнаваемое лицо, вся голова в кадре с запасом, ровный однотонный
+    фон (его потом вырежет маттинг), стиль применён уже здесь. Сценарий сюда
+    не подмешиваем: поза нейтральная, действие добавит видеомодель.
+    """
+    style_note = style.image_prompt or style.ai_prompt
+    return (
+        "Transform the reference photo into a clean sticker-ready character "
+        f"portrait: {style_note}. Keep the exact same person: preserve facial "
+        "identity, face shape, eyes, nose, mouth, hairstyle, hair colour, "
+        "skin tone, apparent age and distinctive features; keep the clothing "
+        "recognizable from the photo. Use the same visible framing as the "
+        "reference, but center the character, keep the whole head fully "
+        "inside the frame with clear margin around it, and do not crop the "
+        "top of the head or the chin. If only the head and shoulders are "
+        "visible, keep it a head-and-shoulders portrait and do not invent "
+        "legs or a full body. Replace the background with one clean plain "
+        "solid light-grey background with no objects and no scenery. "
+        "Front-facing or slight three-quarter view, looking toward the "
+        "camera, relaxed natural expression and neutral pose. Do not add "
+        "new people, props, accessories, text or watermark, and do not "
+        "change the outfit. Sharp detailed face, clean silhouette edges, "
+        "square 1:1 composition."
+    )
+
+
 @dataclass(frozen=True)
 class Style:
     id: str
     emoji: str
     title: str
     ai_prompt: str
-    # Как стиль описан для Wan: стиль уже применён к входному кадру локально
-    # (app.effects.stylize), модели запрещаем перерисовывать персонажа.
+    # Как стиль описан для Wan: стиль уже применён к стартовому кадру на
+    # первой стадии, видеомодели запрещаем перерисовывать персонажа.
     wan_prompt: str = ""
+    # Как стиль задан модели генерации стартового кадра (FLUX Kontext).
+    image_prompt: str = ""
 
 
 STYLES: list[Style] = [
     Style("original", "📸", "Как есть", "photorealistic, natural look",
-          "photorealistic appearance identical to the input frame"),
+          "photorealistic appearance identical to the input frame",
+          "clean photorealistic portrait, natural colours and realistic skin texture"),
     Style("cartoon", "🎨", "Мультяшный", "bright cartoon style, bold colours",
-          "bright flat cartoon look already applied to the input frame"),
+          "bright flat cartoon look already applied to the input frame",
+          "bright flat 2D cartoon character, bold clean outlines, simple cel shading, vivid colours"),
     Style("pixel", "👾", "Пиксель-арт", "retro pixel-art style",
-          "retro pixel-art look already applied to the input frame"),
+          "retro pixel-art look already applied to the input frame",
+          "retro pixel-art character portrait, chunky visible pixels, limited colour palette"),
     Style("neon", "🌆", "Неон", "cyberpunk neon glow style",
-          "neon-lit look already applied to the input frame"),
+          "neon-lit look already applied to the input frame",
+          "cyberpunk neon-lit character portrait, magenta and cyan rim light, dark-friendly colours"),
     Style("anime", "⛩️", "Аниме", "anime style, clean line art",
-          "clean anime look already applied to the input frame"),
+          "clean anime look already applied to the input frame",
+          "clean anime character portrait, crisp line art, cel shading, expressive eyes"),
     Style("vintage", "🎞️", "Винтаж", "vintage sepia film photo style",
-          "vintage sepia film look already applied to the input frame"),
+          "vintage sepia film look already applied to the input frame",
+          "vintage sepia film portrait, warm faded tones, gentle film grain"),
     Style("bw", "🖤", "Ч/Б", "dramatic black and white style",
-          "black-and-white look already applied to the input frame"),
+          "black-and-white look already applied to the input frame",
+          "dramatic black-and-white portrait, strong contrast, monochrome only"),
 ]
 
 STYLES_BY_ID = {s.id: s for s in STYLES}

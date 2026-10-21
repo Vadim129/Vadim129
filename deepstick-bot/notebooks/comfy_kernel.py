@@ -1,4 +1,4 @@
-# DeepStick ComfyUI kernel (Wan 2.2 TI2V-5B + FastWan LoRA) — запускается ботом через
+# DeepStick ComfyUI kernel (FLUX Kontext -> Wan 2.2 TI2V-5B + FastWan) — запускается ботом через
 # Kaggle API, но можно гонять и руками: Run All, сессия живёт до 12 часов.
 # Бот находит адрес туннеля в выходных файлах (tunnel.json) этого ноутбука.
 
@@ -74,7 +74,7 @@ if not cuda_ok:
     raise RuntimeError(
         "Kaggle не дал GPU этой сессии. Включи GPU в ноутбуке и запусти ещё раз.")
 
-print("PHASE setup: download Wan 2.2 models", flush=True)
+print("PHASE setup: download models (Wan/FastWan + FLUX Kontext)", flush=True)
 from huggingface_hub import hf_hub_download  # noqa: E402
 
 REPO = "Comfy-Org/Wan_2.2_ComfyUI_Repackaged"
@@ -84,10 +84,20 @@ FILES = [
     (REPO, "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
      "models/text_encoders"),
     (REPO, "split_files/vae/wan2.2_vae.safetensors", "models/vae"),
-    # FastWan: дистиллированная LoRA быстрой генерации (6 шагов, CFG 1)
+    # FastWan: дистиллированная LoRA быстрой генерации видео (6 шагов, CFG 1)
     ("Kijai/WanVideo_comfy",
      "FastWan/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors",
      "models/loras"),
+    # FLUX.1 Kontext: первая стадия — стартовый кадр персонажа из фото
+    ("Comfy-Org/flux1-kontext-dev_ComfyUI",
+     "split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors",
+     "models/diffusion_models"),
+    ("Comfy-Org/Lumina_Image_2.0_Repackaged",
+     "split_files/vae/ae.safetensors", "models/vae"),
+    ("comfyanonymous/flux_text_encoders", "clip_l.safetensors",
+     "models/text_encoders"),
+    ("comfyanonymous/flux_text_encoders", "t5xxl_fp8_e4m3fn_scaled.safetensors",
+     "models/text_encoders"),
 ]
 for repo, repo_path, sub in FILES:
     try:
@@ -114,7 +124,7 @@ CF = os.path.join(WORK, "cloudflared")
 if not os.path.exists(CF):
     sh(f"wget -q https://github.com/cloudflare/cloudflared/releases/latest/"
        f"download/cloudflared-linux-amd64 -O {CF} && chmod +x {CF}")
-print("DEEPSTICK_ENGINE fastwan-v2", flush=True)
+print("DEEPSTICK_ENGINE frame-fastwan-v3", flush=True)
 print("SETUP DONE", flush=True)
 
 # CELL: 2. Запуск ComfyUI и туннеля, публикация адреса для бота

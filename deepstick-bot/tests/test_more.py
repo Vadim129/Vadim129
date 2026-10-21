@@ -87,6 +87,19 @@ def test_wan_prompt_preserves_character():
     assert "маши рукой" in custom                      # свой текст не потерян
 
 
+def test_image_prompt_builds_clean_start_frame():
+    from app.scenarios import STYLES, STYLES_BY_ID, build_image_prompt
+
+    for st in STYLES:
+        assert st.image_prompt, st.id  # у каждого стиля есть описание кадра
+    p = build_image_prompt(STYLES_BY_ID["cartoon"])
+    assert "exact same person" in p          # сохранение идентичности
+    assert "whole head fully" in p           # голова не обрезана
+    assert "plain" in p and "solid" in p     # ровный фон под маттинг
+    assert "do not invent" in p.lower() or "Do not add" in p
+    assert "2D cartoon" in p                 # стиль применён уже в кадре
+
+
 def test_new_keywords():
     assert match_scenario("хочу дождь из денег").id == "money"
     assert match_scenario("я так устал, сплю").id == "sleep"

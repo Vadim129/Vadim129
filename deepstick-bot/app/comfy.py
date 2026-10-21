@@ -1,11 +1,12 @@
 """Клиент ComfyUI (Kaggle-бэкенд нейрогенерации) + сборка ноутбука Kaggle.
 
-Схема: владелец запускает из бота Kaggle-кернел (kaggle/comfy_kernel.py):
-ComfyUI с Wan 2.2 TI2V-5B поднимается на бесплатной GPU, наружу выходит
-cloudflared-туннель, его URL кернел пишет в tunnel.json своих выходных
-файлов, бот забирает URL через Kaggle API и ходит в ComfyUI по HTTP:
-upload/image -> prompt -> history -> view. Всё остальное (маттинг,
-локальный откат) — как у HF-провайдера.
+Схема: владелец запускает из бота Kaggle-кернел (notebooks/comfy_kernel.py):
+ComfyUI поднимается на бесплатной GPU, наружу выходит cloudflared-туннель,
+бот забирает URL из лога Kaggle и ходит в ComfyUI по HTTP. Генерация —
+двухстадийная: сначала FLUX.1 Kontext делает из пользовательского фото
+чистый стартовый кадр персонажа в выбранном стиле, затем Wan 2.2 TI2V-5B
++ FastWan LoRA оживляет именно этот кадр. Дальше — покадровый маттинг,
+как у HF-провайдера.
 """
 from __future__ import annotations
 
@@ -33,6 +34,15 @@ NEGATIVE = (
 # промпте (см. build_prompt_wan в app/scenarios.py).
 FASTWAN_LORA = "Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors"
 FASTWAN_REPO_PATH = f"FastWan/{FASTWAN_LORA}"
+WAN_UNET = "wan2.2_ti2v_5B_fp16.safetensors"
+
+# Первая стадия: генерация стартового кадра из фото. FLUX.1 Kontext —
+# модель редактирования: переносит персонажа в новый стиль/композицию,
+# сохраняя лицо, причёску и одежду с референса. FP8 влезает в T4.
+FLUX_KONTEXT_UNET = "flux1-dev-kontext_fp8_scaled.safetensors"
+FLUX_CLIP_L = "clip_l.safetensors"
+FLUX_T5 = "t5xxl_fp8_e4m3fn_scaled.safetensors"
+FLUX_VAE = "ae.safetensors"
 
 _TUNNEL_RE = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
@@ -49,7 +59,7 @@ def build_workflow(prompt_text: str, image_name: str, seed: int,
     """
     return {
         "1": {"class_type": "UNETLoader",
-              "inputs": {"unet_name": "wan2.2_ti2v_5B_fp16.safetensors",
+              "inputs": {"unet_name": WAN_UNET,
                          "weight_dtype": "default"}},
         "13": {"class_type": "LoraLoaderModelOnly",
                "inputs": {"model": ["1", 0], "lora_name": FASTWAN_LORA,
@@ -84,6 +94,51 @@ def build_workflow(prompt_text: str, image_name: str, seed: int,
         "11": {"class_type": "SaveVideo",
                "inputs": {"video": ["10", 0], "filename_prefix": "deepstick",
                           "format": "mp4", "codec": "h264"}},
+    }
+
+
+def build_image_workflow(prompt_text: str, image_name: str, seed: int,
+                         steps: int = 20, guidance: float = 2.5) -> dict:
+    """API-воркфлоу первой стадии: фото -> стартовый кадр (FLUX.1 Kontext).
+
+    Официальная схема Kontext: референс масштабируется FluxKontextImageScale,
+    кодируется в латент и подмешивается в кондиционинг через ReferenceLatent;
+    сэмплинг идёт от латента референса (denoise 1), поэтому композиция и
+    персонаж берутся с фото, а промпт задаёт стиль и чистую подачу кадра.
+    Текстовые кодировщики — на CPU: на T4 им не хватает VRAM рядом с UNet.
+    """
+    return {
+        "1": {"class_type": "UNETLoader",
+              "inputs": {"unet_name": FLUX_KONTEXT_UNET,
+                         "weight_dtype": "default"}},
+        "2": {"class_type": "DualCLIPLoader",
+              "inputs": {"clip_name1": FLUX_CLIP_L, "clip_name2": FLUX_T5,
+                         "type": "flux", "device": "cpu"}},
+        "3": {"class_type": "VAELoader", "inputs": {"vae_name": FLUX_VAE}},
+        "4": {"class_type": "LoadImage", "inputs": {"image": image_name}},
+        "5": {"class_type": "FluxKontextImageScale",
+              "inputs": {"image": ["4", 0]}},
+        "6": {"class_type": "VAEEncode",
+              "inputs": {"pixels": ["5", 0], "vae": ["3", 0]}},
+        "7": {"class_type": "CLIPTextEncode",
+              "inputs": {"clip": ["2", 0], "text": prompt_text}},
+        "8": {"class_type": "ConditioningZeroOut",
+              "inputs": {"conditioning": ["7", 0]}},
+        "9": {"class_type": "ReferenceLatent",
+              "inputs": {"conditioning": ["7", 0], "latent": ["6", 0]}},
+        "10": {"class_type": "FluxGuidance",
+               "inputs": {"conditioning": ["9", 0], "guidance": guidance}},
+        "11": {"class_type": "KSampler",
+               "inputs": {"model": ["1", 0], "seed": seed, "steps": steps,
+                          "cfg": 1.0, "sampler_name": "euler",
+                          "scheduler": "simple", "positive": ["10", 0],
+                          "negative": ["8", 0], "latent_image": ["6", 0],
+                          "denoise": 1.0}},
+        "12": {"class_type": "VAEDecode",
+               "inputs": {"samples": ["11", 0], "vae": ["3", 0]}},
+        "13": {"class_type": "SaveImage",
+               "inputs": {"images": ["12", 0],
+                          "filename_prefix": "deepstick_frame"}},
     }
 
 
@@ -242,79 +297,145 @@ def build_notebook(kernel_code: str) -> str:
     })
 
 
-async def comfy_has_fastwan(base_url: str) -> bool:
-    """Есть ли в этом ComfyUI FastWan LoRA (т.е. сессия поднята новым кернелом).
+async def _object_options(base_url: str, node_class: str,
+                          input_name: str) -> list:
+    """Список доступных значений combo-входа ноды из /object_info."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+        r = await client.get(f"{base_url.rstrip('/')}/object_info/{node_class}")
+        r.raise_for_status()
+        node = (r.json() or {}).get(node_class) or {}
+        spec = ((node.get("input") or {}).get("required") or {}).get(
+            input_name) or [[], {}]
+        options = spec[0] if isinstance(spec, (list, tuple)) else []
+        return list(options or [])
 
-    Старая сессия без LoRA честно отвергается: иначе воркфлоу упадёт уже на
-    /prompt, а пользователь получит тихий откат не по той причине.
-    """
+
+async def comfy_has_fastwan(base_url: str) -> bool:
+    """Есть ли в этом ComfyUI FastWan LoRA."""
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            r = await client.get(
-                f"{base_url.rstrip('/')}/object_info/LoraLoaderModelOnly")
-            r.raise_for_status()
-            node = (r.json() or {}).get("LoraLoaderModelOnly") or {}
-            spec = ((node.get("input") or {}).get("required") or {}).get(
-                "lora_name") or [[], {}]
-            options = spec[0] if isinstance(spec, (list, tuple)) else []
-            return FASTWAN_LORA in (options or [])
+        return FASTWAN_LORA in await _object_options(
+            base_url, "LoraLoaderModelOnly", "lora_name")
     except Exception:
         return False
 
 
-async def comfy_generate(base_url: str, photo: Path, prompt: str, out: Path,
-                         timeout_s: float = 720.0) -> None:
-    """Сгенерировать mp4 через ComfyUI. Любая проблема — исключение наверх."""
+async def comfy_pipeline_ready(base_url: str) -> bool:
+    """Поднят ли ComfyUI новым кернелом: FLUX Kontext (кадр) + FastWan (видео).
+
+    Старая сессия без этих моделей честно отвергается: иначе воркфлоу упадёт
+    уже на /prompt, а пользователь получит тихий откат не по той причине.
+    """
+    try:
+        unets = await _object_options(base_url, "UNETLoader", "unet_name")
+        return (WAN_UNET in unets and FLUX_KONTEXT_UNET in unets
+                and await comfy_has_fastwan(base_url))
+    except Exception:
+        return False
+
+
+def _require_pipeline(ok: bool) -> None:
+    if not ok:
+        raise RuntimeError(
+            "В Kaggle-сессии нет моделей FLUX Kontext/FastWan — это старая "
+            "сессия. Останови её в Kaggle и запусти сессию заново из бота.")
+
+
+async def _free_memory(client: httpx.AsyncClient, base: str) -> None:
+    """Выгрузить модели ComfyUI: после FLUX на T4 не хватит места Wan и наоборот."""
+    try:
+        await client.post(f"{base}/free",
+                          json={"unload_models": True, "free_memory": True})
+    except Exception:
+        pass
+
+
+def _find_output(hist: dict, suffixes: tuple[str, ...]) -> dict | None:
+    for node_out in (hist.get("outputs") or {}).values():
+        for key in ("gifs", "videos", "images", "video"):
+            for item in node_out.get(key) or []:
+                name = item.get("filename") or ""
+                if name.lower().endswith(suffixes):
+                    return item
+    return None
+
+
+async def _run_workflow(client: httpx.AsyncClient, base: str, photo: Path,
+                        workflow: dict, suffixes: tuple[str, ...],
+                        deadline: float, label: str) -> dict:
+    """Загрузить картинку, отправить воркфлоу и дождаться выходного файла."""
+    with open(photo, "rb") as fh:
+        r = await client.post(
+            f"{base}/upload/image",
+            files={"image": (photo.name, fh, "image/png")},
+            data={"overwrite": "true"})
+    r.raise_for_status()
+    # build_workflow/build_image_workflow ждут имя файла именно в LoadImage:
+    # вызывающий код подставляет его через workflow — мы делаем это здесь,
+    # чтобы не таскать имя через все сигнатуры.
+    for node in workflow.values():
+        if node.get("class_type") == "LoadImage":
+            node["inputs"]["image"] = r.json()["name"]
+    r = await client.post(f"{base}/prompt",
+                          json={"prompt": workflow,
+                                "client_id": uuid.uuid4().hex})
+    r.raise_for_status()
+    prompt_id = r.json()["prompt_id"]
+    while time.monotonic() < deadline:
+        await _sleep(10)
+        r = await client.get(f"{base}/history/{prompt_id}")
+        r.raise_for_status()
+        hist = r.json().get(prompt_id) or {}
+        status = (hist.get("status") or {}).get("status_str")
+        if status == "error":
+            raise RuntimeError(f"ComfyUI workflow error: {str(hist)[:300]}")
+        file_ref = _find_output(hist, suffixes)
+        if file_ref:
+            return file_ref
+    raise RuntimeError(f"ComfyUI: {label} не появилось за отведённое время")
+
+
+async def _download_output(client: httpx.AsyncClient, base: str,
+                           file_ref: dict, out: Path, label: str) -> None:
+    r = await client.get(
+        f"{base}/view",
+        params={"filename": file_ref["filename"],
+                "subfolder": file_ref.get("subfolder", ""),
+                "type": file_ref.get("type", "output")})
+    r.raise_for_status()
+    out.write_bytes(r.content)
+    if out.stat().st_size < 10_000:
+        raise RuntimeError(f"ComfyUI: подозрительно пустой файл ({label})")
+
+
+async def comfy_generate_frame(base_url: str, photo: Path, prompt: str,
+                               out: Path, timeout_s: float = 900.0) -> None:
+    """Стадия 1: сгенерировать стартовый кадр персонажа из фото (Kontext)."""
     base = base_url.rstrip("/")
     deadline = time.monotonic() + timeout_s
-    if not await comfy_has_fastwan(base):
-        raise RuntimeError(
-            "В Kaggle-сессии нет FastWan LoRA — это старая сессия. "
-            "Останови её в Kaggle и запусти сессию заново из бота.")
+    _require_pipeline(await comfy_pipeline_ready(base))
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
-        with open(photo, "rb") as fh:
-            r = await client.post(
-                f"{base}/upload/image",
-                files={"image": (photo.name, fh, "image/png")},
-                data={"overwrite": "true"})
-        r.raise_for_status()
-        image_name = r.json()["name"]
+        wf = build_image_workflow(
+            prompt, "placeholder.png", seed=uuid.uuid4().int % (2 ** 31))
+        file_ref = await _run_workflow(
+            client, base, photo, wf, (".png", ".jpg", ".jpeg", ".webp"),
+            deadline, "стартовый кадр")
+        await _download_output(client, base, file_ref, out, "стартовый кадр")
+        await _free_memory(client, base)  # дальше Wan: освободить VRAM
 
-        wf = build_workflow(prompt, image_name, seed=uuid.uuid4().int % (2 ** 31))
-        r = await client.post(f"{base}/prompt",
-                              json={"prompt": wf, "client_id": uuid.uuid4().hex})
-        r.raise_for_status()
-        prompt_id = r.json()["prompt_id"]
 
-        file_ref = None
-        while time.monotonic() < deadline:
-            await _sleep(10)
-            r = await client.get(f"{base}/history/{prompt_id}")
-            r.raise_for_status()
-            hist = r.json().get(prompt_id) or {}
-            status = (hist.get("status") or {}).get("status_str")
-            if status == "error":
-                raise RuntimeError(f"ComfyUI workflow error: {str(hist)[:300]}")
-            for node_out in (hist.get("outputs") or {}).values():
-                for key in ("gifs", "videos", "images", "video"):
-                    for item in node_out.get(key) or []:
-                        name = item.get("filename") or ""
-                        if name.lower().endswith((".mp4", ".webm")):
-                            file_ref = item
-            if file_ref:
-                break
-        if not file_ref:
-            raise RuntimeError("ComfyUI: видео не появилось за отведённое время")
-
-        r = await client.get(
-            f"{base}/view",
-            params={"filename": file_ref["filename"],
-                    "subfolder": file_ref.get("subfolder", ""),
-                    "type": file_ref.get("type", "output")})
-        r.raise_for_status()
-        out.write_bytes(r.content)
-        if out.stat().st_size < 10_000:
-            raise RuntimeError("ComfyUI: подозрительно пустой видеофайл")
+async def comfy_generate(base_url: str, photo: Path, prompt: str, out: Path,
+                         timeout_s: float = 720.0) -> None:
+    """Стадия 2: сгенерировать mp4 (FastWan) по стартовому кадру."""
+    base = base_url.rstrip("/")
+    deadline = time.monotonic() + timeout_s
+    _require_pipeline(await comfy_pipeline_ready(base))
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+        wf = build_workflow(prompt, "placeholder.png",
+                            seed=uuid.uuid4().int % (2 ** 31))
+        file_ref = await _run_workflow(
+            client, base, photo, wf, (".mp4", ".webm"), deadline, "видео")
+        await _download_output(client, base, file_ref, out, "видео")
+        await _free_memory(client, base)
 
 
 async def _sleep(seconds: float) -> None:
