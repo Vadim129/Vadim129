@@ -936,13 +936,14 @@ async def _kaggle_launch(message: Message, user: User) -> None:
         "Первый старт — 5–10 минут: скачать модели и поднять сервер.")
     try:
         body = {
-            "id": _kaggle_slug(),
-            "title": "DeepStick ComfyUI (Wan 2.2)",
-            "code": build_notebook(KAGGLE_KERNEL_FILE.read_text()),
+            "slug": _kaggle_slug(),
+            "newTitle": "DeepStick ComfyUI (Wan 2.2)",
+            "text": build_notebook(KAGGLE_KERNEL_FILE.read_text()),
             "language": "python", "kernelType": "notebook",
             "isPrivate": True, "enableGpu": True, "enableInternet": True,
             "datasetDataSources": [], "competitionDataSources": [],
             "kernelDataSources": [], "modelDataSources": [],
+            "categoryIds": [],
         }
         r = await _kaggle_api("POST", "/kernels/push", json=body)
         if r.status_code >= 400:
