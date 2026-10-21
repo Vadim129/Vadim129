@@ -2,7 +2,7 @@
 import base64
 import json
 
-from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url, format_log_tail, pick_kernel
+from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url, format_log_tail, parse_log_blob, parse_sse_payload, pick_kernel
 
 
 def test_build_workflow_structure():
@@ -79,3 +79,12 @@ def test_pick_kernel_matches_title_generated_slug():
     assert info == {"ref": "vadim129/deepstick-comfyui-wan-2-2",
                     "title": "DeepStick ComfyUI (Wan 2.2)", "id": 42}
     assert pick_kernel([], "vadim129") is None
+
+
+def test_parse_log_stream_helpers():
+    assert parse_sse_payload('{"stream_name":"stdout","data":"abc\\n"}') == "abc\n"
+    assert parse_sse_payload("END_OF_LOG") is None
+    assert parse_sse_payload("plain line") == "plain line"
+    blob = json.dumps([{"data": "one "}, {"data": "two"}, {"x": 1}])
+    assert parse_log_blob(blob) == "one two"
+    assert parse_log_blob("just text") == "just text"

@@ -55,7 +55,7 @@ from aiogram.types import (  # noqa: E402
 
 from app import packs  # noqa: E402
 from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
-from app.comfy import build_notebook, comfy_generate, extract_tunnel, format_log_tail, pick_kernel  # noqa: E402
+from app.comfy import build_notebook, comfy_generate, extract_tunnel, format_log_tail, parse_log_blob, parse_sse_payload, pick_kernel  # noqa: E402
 import httpx  # noqa: E402
 from app.db import Database  # noqa: E402
 from app.effects import prepare_subject, render_frames  # noqa: E402
@@ -1132,7 +1132,10 @@ def _kaggle_client():  # noqa: ANN202
     from kaggle.api.kaggle_api_extended import KaggleApi
 
     api = KaggleApi()
-    api.authenticate()  # KAGGLE_USERNAME / KAGGLE_KEY из окружения
+    try:
+        api.authenticate()  # KAGGLE_USERNAME / KAGGLE_KEY из окружения
+    except SystemExit as e:  # SDK при плохих кредах зовёт exit(), а не raise
+        raise RuntimeError("Kaggle не приняла доступ (проверь секреты)") from e
     return api
 
 
@@ -1177,9 +1180,52 @@ def _kaggle_status_sync(ref: str | None = None) -> str:
 
 
 def _kaggle_log_sync(ref: str | None = None) -> str:
-    """Лог текущей/последней сессии кернела ('' — не вышло)."""
+    """Лог сессии кернела ('' — не вышло).
+
+    Обычный kernels_logs отдаёт лог только ЗАВЕРШЁННЫХ сессий, у живой —
+    пусто. Поэтому сначала идём в streaming-эндпоинт Kaggle: он реплеит
+    лог бегущей сессии и доклеивает новые события. Читаем с капом по
+    объёму и паузой между байтами, чтобы не висеть вечно.
+    """
+    slug = ref or _kaggle_slug()
+    owner, _, name = slug.partition("/")
+    if owner and name:
+        url = f"https://www.kaggle.com/api/v1/kernels/logs/stream/{owner}/{name}"
+        try:
+            timeout = httpx.Timeout(connect=10.0, read=25.0, write=10.0,
+                                    pool=10.0)
+            with httpx.Client(timeout=timeout, follow_redirects=True,
+                              auth=(CFG.kaggle_username,
+                                    CFG.kaggle_key)) as client:
+                with client.stream(
+                        "GET", url,
+                        headers={"Accept": "text/event-stream, */*"}) as resp:
+                    resp.raise_for_status()
+                    ctype = (resp.headers.get("content-type") or "").lower()
+                    if "text/event-stream" not in ctype:
+                        body = resp.read().decode("utf-8", "replace")
+                        return parse_log_blob(body)
+                    parts: list[str] = []
+                    total = 0
+                    try:
+                        for line in resp.iter_lines():
+                            if not line.startswith("data:"):
+                                continue
+                            data = parse_sse_payload(line[5:])
+                            if data is None:
+                                break
+                            if data:
+                                parts.append(data)
+                                total += len(data)
+                                if "COMFY_URL" in data or total >= 400_000:
+                                    break
+                    except httpx.TimeoutException:
+                        pass  # докачали бэклог и тишина — этого достаточно
+                    return "".join(parts)
+        except Exception:
+            pass
     try:
-        return _kaggle_client().kernels_logs(ref or _kaggle_slug()) or ""
+        return _kaggle_client().kernels_logs(slug) or ""
     except Exception:
         return ""
 

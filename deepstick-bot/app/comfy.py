@@ -102,6 +102,34 @@ def format_log_tail(text: str, limit: int = 3000) -> str:
     return tail.strip()
 
 
+def parse_sse_payload(payload: str) -> str | None:
+    """Одна строка SSE-потока логов Kaggle -> текст (None = конец потока)."""
+    payload = (payload or "").strip()
+    if payload == "END_OF_LOG":
+        return None
+    try:
+        obj = json.loads(payload)
+    except (json.JSONDecodeError, ValueError):
+        return payload
+    if isinstance(obj, dict):
+        return str(obj.get("data") or "")
+    return ""
+
+
+def parse_log_blob(body: str) -> str:
+    """Лог завершённой сессии Kaggle: JSON-массив событий или plain text."""
+    try:
+        payload = json.loads(body or "")
+    except (json.JSONDecodeError, ValueError):
+        return body or ""
+    if isinstance(payload, list):
+        return "".join(str(e.get("data") or "") for e in payload
+                       if isinstance(e, dict))
+    if isinstance(payload, dict):
+        return str(payload.get("data") or "")
+    return body or ""
+
+
 def extract_tunnel(output: dict, exclude: set[str] | None = None) -> str | None:
     """URL туннеля из ответа Kaggle kernels/output: tunnel.json или лог.
 
