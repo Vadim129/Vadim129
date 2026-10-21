@@ -19,7 +19,6 @@ from pathlib import Path
 
 from PIL import Image, ImageFilter
 
-from .effects import _add_white_stroke
 from .encode import encode_frames, probe
 from .ffmpeg_util import find_ffmpeg
 
@@ -63,7 +62,7 @@ def _cut_frame(png_bytes: bytes, session) -> Image.Image:  # noqa: ANN001
     # лёгкое сглаживание рваных краёв маски
     alpha = img.split()[3].filter(ImageFilter.GaussianBlur(1.0))
     img.putalpha(alpha)
-    return _add_white_stroke(img, width=6)
+    return img  # без обводок и рамок
 
 
 def matte_encode(mp4: Path, webm: Path, fps_cap: int = 16) -> bool:

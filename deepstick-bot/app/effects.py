@@ -51,23 +51,6 @@ def stylize(img: Image.Image, style: str) -> Image.Image:
     return rgb
 
 
-def _add_white_stroke(rgba: Image.Image, width: int = 9) -> Image.Image:
-    """Белая обводка по альфе — классический «стикер»-вид.
-
-    Расширение маски — гауссовым размытием с порогом, а не MaxFilter:
-    квадратное ядро MaxFilter давало угловатые «крупные пиксели» по контуру.
-    """
-    alpha = rgba.split()[3]
-    dilated = alpha.filter(ImageFilter.GaussianBlur(width))
-    dilated = dilated.point(lambda a: 255 if a >= 10 else 0)
-    dilated = dilated.filter(ImageFilter.GaussianBlur(1.3))
-    out = Image.new("RGBA", rgba.size, (0, 0, 0, 0))
-    white = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
-    out.paste(white, (0, 0), dilated)
-    out.alpha_composite(rgba)
-    return out
-
-
 def has_transparency(img: Image.Image, threshold: float = 0.01) -> bool:
     """У картинки уже есть настоящий прозрачный фон (а не сплошной прямоугольник)."""
     if img.mode == "P":
@@ -88,50 +71,40 @@ def _smooth_alpha(rgba: Image.Image, radius: float = 1.1) -> Image.Image:
     return out
 
 
-def _rounded_photo(rgba: Image.Image, radius: int = 48) -> Image.Image:
-    mask = Image.new("L", rgba.size, 0)
-    d = ImageDraw.Draw(mask)
-    d.rounded_rectangle([0, 0, rgba.size[0] - 1, rgba.size[1] - 1], radius, fill=255)
-    out = rgba.copy()
-    out.putalpha(Image.composite(rgba.split()[3], Image.new("L", rgba.size, 0), mask))
-    border = Image.new("RGBA", (rgba.size[0] + 16, rgba.size[1] + 16), (0, 0, 0, 0))
-    bd = ImageDraw.Draw(border)
-    bd.rounded_rectangle([0, 0, border.size[0] - 1, border.size[1] - 1], radius + 8,
-                         outline=(255, 255, 255, 255), width=10)
-    border.alpha_composite(out, (8, 8))
-    return border
-
-
 def prepare_subject(photo: Image.Image, style: str = "original",
                      remove_bg: bool = True, max_side: int = 400) -> Image.Image:
-    """Фото -> объект-стикер, вписанный в max_side x max_side."""
+    """Фото/стикер -> объект для анимации, вписанный в max_side x max_side.
+
+    Правила фона:
+    * картинка уже вырезана (есть прозрачность) — фон не трогаем НИКОГДА,
+      ни в каком режиме: берём родную альфу, дальше только движение;
+    * сплошной прямоугольник/квадрат + вырезание включено — режем rembg;
+    * вырезание выключено или недоступно — картинка как есть, целиком.
+    Никаких рамок, скруглений и обводок не добавляется ни в одном режиме.
+    """
     styled = stylize(photo, style)
-    subject: Image.Image | None = None
+    if has_transparency(photo):
+        alpha = photo.convert("RGBA").split()[3]
+        if alpha.size != styled.size:
+            alpha = alpha.resize(styled.size, Image.Resampling.LANCZOS)
+        subject = styled.convert("RGBA")
+        subject.putalpha(alpha)
+        bbox = subject.split()[3].getbbox()
+        if bbox:
+            subject = subject.crop(bbox)
+        subject = _smooth_alpha(subject)
+        subject.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
+        return subject
     if remove_bg:
-        if has_transparency(photo):
-            # Стикер/картинка уже вырезаны: фон не трогаем и rembg не гоняем —
-            # берём родную альфу, стиль применяем только к цветам.
-            alpha = photo.convert("RGBA").split()[3]
-            if alpha.size != styled.size:
-                alpha = alpha.resize(styled.size, Image.Resampling.LANCZOS)
-            subject = styled.convert("RGBA")
-            subject.putalpha(alpha)
-        else:
-            # Сплошной прямоугольник (фото) — вырезаем фон нейросетью.
-            subject = remove_background(styled)
-        if subject is not None:
-            bbox = subject.split()[3].getbbox()
+        cut = remove_background(styled)
+        if cut is not None:
+            bbox = cut.split()[3].getbbox()
             if bbox:
-                subject = subject.crop(bbox)
-            # прозрачный запас по краям, иначе белая обводка упирается
-            # в границы кадра и обрезается
-            pad = 18
-            canvas = Image.new("RGBA", (subject.width + 2 * pad,
-                                        subject.height + 2 * pad), (0, 0, 0, 0))
-            canvas.alpha_composite(subject, (pad, pad))
-            subject = _add_white_stroke(_smooth_alpha(canvas))
-    if subject is None:
-        subject = _rounded_photo(styled.convert("RGBA"))
+                cut = cut.crop(bbox)
+            cut = _smooth_alpha(cut)
+            cut.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
+            return cut
+    subject = styled.convert("RGBA")
     subject.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)
     return subject
 

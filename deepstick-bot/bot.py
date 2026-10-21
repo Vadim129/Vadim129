@@ -32,7 +32,11 @@ load_dotenv()
 
 from aiogram import Bot, Dispatcher, F  # noqa: E402
 from aiogram.enums import ChatAction  # noqa: E402
-from aiogram.exceptions import TelegramBadRequest, TelegramUnauthorizedError  # noqa: E402
+from aiogram.exceptions import (  # noqa: E402
+    TelegramBadRequest,
+    TelegramRetryAfter,
+    TelegramUnauthorizedError,
+)
 from aiogram.filters import Command, CommandStart  # noqa: E402
 from aiogram.fsm.context import FSMContext  # noqa: E402
 from aiogram.fsm.state import State, StatesGroup  # noqa: E402
@@ -1258,6 +1262,26 @@ def revive_engine_kb() -> InlineKeyboardMarkup:
     ])
 
 
+async def _with_retry(factory, tries: int = 3):  # noqa: ANN001, ANN202
+    """Повтор при Telegram-флуде (RetryAfter): подождать и попробовать снова."""
+    for attempt in range(tries):
+        try:
+            return await factory()
+        except TelegramRetryAfter as e:
+            if attempt == tries - 1:
+                raise
+            await asyncio.sleep(float(e.retry_after) + 1)
+
+
+def _file_has_transparency(path: Path) -> bool:
+    from PIL import Image
+
+    from app.effects import has_transparency
+
+    with Image.open(path) as img:
+        return has_transparency(img)
+
+
 def _to_png(raw: Path, out: Path) -> None:
     from PIL import Image
 
@@ -1272,10 +1296,11 @@ async def cmd_revive(message: Message, state: FSMContext) -> None:
         "🎬 *Оживление набора стикеров*\n\n"
         "Пришли *ссылку на набор* (например, `https://t.me/addstickers/Cats`) "
         "или *любой стикер* из него.\n\n"
-        "Я создам новый набор: вырежу фон у каждого стикера и применю одно "
-        "движение ко всем. Видеостикеры скопирую как есть, анимированные "
+        "Я создам новый набор и добавлю движение каждому стикеру. Уже "
+        "вырезанные стикеры не трогаю — только движение; фон вырезаю лишь "
+        "у сплошных картинок. Видеостикеры скопирую как есть, анимированные "
         "(.tgs) — пропущу.",
-        parse_mode="Markdown")
+        parse_mode="Markdown", reply_markup=main_menu())
 
 
 @dp.message(Flow.waiting_revive_pack, F.sticker | F.text)
@@ -1411,6 +1436,7 @@ async def _revive_run(message: Message, user: User, src_name: str,
     status = await message.answer("🎬 Оживляю набор…", reply_markup=generating_kb())
     job = _job_dir(user.id)
     done = fail = skip = 0
+    fail_reasons: list[str] = []
     created = False
     url = ""
     try:
@@ -1437,15 +1463,20 @@ async def _revive_run(message: Message, user: User, src_name: str,
                 out = job / f"s{i}.webm"
                 used_ai = False
                 if kind == "copy":
-                    file = await bot.get_file(st.file_id)
-                    await bot.download(file, destination=out)
+                    file = await _with_retry(lambda: bot.get_file(st.file_id))
+                    await _with_retry(lambda: bot.download(file, destination=out))
                 else:
                     raw, src = job / f"s{i}.raw", job / f"s{i}.png"
-                    file = await bot.get_file(st.file_id)
-                    await bot.download(file, destination=raw)
+                    file = await _with_retry(lambda: bot.get_file(st.file_id))
+                    await _with_retry(lambda: bot.download(file, destination=raw))
                     await asyncio.to_thread(_to_png, raw, src)
                     per = (scenario_for_emoji(st.emoji) if mode == "emoji"
                            else base_scenario)
+                    if eng == "ai" and await asyncio.to_thread(
+                            _file_has_transparency, src):
+                        # стикер уже вырезан: нейросеть не трогаем вообще,
+                        # только локальное движение по родной прозрачности
+                        eng = "local"
                     if eng == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
@@ -1463,12 +1494,13 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     else:
                         await _render_local_q(src, "original",
                                               per.effect, out, remove_bg)
-                _link, _fid, err = await packs.add_to_named_pack(
+                _link, _fid, err = await _with_retry(lambda: packs.add_to_named_pack(
                     bot, user.id, new_name, out,
                     st.emoji or (per.emoji if kind == "gen" else "🎬"),
-                    create_title=None if created else title)
+                    create_title=None if created else title))
                 if err:
                     fail += 1
+                    fail_reasons.append(f"№{i}: {str(err)[:90]}")
                     log.warning("Оживление: добавление стикера %s не удалось: %s", i, err)
                 else:
                     created = True
@@ -1481,8 +1513,9 @@ async def _revive_run(message: Message, user: User, src_name: str,
                         done_local += 1
             except asyncio.CancelledError:
                 raise
-            except Exception:
+            except Exception as e:
                 fail += 1
+                fail_reasons.append(f"№{i}: {type(e).__name__}: {str(e)[:90]}")
                 log.exception("Оживление набора: стикер %s не удался", i)
             try:
                 await status.edit_text(
@@ -1497,6 +1530,11 @@ async def _revive_run(message: Message, user: User, src_name: str,
             rec = next((r for r in DB.list_packs(user.id) if r["name"] == new_name), None)
             rec_id = int(rec["id"]) if rec else DB.add_pack(user.id, new_name, title)
             DB.set_active_pack(user.id, str(rec_id))
+            actual = None
+            try:
+                actual = len((await bot.get_sticker_set(name=new_name)).stickers)
+            except Exception:
+                pass
             parts = []
             if done_ai:
                 parts.append(f"🧠 нейро {done_ai}")
@@ -1509,6 +1547,11 @@ async def _revive_run(message: Message, user: User, src_name: str,
                 + (f" ({', '.join(parts)})" if parts else "")
                 + (f", не удалось {fail}" if fail else "")
                 + (f", пропущено .tgs {skip}" if skip else "")
+                + (f"\n📦 По данным Telegram в паке сейчас стикеров: {actual}"
+                   if actual is not None else "")
+                + (("\n❌ Причины неудач: " + "; ".join(fail_reasons[:3])
+                    + ("…" if len(fail_reasons) > 3 else ""))
+                   if fail_reasons else "")
                 + f"\n\n📦 Новый набор: {url}\n"
                 "Сделал его текущим — новые стикеры будут падать сюда.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
