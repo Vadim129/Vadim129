@@ -201,8 +201,10 @@ ComfyUI с Wan 2.2 TI2V-5B живёт в Kaggle-сессии (до 12 ч, ~30 GP
 Что нужно от владельца:
 
 1. Аккаунт Kaggle, подтверждённый телефон (без него не дают GPU/интернет).
-2. kaggle.com → Settings → API → **Create New Token** → из `kaggle.json`
-   взять `username` и `key`.
+2. kaggle.com/settings/api → секция **Legacy API Credentials** →
+   **Create New Legacy API Credentials** → скачается `kaggle.json`,
+   из него взять `username` и `key` (новые «API Tokens» не подходят:
+   бот ходит в API по legacy-ключу).
 3. В GitHub (Settings → Secrets and variables → Actions) добавить секреты
    `KAGGLE_USERNAME` и `KAGGLE_KEY`. Подхватятся при ближайшем перезапуске
    бота.
