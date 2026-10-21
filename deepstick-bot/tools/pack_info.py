@@ -1,5 +1,7 @@
 """Диагностика: сколько стикеров в паке по данным Telegram (getStickerSet).
 
+v2: + проверка, жив ли пак вообще.
+
 Запуск: BOT_TOKEN=... python tools/pack_info.py <pack_name> [pack_name...]
 """
 import json

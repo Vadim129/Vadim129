@@ -1498,6 +1498,17 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     bot, user.id, new_name, out,
                     st.emoji or (per.emoji if kind == "gen" else "🎬"),
                     create_title=None if created else title))
+                if err and not created:
+                    # Пак, видимо, удаляли: Telegram не отдаёт его имя обратно,
+                    # и создание с тем же именем падает. Уходим на запасное имя.
+                    log.warning("Оживление: имя %s недоступно (%s) — запасное", new_name, err)
+                    new_name = packs.alive_pack_name(f"{src_name}_v2",
+                                                     me.username or "")
+                    url = f"https://t.me/addstickers/{new_name}"
+                    _link, _fid, err = await _with_retry(lambda: packs.add_to_named_pack(
+                        bot, user.id, new_name, out,
+                        st.emoji or (per.emoji if kind == "gen" else "🎬"),
+                        create_title=title))
                 if err:
                     fail += 1
                     fail_reasons.append(f"№{i}: {str(err)[:90]}")
@@ -1517,6 +1528,7 @@ async def _revive_run(message: Message, user: User, src_name: str,
                 fail += 1
                 fail_reasons.append(f"№{i}: {type(e).__name__}: {str(e)[:90]}")
                 log.exception("Оживление набора: стикер %s не удался", i)
+            await asyncio.sleep(0.35)  # темп добавлений — против флуд-лимита
             try:
                 await status.edit_text(
                     f"🎬 Оживляю набор «{sset.title}»: обработано {i}/{total}\n"
