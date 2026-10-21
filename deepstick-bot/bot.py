@@ -56,6 +56,7 @@ from app.encode import convert_video, encode_frames  # noqa: E402
 from app.matting import matte_encode  # noqa: E402
 from app.scenarios import (  # noqa: E402
     SCENARIOS,
+    scenario_for_emoji,
     SCENARIOS_BY_ID,
     STYLES,
     STYLES_BY_ID,
@@ -105,6 +106,7 @@ USERS_DIR = CFG.data_dir / "users"
 _tasks: dict[int, asyncio.Task] = {}       # одна активная генерация на юзера
 _seen_albums: dict[str, float] = {}        # media_group_id -> когда видели
 
+MENU_START = "▶️ Старт"
 MENU_NEW = "🎬 Сделать стикер"
 MENU_PACK = "📦 Стикерпаки"
 MENU_HISTORY = "🕐 История"
@@ -132,6 +134,7 @@ class Flow(StatesGroup):
 def main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
+            [KeyboardButton(text=MENU_START)],
             [KeyboardButton(text=MENU_NEW)],
             [KeyboardButton(text=MENU_PACK), KeyboardButton(text=MENU_HISTORY)],
             [KeyboardButton(text=MENU_REVIVE)],
@@ -459,6 +462,11 @@ async def _start_flow(message: Message, state: FSMContext) -> None:
 
 
 # ------------------------------------------------------------------ команды
+@dp.message(F.text == MENU_START)
+async def menu_start(message: Message, state: FSMContext) -> None:
+    await cmd_start(message, state)
+
+
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
     uid = message.from_user.id if message.from_user else 0
@@ -1231,6 +1239,16 @@ def revive_scenarios_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def revive_mode_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🎲 Движения по эмодзи стикеров (у каждого своё)",
+                              callback_data="rvm:emoji")],
+        [InlineKeyboardButton(text="🎯 Одно движение для всех",
+                              callback_data="rvm:single")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")],
+    ])
+
+
 def revive_engine_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🧠 Нейросеть (живое движение, долго)",
@@ -1290,8 +1308,22 @@ async def on_revive_input(message: Message, state: FSMContext) -> None:
         f"📦 Набор «{sset.title}»: {len(sset.stickers)} стикеров "
         f"(статика {static_n}, видео {video_n}"
         + (f", пропущу .tgs: {tgs_n}" if tgs_n else "") + ").\n\n"
-        "Выбери одно движение для всех стикеров набора:",
-        reply_markup=revive_scenarios_kb())
+        "Как оживлять?",
+        reply_markup=revive_mode_kb())
+
+
+@dp.callback_query(F.data.startswith("rvm:"))
+async def cb_revive_mode(cb: CallbackQuery, state: FSMContext) -> None:
+    mode = (cb.data or "").split(":", 1)[1]
+    if mode == "single":
+        await cb.message.edit_text("Выбери одно движение для всех стикеров набора:",
+                                   reply_markup=revive_scenarios_kb())
+        await cb.answer()
+        return
+    await state.update_data(revive_mode="emoji", revive_scenario=None,
+                            revive_custom=None)
+    await _revive_engine_or_start(cb.message, cb.from_user, state, edit=True)
+    await cb.answer()
 
 
 @dp.callback_query(F.data.startswith("rvs:"))
@@ -1307,7 +1339,8 @@ async def cb_revive_scenario(cb: CallbackQuery, state: FSMContext) -> None:
     if choice not in SCENARIOS_BY_ID:
         await cb.answer("Такого сценария нет", show_alert=True)
         return
-    await state.update_data(revive_scenario=choice, revive_custom=None)
+    await state.update_data(revive_mode="single", revive_scenario=choice,
+                            revive_custom=None)
     await _revive_engine_or_start(cb.message, cb.from_user, state, edit=True)
     await cb.answer()
 
@@ -1320,7 +1353,8 @@ async def on_revive_custom(message: Message, state: FSMContext) -> None:
     if len(text) < 3:
         await message.answer("Слишком коротко — опиши движение чуть подробнее.")
         return
-    await state.update_data(revive_scenario=None, revive_custom=text)
+    await state.update_data(revive_mode="single", revive_scenario=None,
+                            revive_custom=text)
     await _revive_engine_or_start(message, user, state, edit=False)
 
 
@@ -1360,16 +1394,16 @@ async def _revive_begin(message: Message, user: User, state: FSMContext,
     await state.clear()
     task = asyncio.create_task(_revive_run(
         message, user, data["revive_src"], data.get("revive_scenario"),
-        data.get("revive_custom"), engine))
+        data.get("revive_custom"), engine, data.get("revive_mode", "emoji")))
     _tasks[user.id] = task
 
 
 async def _revive_run(message: Message, user: User, src_name: str,
                       scenario_id: str | None, custom_text: str | None,
-                      engine: str) -> None:
+                      engine: str, mode: str = "emoji") -> None:
     bot = message.bot
-    scenario = (SCENARIOS_BY_ID[scenario_id] if scenario_id
-                else match_scenario(custom_text or ""))
+    base_scenario = (SCENARIOS_BY_ID[scenario_id] if scenario_id
+                     else match_scenario(custom_text or ""))
     style = STYLES_BY_ID["original"]
     settings = DB.get_settings(user.id)
     remove_bg = CFG.remove_bg and settings["remove_bg"]
@@ -1409,22 +1443,27 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     file = await bot.get_file(st.file_id)
                     await bot.download(file, destination=raw)
                     await asyncio.to_thread(_to_png, raw, src)
+                    per = (scenario_for_emoji(st.emoji) if mode == "emoji"
+                           else base_scenario)
                     if engine == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
                             await _ai_video_q(
-                                src, build_prompt(style, scenario, custom_text), mp4)
+                                src, build_prompt(style, per,
+                                                  custom_text if mode == "single" else None),
+                                mp4)
                             if not await _matte_q(mp4, out):
                                 await asyncio.to_thread(convert_video, mp4, out)
                         except Exception:
                             log.warning("Оживление: нейросеть упала на стикере %s — локально", i)
                             await _render_local_q(src, "original",
-                                                  scenario.effect, out, remove_bg)
+                                                  per.effect, out, remove_bg)
                     else:
                         await _render_local_q(src, "original",
-                                              scenario.effect, out, remove_bg)
+                                              per.effect, out, remove_bg)
                 _link, _fid, err = await packs.add_to_named_pack(
-                    bot, user.id, new_name, out, st.emoji or scenario.emoji,
+                    bot, user.id, new_name, out,
+                    st.emoji or (per.emoji if kind == "gen" else "🎬"),
                     create_title=None if created else title)
                 if err:
                     fail += 1

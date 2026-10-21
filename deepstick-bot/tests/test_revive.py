@@ -19,3 +19,22 @@ def test_alive_pack_name():
     assert alive_pack_name("weird-name!", "b") == "weird_name_alive_by_b"
     assert len(alive_pack_name("x" * 100, "somebot")) <= 64
     assert alive_pack_name("!!!", "bot").endswith("_alive_by_bot")
+
+
+def test_scenario_for_emoji():
+    import random
+
+    from app.scenarios import SCENARIOS, scenario_for_emoji
+
+    assert scenario_for_emoji("😂").id == "laugh"
+    assert scenario_for_emoji("❤️").id == "love"  # с variation selector
+    assert scenario_for_emoji("🔥").id == "fire"
+    assert scenario_for_emoji("😴").id == "sleep"
+    assert scenario_for_emoji("🏆").id == "winner"
+    # неизвестный / пустой эмодзи — случайный, но всегда валидный сценарий
+    ids = {s.id for s in SCENARIOS}
+    assert scenario_for_emoji("🦄", rng=random.Random(1)).id in ids
+    assert scenario_for_emoji(None, rng=random.Random(1)).id in ids
+    # сид даёт воспроизводимость
+    assert (scenario_for_emoji("🦄", rng=random.Random(7)).id
+            == scenario_for_emoji("🦄", rng=random.Random(7)).id)

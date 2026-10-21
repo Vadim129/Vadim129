@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 
 
@@ -128,3 +129,45 @@ def match_scenario(text: str) -> Scenario:
         if any(w in low for w in words):
             return SCENARIOS_BY_ID[sid]
     return SCENARIOS_BY_ID["bounce"]
+
+
+# ------------------------------------------------------------- эмодзи -> движение
+# Для режима оживления «по эмодзи»: движение подбирается под эмодзи каждого
+# стикера; неизвестные эмодзи получают случайный сценарий.
+_EMOJI_RAW: dict[str, list[str]] = {
+    "rocket": ["🚀", "🛸", "✈️", "🛰️"],
+    "laugh": ["😂", "🤣", "😆", "😅", "😹"],
+    "love": ["😍", "❤️", "♥️", "💖", "💕", "💘", "😘", "🥰", "😻"],
+    "wow": ["😮", "😱", "😳", "🤯", "😲", "🫢", "😯"],
+    "dance": ["💃", "🕺", "🎉", "🥳", "🎊", "🪩"],
+    "fire": ["🔥", "😎", "💪", "🤙", "👑", "🦁"],
+    "portal": ["🌀", "🔮", "✨", "🌌", "🪄"],
+    "hello": ["👋", "🙋", "✋", "🖐️", "🙂", "😊"],
+    "yes": ["✅", "👍", "👌", "🆗", "💯", "🫡"],
+    "no": ["🚫", "👎", "🙅", "🙄", "😒", "🤨"],
+    "spin": ["🔄", "🎡", "🌪️", "💫", "🤸"],
+    "bounce": ["🤪", "😜", "😝", "🙃", "🎈"],
+    "money": ["💸", "💰", "🤑", "💵", "💎"],
+    "sleep": ["😴", "💤", "🥱", "😪", "🌙"],
+    "angry": ["😡", "🤬", "😠", "👿", "😤", "💢"],
+    "winner": ["🏆", "🥇", "🏅", "🎖️", "👏", "🙌", "🤩"],
+    "cry": ["😭", "😢", "🥺", "🥹", "💧", "😿"],
+}
+
+
+def _norm_emoji(emoji: str) -> str:
+    return (emoji or "").replace("\uFE0F", "").strip()
+
+
+EMOJI_TO_SCENARIO: dict[str, str] = {
+    _norm_emoji(e): sid for sid, emojis in _EMOJI_RAW.items() for e in emojis
+}
+
+
+def scenario_for_emoji(emoji: str | None,
+                       rng: random.Random | None = None) -> Scenario:
+    """Сценарий под эмодзи стикера; неизвестный эмодзи — случайный сценарий."""
+    sid = EMOJI_TO_SCENARIO.get(_norm_emoji(emoji or ""))
+    if sid:
+        return SCENARIOS_BY_ID[sid]
+    return (rng or random).choice(SCENARIOS)
