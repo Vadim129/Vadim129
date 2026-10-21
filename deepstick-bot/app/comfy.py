@@ -73,6 +73,35 @@ def find_tunnel_url(text: str) -> str | None:
     return m.group(0) if m else None
 
 
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def format_log_tail(text: str, limit: int = 3000) -> str:
+    """Компактный и безопасный хвост лога Kaggle для показа в Telegram.
+
+    Оставляем последние строки (там обычно traceback), срезаем ANSI-цвета,
+    сверхдлинные progress-бары и маскируем адрес туннеля: ComfyUI за ним
+    без авторизации, поэтому светить конкретный поддомен в диагностике
+    не нужно.
+    """
+    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n")
+    raw = _ANSI_RE.sub("", raw)
+    raw = _TUNNEL_RE.sub("https://<tunnel>.trycloudflare.com", raw)
+    lines = []
+    for line in raw.split("\n"):
+        line = line.rstrip()
+        if len(line) > 320:
+            line = line[:317] + "..."
+        if line or (lines and lines[-1]):
+            lines.append(line)
+    while lines and not lines[-1]:
+        lines.pop()
+    tail = "\n".join(lines[-90:])
+    if len(tail) > limit:
+        tail = tail[-limit:]
+    return tail.strip()
+
+
 def extract_tunnel(output: dict, exclude: set[str] | None = None) -> str | None:
     """URL туннеля из ответа Kaggle kernels/output: tunnel.json или лог.
 

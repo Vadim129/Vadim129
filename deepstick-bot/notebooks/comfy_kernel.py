@@ -19,10 +19,26 @@ def sh(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 
+print("PHASE setup: clone ComfyUI", flush=True)
 if not os.path.isdir(COMFY):
     sh(f"git clone -q https://github.com/comfyanonymous/ComfyUI {COMFY}")
+print("PHASE setup: pip requirements", flush=True)
 sh(f"{sys.executable} -m pip install -q -r {COMFY}/requirements.txt")
 
+try:
+    import torch
+
+    cuda_ok = torch.cuda.is_available()
+    gpu_name = torch.cuda.get_device_name(0) if cuda_ok else "-"
+    print(f"TORCH {torch.__version__} CUDA={cuda_ok} GPU={gpu_name}",
+          flush=True)
+except Exception as e:
+    raise RuntimeError(f"PyTorch недоступен в сессии Kaggle: {e}") from e
+if not cuda_ok:
+    raise RuntimeError(
+        "Kaggle не дал GPU этой сессии. Включи GPU в ноутбуке и запусти ещё раз.")
+
+print("PHASE setup: download Wan 2.2 models", flush=True)
 from huggingface_hub import hf_hub_download  # noqa: E402
 
 REPO = "Comfy-Org/Wan_2.2_ComfyUI_Repackaged"
@@ -41,13 +57,19 @@ for repo_path, sub in FILES:
     dst_dir = os.path.join(COMFY, sub)
     os.makedirs(dst_dir, exist_ok=True)
     dst = os.path.join(dst_dir, os.path.basename(repo_path))
+    if os.path.islink(dst) and not os.path.exists(dst):
+        os.unlink(dst)  # битая ссылка от прошлого запуска
     if not os.path.exists(dst):
         try:
             os.link(src, dst)
         except OSError:
-            shutil.copy(src, dst)
-    print("model:", dst, flush=True)
+            try:
+                os.symlink(src, dst)
+            except OSError:
+                shutil.copy(src, dst)
+    print("model:", dst, os.path.getsize(dst), flush=True)
 
+print("PHASE setup: cloudflared", flush=True)
 CF = os.path.join(WORK, "cloudflared")
 if not os.path.exists(CF):
     sh(f"wget -q https://github.com/cloudflare/cloudflared/releases/latest/"
@@ -58,34 +80,62 @@ print("SETUP DONE", flush=True)
 import re  # noqa: E402
 import urllib.request  # noqa: E402
 
-comfy_log = open(os.path.join(WORK, "comfy.log"), "wb")
+COMFY_LOG = os.path.join(WORK, "comfy.log")
+
+
+def tail_text(path, limit=5000):
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
+            return fh.read()[-limit:].strip()
+    except Exception as e:
+        return f"<не удалось прочитать {path}: {e}>"
+
+
+comfy_log = open(COMFY_LOG, "wb")
 proc = subprocess.Popen(
     [sys.executable, "main.py", "--listen", "127.0.0.1", "--port", "8188",
      "--disable-auto-launch", "--preview-method", "none"],
     cwd=COMFY, stdout=comfy_log, stderr=subprocess.STDOUT)
 
+comfy_ready = False
 for _ in range(90):  # ждём ComfyUI до ~7 минут
     try:
-        urllib.request.urlopen("http://127.0.0.1:8188/system_stats", timeout=5)
+        with urllib.request.urlopen(
+                "http://127.0.0.1:8188/system_stats", timeout=5) as response:
+            response.read(200)
+        comfy_ready = True
         break
     except Exception:
         if proc.poll() is not None:
-            raise RuntimeError("ComfyUI умер при старте, смотри comfy.log")
+            raise RuntimeError(
+                "ComfyUI умер при старте.\n--- comfy.log ---\n"
+                + tail_text(COMFY_LOG))
         time.sleep(5)
+if not comfy_ready:
+    if proc.poll() is None:
+        proc.terminate()
+    raise RuntimeError(
+        "ComfyUI не поднялся за отведённое время.\n--- comfy.log ---\n"
+        + tail_text(COMFY_LOG))
 print("COMFY UP", flush=True)
 
 tun = subprocess.Popen(
     [CF, "tunnel", "--url", "http://127.0.0.1:8188"],
     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 url = None
+cf_lines = []
 for line in tun.stdout:
+    cf_lines.append(line.rstrip())
+    cf_lines = cf_lines[-30:]
     print("cloudflared:", line.rstrip(), flush=True)
     m = re.search(r"https://[a-z0-9-]+\.trycloudflare\.com", line)
     if m:
         url = m.group(0)
         break
 if not url:
-    raise RuntimeError("cloudflared не дал адрес туннеля")
+    raise RuntimeError(
+        "cloudflared не дал адрес туннеля.\n--- cloudflared ---\n"
+        + "\n".join(cf_lines))
 
 with open(os.path.join(WORK, "tunnel.json"), "w") as fh:
     json.dump({"url": url, "ts": time.time()}, fh)
@@ -100,4 +150,6 @@ while True:
     except Exception as e:
         print("comfy ping failed:", e, flush=True)
     if proc.poll() is not None:
-        raise RuntimeError("ComfyUI процесс завершился")
+        raise RuntimeError(
+            "ComfyUI процесс завершился.\n--- comfy.log ---\n"
+            + tail_text(COMFY_LOG))

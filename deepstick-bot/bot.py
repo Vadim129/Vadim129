@@ -55,7 +55,7 @@ from aiogram.types import (  # noqa: E402
 
 from app import packs  # noqa: E402
 from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
-from app.comfy import build_notebook, comfy_generate, extract_tunnel, pick_kernel  # noqa: E402
+from app.comfy import build_notebook, comfy_generate, extract_tunnel, format_log_tail, pick_kernel  # noqa: E402
 import httpx  # noqa: E402
 from app.db import Database  # noqa: E402
 from app.effects import prepare_subject, render_frames  # noqa: E402
@@ -1215,9 +1215,21 @@ def _kaggle_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="▶️ Запустить сессию (≈12 ч)",
                               callback_data="kg:start")],
+        [InlineKeyboardButton(text="📋 Последний лог Kaggle",
+                              callback_data="kg:log")],
         [InlineKeyboardButton(text="⏹ Отключить (забыть адрес)",
                               callback_data="kg:stop")],
     ])
+
+
+def _kaggle_failure_text(prefix: str, log_text: str) -> str:
+    """Текст падения Kaggle-сессии с концом лога: причина видна сразу."""
+    tail = format_log_tail(log_text, limit=2700)
+    if tail:
+        text = f"{prefix}\n\n📋 Конец лога Kaggle:\n{tail}"
+    else:
+        text = f"{prefix}\n\n📋 Kaggle пока не отдал лог этой сессии."
+    return text[:3900]
 
 
 @dp.callback_query(F.data == "kg:open")
@@ -1243,6 +1255,38 @@ async def cb_kaggle_open(cb: CallbackQuery) -> None:
                "в неделю."))
     await cb.message.answer(text, parse_mode="Markdown", reply_markup=_kaggle_kb())
     await cb.answer()
+
+
+@dp.callback_query(F.data == "kg:log")
+async def cb_kaggle_log(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    if not _kaggle_ready():
+        await cb.answer("Сначала добавь секреты KAGGLE_USERNAME и KAGGLE_KEY",
+                        show_alert=True)
+        return
+    await cb.answer("Забираю лог…")
+    info = await asyncio.to_thread(_kaggle_find_kernel_sync)
+    ref = (info or {}).get("ref") or _kaggle_slug()
+    log_text = await asyncio.to_thread(_kaggle_log_sync, ref)
+    tail = format_log_tail(log_text, limit=10000)
+    if not tail:
+        await cb.message.answer("📋 Kaggle пока не отдал лог этой сессии.")
+        return
+    chunks: list[str] = []
+    chunk = ""
+    for line in tail.split("\n"):
+        if chunk and len(chunk) + len(line) + 1 > 3300:
+            chunks.append(chunk)
+            chunk = ""
+        chunk = f"{chunk}\n{line}" if chunk else line
+    if chunk:
+        chunks.append(chunk)
+    await cb.message.answer(
+        f"📋 Последний лог Kaggle ({ref}) — конец, {len(chunks)} сообщ.:")
+    for part in chunks[:4]:
+        await cb.message.answer(part)
 
 
 @dp.callback_query(F.data == "kg:start")
@@ -1333,15 +1377,18 @@ async def _kaggle_launch(message: Message, user: User) -> None:
                     return
                 dead.add(url)  # адрес от прошлой, уже мёртвой сессии
             if any(x in low for x in ("error", "cancel", "fail")):
-                await status.edit_text(
-                    f"😖 Сессия Kaggle упала (статус {st}). Зайди в Kaggle → "
-                    "My Code и глянь лог DeepStick-ноутбука.")
+                latest_log = await asyncio.to_thread(_kaggle_log_sync, ref)
+                await status.edit_text(_kaggle_failure_text(
+                    f"😖 Сессия Kaggle упала (статус {st}). "
+                    "Причина — в конце лога ниже.",
+                    latest_log or log_text))
                 return
             if "complete" in low:
-                await status.edit_text(
+                latest_log = await asyncio.to_thread(_kaggle_log_sync, ref)
+                await status.edit_text(_kaggle_failure_text(
                     "😖 Сессия Kaggle завершилась, так и не опубликовав "
-                    "адрес ComfyUI. Глянь лог DeepStick-ноутбука в "
-                    "Kaggle (My Code) — и пришли мне последние строки.")
+                    "адрес ComfyUI.",
+                    latest_log or log_text))
                 return
         await status.edit_text(
             "😖 Не дождался готовности за 25 минут. Проверь в Kaggle "

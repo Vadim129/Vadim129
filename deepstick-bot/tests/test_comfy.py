@@ -2,7 +2,7 @@
 import base64
 import json
 
-from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url, pick_kernel
+from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url, format_log_tail, pick_kernel
 
 
 def test_build_workflow_structure():
@@ -44,6 +44,18 @@ def test_extract_tunnel_exclude_and_latest():
     assert extract_tunnel(payload) == new  # свежий адрес — последний в логе
     assert extract_tunnel(payload, exclude={new}) == old
     assert extract_tunnel(payload, exclude={new, old}) is None
+
+
+def test_format_log_tail_masks_tunnel_and_ansi():
+    raw = ("\x1b[31mPHASE setup\x1b[0m\r\n"
+           "COMFY_URL https://secret-name.trycloudflare.com\n"
+           "Traceback: boom")
+    tail = format_log_tail(raw)
+    assert "\x1b" not in tail
+    assert "secret-name" not in tail
+    assert "<tunnel>.trycloudflare.com" in tail
+    assert tail.endswith("Traceback: boom")
+    assert format_log_tail("") == ""
 
 
 def test_pick_kernel_matches_title_generated_slug():
