@@ -22,5 +22,7 @@ for name in sys.argv[1:]:
     stickers = res["result"]["stickers"]
     video = sum(1 for s in stickers if s.get("is_video"))
     anim = sum(1 for s in stickers if s.get("is_animated"))
-    print(f"{name}: title={res['result'].get('title')!r} total={len(stickers)} "
-          f"video={video} animated_tgs={anim} static={len(stickers) - video - anim}")
+    line = (f"{name}: title={res['result'].get('title')!r} total={len(stickers)} "
+            f"video={video} animated_tgs={anim} static={len(stickers) - video - anim}")
+    print(line)
+    print(f"::error title=PACKINFO::{line}")  # аннотация job: видна через API
