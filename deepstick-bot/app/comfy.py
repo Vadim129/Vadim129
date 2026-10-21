@@ -179,10 +179,10 @@ def build_notebook(kernel_code: str) -> str:
     if cur["lines"]:
         cells.append(cur)
     nb_cells = [{
-        "cell_type": "code", "execution_count": None, "metadata": {},
-        "outputs": [],
+        "cell_type": "code", "execution_count": None, "id": f"cell-{i}",
+        "metadata": {}, "outputs": [],
         "source": [ln + "\n" for ln in c["lines"]],
-    } for c in cells]
+    } for i, c in enumerate(cells)]
     return json.dumps({
         "cells": nb_cells,
         "metadata": {

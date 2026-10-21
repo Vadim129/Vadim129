@@ -1224,6 +1224,19 @@ def _kaggle_kb() -> InlineKeyboardMarkup:
 
 def _kaggle_failure_text(prefix: str, log_text: str) -> str:
     """Текст падения Kaggle-сессии с концом лога: причина видна сразу."""
+    low_log = (log_text or "").lower()
+    if "kaggle_no_internet" in low_log or "could not resolve host" in low_log:
+        tail = format_log_tail(log_text, limit=1200)
+        return (
+            "😖 Kaggle-сессия стартовала БЕЗ интернета: не открывается "
+            "даже github.com, а без сети нельзя скачать ComfyUI и модели.\n\n"
+            "Что сделать:\n"
+            "1) Kaggle → Settings → подтверди номер телефона "
+            "(без этого интернет в ноутбуках не включают).\n"
+            "2) Открой ноутбук DeepStick в Kaggle: справа в Settings — "
+            "Internet: On, Accelerator: GPU T4.\n"
+            "3) Вернись сюда и нажми «▶️ Запустить сессию» ещё раз.\n\n"
+            f"📋 Подтверждение из лога:\n{tail}")[:3900]
     tail = format_log_tail(log_text, limit=2700)
     if tail:
         text = f"{prefix}\n\n📋 Конец лога Kaggle:\n{tail}"

@@ -22,8 +22,18 @@ def test_build_notebook_cells():
             "# CELL: run\nwhile True:\n    pass\n")
     nb = json.loads(build_notebook(code))
     assert nb["nbformat"] == 4 and len(nb["cells"]) == 2
+    assert [c["id"] for c in nb["cells"]] == ["cell-0", "cell-1"]
     assert "import os" in "".join(nb["cells"][0]["source"])
     assert "while True" in "".join(nb["cells"][1]["source"])
+
+
+def test_kernel_has_no_internet_marker():
+    from pathlib import Path
+
+    code = (Path(__file__).resolve().parent.parent
+            / "notebooks" / "comfy_kernel.py").read_text()
+    assert "KAGGLE_NO_INTERNET" in code
+    assert "wait_for_internet" in code
 
 
 def test_find_and_extract_tunnel():

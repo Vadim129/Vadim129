@@ -6,6 +6,7 @@
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -19,9 +20,44 @@ def sh(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 
+def wait_for_internet(attempts=8, delay=20):
+    """Kaggle без подтверждённого телефона не выпускает сессию в интернет:
+    github.com тогда даже не резолвится. Ждём (вдруг DNS моргнул) и падаем
+    с понятным маркером, а не с трейсбеком git clone."""
+    hosts = ("github.com", "huggingface.co", "pypi.org")
+    for attempt in range(1, attempts + 1):
+        bad = []
+        for host in hosts:
+            try:
+                socket.getaddrinfo(host, 443)
+            except OSError:
+                bad.append(host)
+        if not bad:
+            print("NET OK", flush=True)
+            return
+        print(f"NET CHECK {attempt}/{attempts}: не резолвятся {bad}",
+              flush=True)
+        if attempt < attempts:
+            time.sleep(delay)
+    raise RuntimeError(
+        "KAGGLE_NO_INTERNET: сессия Kaggle без интернета "
+        "(github.com не резолвится)")
+
+
+wait_for_internet()
 print("PHASE setup: clone ComfyUI", flush=True)
-if not os.path.isdir(COMFY):
-    sh(f"git clone -q https://github.com/comfyanonymous/ComfyUI {COMFY}")
+for clone_try in range(1, 4):
+    if os.path.isdir(COMFY):
+        break
+    try:
+        sh(f"git clone -q --depth 1 "
+           f"https://github.com/comfyanonymous/ComfyUI {COMFY}")
+    except subprocess.CalledProcessError:
+        shutil.rmtree(COMFY, ignore_errors=True)
+        if clone_try == 3:
+            raise
+        print(f"clone retry {clone_try}/3", flush=True)
+        time.sleep(20)
 print("PHASE setup: pip requirements", flush=True)
 sh(f"{sys.executable} -m pip install -q -r {COMFY}/requirements.txt")
 
