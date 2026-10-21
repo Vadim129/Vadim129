@@ -2,7 +2,7 @@
 import base64
 import json
 
-from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url
+from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunnel_url, pick_kernel
 
 
 def test_build_workflow_structure():
@@ -44,3 +44,16 @@ def test_extract_tunnel_exclude_and_latest():
     assert extract_tunnel(payload) == new  # свежий адрес — последний в логе
     assert extract_tunnel(payload, exclude={new}) == old
     assert extract_tunnel(payload, exclude={new, old}) is None
+
+
+def test_pick_kernel_matches_title_generated_slug():
+    kernels = [
+        {"ref": "vadim129/other", "title": "Other", "id": 1},
+        {"ref": "vadim129/deepstick-comfyui-wan-2-2",
+         "title": "DeepStick ComfyUI (Wan 2.2)", "id": 42,
+         "last_run_time": "2026-10-21T18:00:00"},
+    ]
+    info = pick_kernel(kernels, "vadim129")
+    assert info == {"ref": "vadim129/deepstick-comfyui-wan-2-2",
+                    "title": "DeepStick ComfyUI (Wan 2.2)", "id": 42}
+    assert pick_kernel([], "vadim129") is None

@@ -100,6 +100,43 @@ def extract_tunnel(output: dict, exclude: set[str] | None = None) -> str | None:
     return None
 
 
+def pick_kernel(kernels, username: str) -> dict | None:
+    """Найти наш ComfyUI-кернел в списке Kaggle по названию или адресу.
+
+    Kaggle может создать ноутбук с адресом, производным от заголовка, а
+    не ровно из переданного slug — поэтому статус и обновление надо вести
+    по фактическому ref из аккаунта, а не по предположению.
+    """
+    def val(obj, key):  # noqa: ANN001, ANN202
+        return obj.get(key) if isinstance(obj, dict) else getattr(obj, key, None)
+
+    matches = []
+    for kernel in kernels or []:
+        ref = str(val(kernel, "ref") or "")
+        slug = str(val(kernel, "slug") or "")
+        title = str(val(kernel, "title") or "")
+        tail = (ref.rsplit("/", 1)[-1] if ref else slug.rsplit("/", 1)[-1]).lower()
+        title_key = " ".join(title.lower().split())
+        if "deepstick-comfy" not in tail and title_key not in {
+                "deepstick comfyui (wan 2.2)", "deepstick comfy"}:
+            continue
+        if not ref:
+            ref = slug if "/" in slug else f"{username}/{slug}"
+        kid = val(kernel, "id")
+        matches.append({
+            "ref": ref,
+            "title": title or "Deepstick Comfy",
+            "id": int(kid) if str(kid or "").isdigit() else None,
+            "_seen": str(val(kernel, "last_run_time") or ""),
+        })
+    if not matches:
+        return None
+    matches.sort(key=lambda item: item["_seen"], reverse=True)
+    result = matches[0]
+    result.pop("_seen", None)
+    return result
+
+
 def build_notebook(kernel_code: str) -> str:
     """Код кернела (.py с маркерами '# CELL: ...') -> JSON ноутбука Kaggle."""
     cells, cur = [], {"title": "main", "lines": []}

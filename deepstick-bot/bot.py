@@ -55,7 +55,7 @@ from aiogram.types import (  # noqa: E402
 
 from app import packs  # noqa: E402
 from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
-from app.comfy import build_notebook, comfy_generate, extract_tunnel  # noqa: E402
+from app.comfy import build_notebook, comfy_generate, extract_tunnel, pick_kernel  # noqa: E402
 import httpx  # noqa: E402
 from app.db import Database  # noqa: E402
 from app.effects import prepare_subject, render_frames  # noqa: E402
@@ -1136,32 +1136,66 @@ def _kaggle_client():  # noqa: ANN202
     return api
 
 
-def _kaggle_status_sync() -> str:
+def _kaggle_stored_info() -> dict | None:
+    ref = DB.get_global("comfy_kernel_ref", "")
+    if not ref:
+        return None
+    kid = DB.get_global("comfy_kernel_id", "")
+    return {"ref": ref,
+            "title": DB.get_global("comfy_kernel_title", "Deepstick Comfy"),
+            "id": int(kid) if kid.isdigit() else None}
+
+
+def _kaggle_find_kernel_sync() -> dict | None:
+    """Найти существующий DeepStick-ноутбук в аккаунте Kaggle.
+
+    У первой версии адрес мог получиться из заголовка (не тот, что мы
+    предполагали) — тогда статус по выдуманному slug отвечает 404, а
+    повторное создание падает на занятом заголовке. Ищем фактический.
+    """
+    try:
+        kernels = _kaggle_client().kernels_list(mine=True, page_size=100)
+        info = pick_kernel(kernels or [], CFG.kaggle_username)
+    except Exception:
+        info = None
+    if info:
+        DB.set_global("comfy_kernel_ref", info["ref"])
+        DB.set_global("comfy_kernel_title", info["title"])
+        if info.get("id"):
+            DB.set_global("comfy_kernel_id", str(info["id"]))
+        return info
+    return _kaggle_stored_info()
+
+
+def _kaggle_status_sync(ref: str | None = None) -> str:
     """Статус кернела строкой ('' — не вышло спросить)."""
     try:
-        resp = _kaggle_client().kernels_status(_kaggle_slug())
+        resp = _kaggle_client().kernels_status(ref or _kaggle_slug())
         return str(getattr(resp, "status", "") or "")
     except Exception:
         return ""
 
 
-def _kaggle_log_sync() -> str:
+def _kaggle_log_sync(ref: str | None = None) -> str:
     """Лог текущей/последней сессии кернела ('' — не вышло)."""
     try:
-        return _kaggle_client().kernels_logs(_kaggle_slug()) or ""
+        return _kaggle_client().kernels_logs(ref or _kaggle_slug()) or ""
     except Exception:
         return ""
 
 
-def _kaggle_push_sync() -> None:
+def _kaggle_push_sync(info: dict | None = None) -> None:
     """Залить кернел (новая версия + запуск) через SDK."""
     folder = CFG.data_dir / "kaggle_kernel"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "kernel.ipynb").write_text(
         build_notebook(KAGGLE_KERNEL_FILE.read_text()))
+    # Для нового ноутбука заголовок специально совпадает со slug
+    # (Deepstick Comfy -> deepstick-comfy). Существующий обновляем по его
+    # фактическому ref/ID, не меняя ему название — иначе Kaggle даёт 409.
     meta = {
-        "id": _kaggle_slug(),
-        "title": "DeepStick ComfyUI (Wan 2.2)",
+        "id": (info or {}).get("ref") or _kaggle_slug(),
+        "title": (info or {}).get("title") or "Deepstick Comfy",
         "code_file": "kernel.ipynb",
         "language": "python",
         "kernel_type": "notebook",
@@ -1171,6 +1205,8 @@ def _kaggle_push_sync() -> None:
         "dataset_sources": [], "competition_sources": [],
         "kernel_sources": [], "model_sources": [],
     }
+    if (info or {}).get("id"):
+        meta["id_no"] = info["id"]
     (folder / "kernel-metadata.json").write_text(json.dumps(meta, indent=2))
     _kaggle_client().kernels_push(str(folder))
 
@@ -1253,11 +1289,13 @@ async def _kaggle_launch(message: Message, user: User) -> None:
         "☁️ Запускаю Kaggle-сессию с ComfyUI (Wan 2.2)…\n"
         "Первый старт — 5–10 минут: скачать модели и поднять сервер.")
     try:
-        state = await asyncio.to_thread(_kaggle_status_sync)
+        info = await asyncio.to_thread(_kaggle_find_kernel_sync)
+        ref = (info or {}).get("ref") or _kaggle_slug()
+        state = await asyncio.to_thread(_kaggle_status_sync, ref)
         running = "running" in state.lower() or "queued" in state.lower()
         if not running:
             try:
-                await asyncio.to_thread(_kaggle_push_sync)
+                await asyncio.to_thread(_kaggle_push_sync, info)
             except Exception as e:
                 await status.edit_text(
                     f"😖 Kaggle отклонил запуск:\n{str(e)[:280]}")
@@ -1267,7 +1305,7 @@ async def _kaggle_launch(message: Message, user: User) -> None:
         dead: set[str] = set()
         while time.monotonic() < deadline:
             await asyncio.sleep(45)
-            st = await asyncio.to_thread(_kaggle_status_sync)
+            st = await asyncio.to_thread(_kaggle_status_sync, ref)
             low = st.lower()
             if st and st != seen:
                 seen = st
@@ -1278,7 +1316,7 @@ async def _kaggle_launch(message: Message, user: User) -> None:
                     pass
             # Адрес туннеля кернел печатает в лог (COMFY_URL ...) — ищем там;
             # файлы выходных данных Kaggle отдаёт только после завершения.
-            log_text = await asyncio.to_thread(_kaggle_log_sync)
+            log_text = await asyncio.to_thread(_kaggle_log_sync, ref)
             url = extract_tunnel({"log": log_text}, exclude=dead)
             if url:
                 if await _comfy_quick(url):
@@ -1297,17 +1335,17 @@ async def _kaggle_launch(message: Message, user: User) -> None:
             if any(x in low for x in ("error", "cancel", "fail")):
                 await status.edit_text(
                     f"😖 Сессия Kaggle упала (статус {st}). Зайди в Kaggle → "
-                    "My Code → deepstick-comfy и глянь лог последней версии.")
+                    "My Code и глянь лог DeepStick-ноутбука.")
                 return
             if "complete" in low:
                 await status.edit_text(
                     "😖 Сессия Kaggle завершилась, так и не опубликовав "
-                    "адрес ComfyUI. Глянь лог: Kaggle → My Code → "
-                    "deepstick-comfy — и пришли мне последние строки.")
+                    "адрес ComfyUI. Глянь лог DeepStick-ноутбука в "
+                    "Kaggle (My Code) — и пришли мне последние строки.")
                 return
         await status.edit_text(
             "😖 Не дождался готовности за 25 минут. Проверь в Kaggle "
-            "(My Code → deepstick-comfy), что сессия запустилась, и попробуй "
+            "(My Code → DeepStick-ноутбук), что сессия запустилась, и попробуй "
             "ещё раз.")
     except Exception as e:
         log.exception("Запуск Kaggle упал")
