@@ -475,6 +475,16 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
                 await _neuro_video_q(photo, prompt, mp4, user.id,
                                      style_id=style_id, wan_prompt=wan_prompt,
                                      image_prompt=image_prompt)
+                # Показываем сам стартовый кадр: видно, кого именно оживляем
+                # (и сразу понятно, если модель кадра уехала от фото).
+                frame_png = job / "ai_frame.png"
+                if frame_png.exists():
+                    try:
+                        await message.answer_photo(
+                            FSInputFile(frame_png),
+                            caption="🖼 Стартовый кадр — его сейчас оживлю в стикер")
+                    except Exception:
+                        log.warning("Не смог отправить стартовый кадр", exc_info=True)
                 # Стикер = вырезанная фигурка на прозрачности, а не прямоугольник:
                 # вырезаем фон из сгенерированного видео покадрово.
                 if progress_task:
@@ -551,15 +561,19 @@ async def _matte_q(mp4: Path, webm: Path) -> bool:
 
 
 def _prepare_reference_input(photo: Path, out: Path) -> Path:
-    """Референс для генерации стартового кадра: фото как есть, квадрат 1024.
+    """Референс для генерации стартового кадра: фото ЦЕЛИКОМ, квадрат 1024.
 
-    Никакой локальной стилизации: стиль и чистую композицию сделает модель
-    первой стадии (FLUX Kontext) по build_image_prompt, ей нужен оригинал.
+    Никакой локальной стилизации и никакого кропа: центр-кроп в квадрат у
+    селфи срезал лоб/подбородок ещё до модели, и ей приходилось домысливать
+    голову. Вписываем фото целиком и добиваем поля нейтральным серым —
+    модель первой стадии всё равно перекомпонует кадр по промпту.
     """
     with Image.open(photo) as im:
         rgb = im.convert("RGB")
-    framed = ImageOps.fit(rgb, (1024, 1024), method=Image.Resampling.LANCZOS)
-    framed.save(out, "PNG")
+    rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (1024, 1024), (128, 128, 128))
+    canvas.paste(rgb, ((1024 - rgb.width) // 2, (1024 - rgb.height) // 2))
+    canvas.save(out, "PNG")
     return out
 
 
@@ -594,7 +608,7 @@ async def _neuro_video_q(photo: Path, prompt: str, out: Path, user_id: int,
                          generate_frame: bool = True) -> None:
     """Нейрогенерация: Kaggle-ComfyUI первым, дальше HF-цепочка.
 
-    ComfyUI-путь двухстадийный: FLUX Kontext генерирует из фото чистый
+    ComfyUI-путь двухстадийный: Qwen-Image-Edit генерирует из фото чистый
     стартовый кадр персонажа (стиль, композиция, ровный фон), FastWan
     оживляет именно его. Если стадия кадра упала — Wan стартует с локально
     стилизованного фото. В HF-цепочку уходит исходное фото и прежний
@@ -1465,7 +1479,7 @@ async def _comfy_quick(url: str) -> bool:
 
 async def _kaggle_launch(message: Message, user: User) -> None:
     status = await message.answer(
-        "☁️ Запускаю Kaggle-сессию с ComfyUI (FLUX Kontext → FastWan)…\n"
+        "☁️ Запускаю Kaggle-сессию с ComfyUI (Qwen Image Edit → FastWan)…\n"
         "Первый старт — 8–15 минут: скачать модели картинки и видео, поднять сервер.")
     try:
         info = await asyncio.to_thread(_kaggle_find_kernel_sync)
@@ -1500,11 +1514,11 @@ async def _kaggle_launch(message: Message, user: User) -> None:
             if url:
                 quick = await _comfy_quick(url)
                 if quick and not await comfy_pipeline_ready(url):
-                    # Жива сессия СТАРОГО кернела (без FLUX Kontext/FastWan):
+                    # Жива сессия СТАРОГО кернела (без Qwen Image Edit/FastWan):
                     # работать она будет по-старому и плохо. Просим перезапуск.
                     await status.edit_text(
                         "⚠️ Нашлась старая Kaggle-сессия без генерации "
-                        "стартового кадра (FLUX Kontext + FastWan). Останови "
+                        "стартового кадра (Qwen Image Edit + FastWan). Останови "
                         "её в Kaggle (My Code → Deepstick Comfy → Stop) и "
                         "нажми «▶️ Запустить сессию» ещё раз — новая сначала "
                         "генерирует картинку персонажа, а потом оживляет её.")
@@ -1514,7 +1528,7 @@ async def _kaggle_launch(message: Message, user: User) -> None:
                     DB.set_global("comfy_ts", str(time.time()))
                     _comfy_health.update(ok=True, checked=time.monotonic())
                     await status.edit_text(
-                        "✅ *Нейросеть Kaggle онлайн!* ComfyUI: сначала генерирует стартовую картинку персонажа (FLUX Kontext), потом оживляет её (FastWan). "
+                        "✅ *Нейросеть Kaggle онлайн!* ComfyUI: сначала генерирует стартовую картинку персонажа (Qwen Image Edit), потом оживляет её (FastWan). "
                         "живёт до ~12 часов или пока не кончится недельная "
                         "квота Kaggle.\nГенерации теперь идут через неё "
                         "(охват — настройкой «🧠 Нейросеть» выше), откат на "

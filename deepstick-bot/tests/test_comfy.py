@@ -37,25 +37,32 @@ def test_workflow_is_fastwan_fast_and_identity_safe():
 
 
 def test_build_image_workflow_structure():
-    from app.comfy import FLUX_KONTEXT_UNET, FLUX_T5, FLUX_VAE
+    from app.comfy import QWEN_CLIP, QWEN_EDIT_GGUF, QWEN_LIGHTNING_LORA, QWEN_VAE
 
     wf = build_image_workflow("make a cartoon portrait", "photo.png", seed=7)
     types = {node["class_type"] for node in wf.values()}
-    assert {"UNETLoader", "DualCLIPLoader", "VAELoader", "LoadImage",
-            "FluxKontextImageScale", "VAEEncode", "CLIPTextEncode",
-            "ConditioningZeroOut", "ReferenceLatent", "FluxGuidance",
+    assert {"UnetLoaderGGUF", "LoraLoaderModelOnly", "ModelSamplingAuraFlow",
+            "CFGNorm", "CLIPLoader", "VAELoader", "LoadImage",
+            "FluxKontextImageScale", "VAEEncode",
+            "TextEncodeQwenImageEditPlus",
+            "FluxKontextMultiReferenceLatentMethod",
             "KSampler", "VAEDecode", "SaveImage"} <= types
-    assert wf["1"]["inputs"]["unet_name"] == FLUX_KONTEXT_UNET
-    assert wf["2"]["inputs"]["clip_name2"] == FLUX_T5
-    assert wf["2"]["inputs"]["device"] == "cpu"
-    assert wf["3"]["inputs"]["vae_name"] == FLUX_VAE
-    assert wf["4"]["inputs"]["image"] == "photo.png"
-    # Референс идёт и в латент сэмплинга, и в ReferenceLatent кондиционинга.
-    assert wf["6"]["inputs"]["pixels"] == ["5", 0]
-    assert wf["9"]["inputs"]["latent"] == ["6", 0]
-    assert wf["11"]["inputs"]["latent_image"] == ["6", 0]
-    assert wf["11"]["inputs"]["steps"] == 20
-    assert wf["13"]["inputs"]["images"] == ["12", 0]
+    assert wf["1"]["inputs"]["unet_name"] == QWEN_EDIT_GGUF
+    assert wf["2"]["inputs"]["lora_name"] == QWEN_LIGHTNING_LORA
+    assert wf["5"]["inputs"]["clip_name"] == QWEN_CLIP
+    assert wf["5"]["inputs"]["type"] == "qwen_image"
+    assert wf["6"]["inputs"]["vae_name"] == QWEN_VAE
+    assert wf["7"]["inputs"]["image"] == "photo.png"
+    # Фото реально подаётся в модель: image1 в оба TextEncode (vision-вход)
+    # и VAE-латентом в сэмплер — не только текстом промпта.
+    assert wf["10"]["inputs"]["image1"] == ["8", 0]
+    assert wf["10"]["inputs"]["prompt"] == "make a cartoon portrait"
+    assert wf["11"]["inputs"]["image1"] == ["8", 0]
+    assert wf["14"]["inputs"]["latent_image"] == ["9", 0]
+    # Lightning-режим: 4 шага, CFG 1.
+    assert wf["14"]["inputs"]["steps"] == 4
+    assert wf["14"]["inputs"]["cfg"] == 1.0
+    assert wf["16"]["inputs"]["images"] == ["15", 0]
 
 
 def test_build_notebook_cells():
@@ -80,18 +87,29 @@ def test_kernel_has_no_internet_marker():
 def test_kernel_downloads_fastwan_lora():
     from pathlib import Path
 
-    from app.comfy import FASTWAN_REPO_PATH, FLUX_KONTEXT_UNET, FLUX_T5
+    from app.comfy import (
+        FASTWAN_REPO_PATH,
+        QWEN_CLIP,
+        QWEN_EDIT_GGUF,
+        QWEN_LIGHTNING_LORA,
+        QWEN_VAE,
+    )
 
     code = (Path(__file__).resolve().parent.parent
             / "notebooks" / "comfy_kernel.py").read_text()
     assert "Kijai/WanVideo_comfy" in code
     assert FASTWAN_REPO_PATH in code
     assert "models/loras" in code
-    # Первая стадия: FLUX Kontext и его кодировщики/VAE.
-    assert "Comfy-Org/flux1-kontext-dev_ComfyUI" in code
-    assert FLUX_KONTEXT_UNET in code
-    assert FLUX_T5 in code
-    assert "DEEPSTICK_ENGINE frame-fastwan-v3" in code
+    # Первая стадия: Qwen-Image-Edit-2511 (GGUF) + Lightning LoRA + VL/VAE.
+    assert "unsloth/Qwen-Image-Edit-2511-GGUF" in code
+    assert "lightx2v/Qwen-Image-Edit-2511-Lightning" in code
+    assert "city96/ComfyUI-GGUF" in code
+    assert QWEN_EDIT_GGUF in code
+    assert QWEN_LIGHTNING_LORA in code
+    assert QWEN_CLIP in code
+    assert QWEN_VAE in code
+    assert "models/unet" in code
+    assert "DEEPSTICK_ENGINE qwenedit-fastwan-v4" in code
 
 
 def test_find_and_extract_tunnel():

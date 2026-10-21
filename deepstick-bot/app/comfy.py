@@ -3,10 +3,10 @@
 Схема: владелец запускает из бота Kaggle-кернел (notebooks/comfy_kernel.py):
 ComfyUI поднимается на бесплатной GPU, наружу выходит cloudflared-туннель,
 бот забирает URL из лога Kaggle и ходит в ComfyUI по HTTP. Генерация —
-двухстадийная: сначала FLUX.1 Kontext делает из пользовательского фото
-чистый стартовый кадр персонажа в выбранном стиле, затем Wan 2.2 TI2V-5B
-+ FastWan LoRA оживляет именно этот кадр. Дальше — покадровый маттинг,
-как у HF-провайдера.
+двухстадийная: сначала Qwen-Image-Edit-2511 делает из пользовательского
+фото чистый стартовый кадр персонажа в выбранном стиле, затем Wan 2.2
+TI2V-5B + FastWan LoRA оживляет именно этот кадр. Дальше — покадровый
+маттинг, как у HF-провайдера.
 """
 from __future__ import annotations
 
@@ -36,13 +36,15 @@ FASTWAN_LORA = "Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors"
 FASTWAN_REPO_PATH = f"FastWan/{FASTWAN_LORA}"
 WAN_UNET = "wan2.2_ti2v_5B_fp16.safetensors"
 
-# Первая стадия: генерация стартового кадра из фото. FLUX.1 Kontext —
-# модель редактирования: переносит персонажа в новый стиль/композицию,
-# сохраняя лицо, причёску и одежду с референса. FP8 влезает в T4.
-FLUX_KONTEXT_UNET = "flux1-dev-kontext_fp8_scaled.safetensors"
-FLUX_CLIP_L = "clip_l.safetensors"
-FLUX_T5 = "t5xxl_fp8_e4m3fn_scaled.safetensors"
-FLUX_VAE = "ae.safetensors"
+# Первая стадия: генерация стартового кадра из фото. Qwen-Image-Edit-2511 —
+# именно edit-модель: исходное фото читает vision-кодировщик (Qwen2.5-VL)
+# вместе с текстовой инструкцией, поэтому персонаж берётся с фото, а не
+# придумывается по промпту. GGUF Q4_K_M влезает в T4, Lightning LoRA даёт
+# 4 шага вместо 20.
+QWEN_EDIT_GGUF = "qwen-image-edit-2511-Q4_K_M.gguf"
+QWEN_LIGHTNING_LORA = "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
+QWEN_CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+QWEN_VAE = "qwen_image_vae.safetensors"
 
 _TUNNEL_RE = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
@@ -98,46 +100,59 @@ def build_workflow(prompt_text: str, image_name: str, seed: int,
 
 
 def build_image_workflow(prompt_text: str, image_name: str, seed: int,
-                         steps: int = 20, guidance: float = 2.5) -> dict:
-    """API-воркфлоу первой стадии: фото -> стартовый кадр (FLUX.1 Kontext).
+                         steps: int = 4, cfg: float = 1.0) -> dict:
+    """API-воркфлоу первой стадии: фото -> стартовый кадр (Qwen-Image-Edit-2511).
 
-    Официальная схема Kontext: референс масштабируется FluxKontextImageScale,
-    кодируется в латент и подмешивается в кондиционинг через ReferenceLatent;
-    сэмплинг идёт от латента референса (denoise 1), поэтому композиция и
-    персонаж берутся с фото, а промпт задаёт стиль и чистую подачу кадра.
-    Текстовые кодировщики — на CPU: на T4 им не хватает VRAM рядом с UNet.
+    Схема официального шаблона ComfyUI: референс масштабируется, уходит
+    image1-входом в TextEncodeQwenImageEditPlus (vision-кодировщик читает
+    саму картинку вместе с инструкцией) и одновременно VAE-латентом в
+    KSampler; кондиционинг проходит Edit Model Reference Method
+    (index_timestep_zero — нужен для перепакованных/GGUF весов). Сэмплинг —
+    Lightning-режим: 4 шага, CFG 1.
     """
     return {
-        "1": {"class_type": "UNETLoader",
-              "inputs": {"unet_name": FLUX_KONTEXT_UNET,
-                         "weight_dtype": "default"}},
-        "2": {"class_type": "DualCLIPLoader",
-              "inputs": {"clip_name1": FLUX_CLIP_L, "clip_name2": FLUX_T5,
-                         "type": "flux", "device": "cpu"}},
-        "3": {"class_type": "VAELoader", "inputs": {"vae_name": FLUX_VAE}},
-        "4": {"class_type": "LoadImage", "inputs": {"image": image_name}},
-        "5": {"class_type": "FluxKontextImageScale",
-              "inputs": {"image": ["4", 0]}},
-        "6": {"class_type": "VAEEncode",
-              "inputs": {"pixels": ["5", 0], "vae": ["3", 0]}},
-        "7": {"class_type": "CLIPTextEncode",
-              "inputs": {"clip": ["2", 0], "text": prompt_text}},
-        "8": {"class_type": "ConditioningZeroOut",
-              "inputs": {"conditioning": ["7", 0]}},
-        "9": {"class_type": "ReferenceLatent",
-              "inputs": {"conditioning": ["7", 0], "latent": ["6", 0]}},
-        "10": {"class_type": "FluxGuidance",
-               "inputs": {"conditioning": ["9", 0], "guidance": guidance}},
-        "11": {"class_type": "KSampler",
-               "inputs": {"model": ["1", 0], "seed": seed, "steps": steps,
-                          "cfg": 1.0, "sampler_name": "euler",
-                          "scheduler": "simple", "positive": ["10", 0],
-                          "negative": ["8", 0], "latent_image": ["6", 0],
+        "1": {"class_type": "UnetLoaderGGUF",
+              "inputs": {"unet_name": QWEN_EDIT_GGUF}},
+        "2": {"class_type": "LoraLoaderModelOnly",
+              "inputs": {"model": ["1", 0],
+                         "lora_name": QWEN_LIGHTNING_LORA,
+                         "strength_model": 1.0}},
+        "3": {"class_type": "ModelSamplingAuraFlow",
+              "inputs": {"model": ["2", 0], "shift": 3.1}},
+        "4": {"class_type": "CFGNorm",
+              "inputs": {"model": ["3", 0], "strength": 1.0,
+                         "pre_cfg": False}},
+        "5": {"class_type": "CLIPLoader",
+              "inputs": {"clip_name": QWEN_CLIP, "type": "qwen_image",
+                         "device": "default"}},
+        "6": {"class_type": "VAELoader", "inputs": {"vae_name": QWEN_VAE}},
+        "7": {"class_type": "LoadImage", "inputs": {"image": image_name}},
+        "8": {"class_type": "FluxKontextImageScale",
+              "inputs": {"image": ["7", 0]}},
+        "9": {"class_type": "VAEEncode",
+              "inputs": {"pixels": ["8", 0], "vae": ["6", 0]}},
+        "10": {"class_type": "TextEncodeQwenImageEditPlus",
+               "inputs": {"clip": ["5", 0], "prompt": prompt_text,
+                          "vae": ["6", 0], "image1": ["8", 0]}},
+        "11": {"class_type": "TextEncodeQwenImageEditPlus",
+               "inputs": {"clip": ["5", 0], "prompt": "",
+                          "vae": ["6", 0], "image1": ["8", 0]}},
+        "12": {"class_type": "FluxKontextMultiReferenceLatentMethod",
+               "inputs": {"conditioning": ["10", 0],
+                          "reference_latents_method": "index_timestep_zero"}},
+        "13": {"class_type": "FluxKontextMultiReferenceLatentMethod",
+               "inputs": {"conditioning": ["11", 0],
+                          "reference_latents_method": "index_timestep_zero"}},
+        "14": {"class_type": "KSampler",
+               "inputs": {"model": ["4", 0], "seed": seed, "steps": steps,
+                          "cfg": cfg, "sampler_name": "euler",
+                          "scheduler": "simple", "positive": ["12", 0],
+                          "negative": ["13", 0], "latent_image": ["9", 0],
                           "denoise": 1.0}},
-        "12": {"class_type": "VAEDecode",
-               "inputs": {"samples": ["11", 0], "vae": ["3", 0]}},
-        "13": {"class_type": "SaveImage",
-               "inputs": {"images": ["12", 0],
+        "15": {"class_type": "VAEDecode",
+               "inputs": {"samples": ["14", 0], "vae": ["6", 0]}},
+        "16": {"class_type": "SaveImage",
+               "inputs": {"images": ["15", 0],
                           "filename_prefix": "deepstick_frame"}},
     }
 
@@ -320,15 +335,18 @@ async def comfy_has_fastwan(base_url: str) -> bool:
 
 
 async def comfy_pipeline_ready(base_url: str) -> bool:
-    """Поднят ли ComfyUI новым кернелом: FLUX Kontext (кадр) + FastWan (видео).
+    """Поднят ли ComfyUI новым кернелом: Qwen Edit (кадр) + FastWan (видео).
 
     Старая сессия без этих моделей честно отвергается: иначе воркфлоу упадёт
     уже на /prompt, а пользователь получит тихий откат не по той причине.
     """
     try:
         unets = await _object_options(base_url, "UNETLoader", "unet_name")
-        return (WAN_UNET in unets and FLUX_KONTEXT_UNET in unets
-                and await comfy_has_fastwan(base_url))
+        ggufs = await _object_options(base_url, "UnetLoaderGGUF", "unet_name")
+        loras = await _object_options(
+            base_url, "LoraLoaderModelOnly", "lora_name")
+        return (WAN_UNET in unets and QWEN_EDIT_GGUF in ggufs
+                and FASTWAN_LORA in loras and QWEN_LIGHTNING_LORA in loras)
     except Exception:
         return False
 
@@ -336,12 +354,12 @@ async def comfy_pipeline_ready(base_url: str) -> bool:
 def _require_pipeline(ok: bool) -> None:
     if not ok:
         raise RuntimeError(
-            "В Kaggle-сессии нет моделей FLUX Kontext/FastWan — это старая "
+            "В Kaggle-сессии нет моделей Qwen Image Edit/FastWan — это старая "
             "сессия. Останови её в Kaggle и запусти сессию заново из бота.")
 
 
 async def _free_memory(client: httpx.AsyncClient, base: str) -> None:
-    """Выгрузить модели ComfyUI: после FLUX на T4 не хватит места Wan и наоборот."""
+    """Выгрузить модели ComfyUI: после Qwen Edit на T4 не хватит места Wan и наоборот."""
     try:
         await client.post(f"{base}/free",
                           json={"unload_models": True, "free_memory": True})
@@ -409,7 +427,7 @@ async def _download_output(client: httpx.AsyncClient, base: str,
 
 async def comfy_generate_frame(base_url: str, photo: Path, prompt: str,
                                out: Path, timeout_s: float = 900.0) -> None:
-    """Стадия 1: сгенерировать стартовый кадр персонажа из фото (Kontext)."""
+    """Стадия 1: сгенерировать стартовый кадр персонажа из фото (Qwen Edit)."""
     base = base_url.rstrip("/")
     deadline = time.monotonic() + timeout_s
     _require_pipeline(await comfy_pipeline_ready(base))

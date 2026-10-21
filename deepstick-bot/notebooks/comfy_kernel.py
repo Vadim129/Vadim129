@@ -1,4 +1,4 @@
-# DeepStick ComfyUI kernel (FLUX Kontext -> Wan 2.2 TI2V-5B + FastWan) — запускается ботом через
+# DeepStick ComfyUI kernel (Qwen Image Edit -> Wan 2.2 TI2V-5B + FastWan) — запускается ботом через
 # Kaggle API, но можно гонять и руками: Run All, сессия живёт до 12 часов.
 # Бот находит адрес туннеля в выходных файлах (tunnel.json) этого ноутбука.
 
@@ -61,6 +61,23 @@ for clone_try in range(1, 4):
 print("PHASE setup: pip requirements", flush=True)
 sh(f"{sys.executable} -m pip install -q -r {COMFY}/requirements.txt")
 
+# ComfyUI-GGUF: загрузчик GGUF-моделей (Qwen-Image-Edit-2511 Q4_K_M)
+GGUF_NODE = os.path.join(COMFY, "custom_nodes", "ComfyUI-GGUF")
+print("PHASE setup: clone ComfyUI-GGUF", flush=True)
+for clone_try in range(1, 4):
+    if os.path.isdir(GGUF_NODE):
+        break
+    try:
+        sh(f"git clone -q --depth 1 "
+           f"https://github.com/city96/ComfyUI-GGUF {GGUF_NODE}")
+    except subprocess.CalledProcessError:
+        shutil.rmtree(GGUF_NODE, ignore_errors=True)
+        if clone_try == 3:
+            raise
+        print(f"gguf clone retry {clone_try}/3", flush=True)
+        time.sleep(20)
+sh(f"{sys.executable} -m pip install -q -r {GGUF_NODE}/requirements.txt")
+
 try:
     import torch
 
@@ -74,7 +91,7 @@ if not cuda_ok:
     raise RuntimeError(
         "Kaggle не дал GPU этой сессии. Включи GPU в ноутбуке и запусти ещё раз.")
 
-print("PHASE setup: download models (Wan/FastWan + FLUX Kontext)", flush=True)
+print("PHASE setup: download models (Wan/FastWan + Qwen Image Edit)", flush=True)
 from huggingface_hub import hf_hub_download  # noqa: E402
 
 REPO = "Comfy-Org/Wan_2.2_ComfyUI_Repackaged"
@@ -88,16 +105,17 @@ FILES = [
     ("Kijai/WanVideo_comfy",
      "FastWan/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors",
      "models/loras"),
-    # FLUX.1 Kontext: первая стадия — стартовый кадр персонажа из фото
-    ("Comfy-Org/flux1-kontext-dev_ComfyUI",
-     "split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors",
-     "models/diffusion_models"),
-    ("Comfy-Org/Lumina_Image_2.0_Repackaged",
-     "split_files/vae/ae.safetensors", "models/vae"),
-    ("comfyanonymous/flux_text_encoders", "clip_l.safetensors",
+    # Qwen-Image-Edit-2511: первая стадия — стартовый кадр персонажа из фото
+    ("unsloth/Qwen-Image-Edit-2511-GGUF",
+     "qwen-image-edit-2511-Q4_K_M.gguf", "models/unet"),
+    ("lightx2v/Qwen-Image-Edit-2511-Lightning",
+     "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+     "models/loras"),
+    ("Comfy-Org/HunyuanVideo_1.5_repackaged",
+     "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
      "models/text_encoders"),
-    ("comfyanonymous/flux_text_encoders", "t5xxl_fp8_e4m3fn_scaled.safetensors",
-     "models/text_encoders"),
+    ("Comfy-Org/Qwen-Image_ComfyUI",
+     "split_files/vae/qwen_image_vae.safetensors", "models/vae"),
 ]
 for repo, repo_path, sub in FILES:
     try:
@@ -124,7 +142,7 @@ CF = os.path.join(WORK, "cloudflared")
 if not os.path.exists(CF):
     sh(f"wget -q https://github.com/cloudflare/cloudflared/releases/latest/"
        f"download/cloudflared-linux-amd64 -O {CF} && chmod +x {CF}")
-print("DEEPSTICK_ENGINE frame-fastwan-v3", flush=True)
+print("DEEPSTICK_ENGINE qwenedit-fastwan-v4", flush=True)
 print("SETUP DONE", flush=True)
 
 # CELL: 2. Запуск ComfyUI и туннеля, публикация адреса для бота
