@@ -61,7 +61,7 @@ def _cut_frame(png_bytes: bytes, session) -> Image.Image:  # noqa: ANN001
     out = remove(png_bytes, session=session)
     img = Image.open(io.BytesIO(out)).convert("RGBA")
     # лёгкое сглаживание рваных краёв маски
-    alpha = img.split()[3].filter(ImageFilter.GaussianBlur(0.7))
+    alpha = img.split()[3].filter(ImageFilter.GaussianBlur(1.0))
     img.putalpha(alpha)
     return _add_white_stroke(img, width=6)
 

@@ -52,13 +52,39 @@ def stylize(img: Image.Image, style: str) -> Image.Image:
 
 
 def _add_white_stroke(rgba: Image.Image, width: int = 9) -> Image.Image:
-    """Белая обводка по альфе — классический «стикeр»-вид."""
+    """Белая обводка по альфе — классический «стикер»-вид.
+
+    Расширение маски — гауссовым размытием с порогом, а не MaxFilter:
+    квадратное ядро MaxFilter давало угловатые «крупные пиксели» по контуру.
+    """
     alpha = rgba.split()[3]
-    dilated = alpha.filter(ImageFilter.MaxFilter(width * 2 + 1))
+    dilated = alpha.filter(ImageFilter.GaussianBlur(width))
+    dilated = dilated.point(lambda a: 255 if a >= 10 else 0)
+    dilated = dilated.filter(ImageFilter.GaussianBlur(1.3))
     out = Image.new("RGBA", rgba.size, (0, 0, 0, 0))
     white = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
     out.paste(white, (0, 0), dilated)
     out.alpha_composite(rgba)
+    return out
+
+
+def has_transparency(img: Image.Image, threshold: float = 0.01) -> bool:
+    """У картинки уже есть настоящий прозрачный фон (а не сплошной прямоугольник)."""
+    if img.mode == "P":
+        img = img.convert("RGBA")
+    if img.mode not in ("RGBA", "LA"):
+        return False
+    alpha = img.getchannel("A")
+    hist = alpha.histogram()
+    clear = sum(hist[:250])
+    return clear > threshold * img.width * img.height
+
+
+def _smooth_alpha(rgba: Image.Image, radius: float = 1.1) -> Image.Image:
+    """Мягкий край маски: лёгкое размытие альфы убирает «лесенку» и ореол."""
+    alpha = rgba.split()[3].filter(ImageFilter.GaussianBlur(radius))
+    out = rgba.copy()
+    out.putalpha(alpha)
     return out
 
 
@@ -82,12 +108,28 @@ def prepare_subject(photo: Image.Image, style: str = "original",
     styled = stylize(photo, style)
     subject: Image.Image | None = None
     if remove_bg:
-        subject = remove_background(styled)
+        if has_transparency(photo):
+            # Стикер/картинка уже вырезаны: фон не трогаем и rembg не гоняем —
+            # берём родную альфу, стиль применяем только к цветам.
+            alpha = photo.convert("RGBA").split()[3]
+            if alpha.size != styled.size:
+                alpha = alpha.resize(styled.size, Image.Resampling.LANCZOS)
+            subject = styled.convert("RGBA")
+            subject.putalpha(alpha)
+        else:
+            # Сплошной прямоугольник (фото) — вырезаем фон нейросетью.
+            subject = remove_background(styled)
         if subject is not None:
             bbox = subject.split()[3].getbbox()
             if bbox:
                 subject = subject.crop(bbox)
-            subject = _add_white_stroke(subject)
+            # прозрачный запас по краям, иначе белая обводка упирается
+            # в границы кадра и обрезается
+            pad = 18
+            canvas = Image.new("RGBA", (subject.width + 2 * pad,
+                                        subject.height + 2 * pad), (0, 0, 0, 0))
+            canvas.alpha_composite(subject, (pad, pad))
+            subject = _add_white_stroke(_smooth_alpha(canvas))
     if subject is None:
         subject = _rounded_photo(styled.convert("RGBA"))
     subject.thumbnail((max_side, max_side), Image.Resampling.LANCZOS)

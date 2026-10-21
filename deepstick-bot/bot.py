@@ -1219,8 +1219,7 @@ async def cb_gen_cancel(cb: CallbackQuery) -> None:
 
 
 # ------------------------------------------------------------------ оживление набора
-REVIVE_LIMIT_LOCAL = 25  # стикеров за раз локально (быстро)
-REVIVE_LIMIT_AI = 10     # нейро-режим: долго и ест квоту — поменьше
+REVIVE_LIMIT_AI = 10  # первые N стикеров в нейро-режиме; остальные — локально
 
 
 def revive_scenarios_kb() -> InlineKeyboardMarkup:
@@ -1363,10 +1362,12 @@ async def _revive_engine_or_start(message: Message, user: User, state: FSMContex
     if _ai_on(user.id):
         text = ("Чем оживлять?\n\n"
                 "🧠 *Нейросеть* — настоящее движение по сценарию, но медленно "
-                "(минуты на стикер) и тратит бесплатную квоту: оживлю до "
-                f"{REVIVE_LIMIT_AI} стикеров.\n"
-                "⚡ *Локально* — вырезание фона + анимация-эффект, быстро: до "
-                f"{REVIVE_LIMIT_LOCAL} стикеров.")
+                "(минуты на стикер) и тратит бесплатную квоту: первые "
+                f"{REVIVE_LIMIT_AI} стикеров сделает нейросеть, остальные — "
+                "локально, чтобы не ждать часами.\n"
+                "⚡ *Локально* — вырезание фона + анимация-эффект, быстро.\n"
+                "В обоих режимах оживлю *все* стикеры набора; уже вырезанные "
+                "не трогаю — только добавлю движение.")
         if edit:
             await message.edit_text(text, parse_mode="Markdown",
                                     reply_markup=revive_engine_kb())
@@ -1418,23 +1419,23 @@ async def _revive_run(message: Message, user: User, src_name: str,
         me = await bot.me()
         new_name = packs.alive_pack_name(src_name, me.username or "")
         url = f"https://t.me/addstickers/{new_name}"
-        limit = REVIVE_LIMIT_AI if engine == "ai" else REVIVE_LIMIT_LOCAL
         todo, gen_seen = [], 0
         for st in sset.stickers:
             if st.is_animated:
                 skip += 1
             elif st.is_video:
-                todo.append(("copy", st))
+                todo.append(("copy", st, None))
             else:
                 gen_seen += 1
-                if gen_seen > limit:
-                    skip += 1
-                else:
-                    todo.append(("gen", st))
+                eng = ("ai" if engine == "ai" and gen_seen <= REVIVE_LIMIT_AI
+                       else "local")
+                todo.append(("gen", st, eng))
         total = len(todo)
-        for i, (kind, st) in enumerate(todo, 1):
+        done_ai = done_local = done_copy = 0
+        for i, (kind, st, eng) in enumerate(todo, 1):
             try:
                 out = job / f"s{i}.webm"
+                used_ai = False
                 if kind == "copy":
                     file = await bot.get_file(st.file_id)
                     await bot.download(file, destination=out)
@@ -1445,7 +1446,7 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     await asyncio.to_thread(_to_png, raw, src)
                     per = (scenario_for_emoji(st.emoji) if mode == "emoji"
                            else base_scenario)
-                    if engine == "ai":
+                    if eng == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
                             await _ai_video_q(
@@ -1454,6 +1455,7 @@ async def _revive_run(message: Message, user: User, src_name: str,
                                 mp4)
                             if not await _matte_q(mp4, out):
                                 await asyncio.to_thread(convert_video, mp4, out)
+                            used_ai = True
                         except Exception:
                             log.warning("Оживление: нейросеть упала на стикере %s — локально", i)
                             await _render_local_q(src, "original",
@@ -1471,6 +1473,12 @@ async def _revive_run(message: Message, user: User, src_name: str,
                 else:
                     created = True
                     done += 1
+                    if kind == "copy":
+                        done_copy += 1
+                    elif used_ai:
+                        done_ai += 1
+                    else:
+                        done_local += 1
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -1481,7 +1489,7 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     f"🎬 Оживляю набор «{sset.title}»: обработано {i}/{total}\n"
                     f"✅ добавлено {done}"
                     + (f", ❌ не удалось {fail}" if fail else "")
-                    + (f", ⏭ пропущено {skip}" if skip else ""),
+                    + (f", ⏭ .tgs пропущено {skip}" if skip else ""),
                     reply_markup=generating_kb())
             except TelegramBadRequest:
                 pass
@@ -1489,10 +1497,18 @@ async def _revive_run(message: Message, user: User, src_name: str,
             rec = next((r for r in DB.list_packs(user.id) if r["name"] == new_name), None)
             rec_id = int(rec["id"]) if rec else DB.add_pack(user.id, new_name, title)
             DB.set_active_pack(user.id, str(rec_id))
+            parts = []
+            if done_ai:
+                parts.append(f"🧠 нейро {done_ai}")
+            if done_local:
+                parts.append(f"⚡ локально {done_local}")
+            if done_copy:
+                parts.append(f"🎞 видео скопировано {done_copy}")
             await status.edit_text(
                 f"✅ Готово! Оживил {done} стикеров"
+                + (f" ({', '.join(parts)})" if parts else "")
                 + (f", не удалось {fail}" if fail else "")
-                + (f", пропущено {skip} (.tgs или сверх лимита)" if skip else "")
+                + (f", пропущено .tgs {skip}" if skip else "")
                 + f"\n\n📦 Новый набор: {url}\n"
                 "Сделал его текущим — новые стикеры будут падать сюда.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
