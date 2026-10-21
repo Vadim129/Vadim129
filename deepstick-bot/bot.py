@@ -75,9 +75,27 @@ def _is_admin(user_id: int) -> bool:
     return user_id in CFG.admin_ids or DB.first_user_id() == user_id
 
 
-def _ai_on() -> bool:
-    """Нейросеть: провайдер задан (AI_PROVIDER) и не выключена владельцем."""
-    return ai_enabled() and DB.get_global("ai_enabled", "1") == "1"
+_AI_SCOPES = ("all", "owner", "off")
+
+
+def _ai_scope() -> str:
+    """Охват нейросети: all — всем, owner — только владельцу, off — никому."""
+    scope = DB.get_global("ai_scope", "")
+    if scope in _AI_SCOPES:
+        return scope
+    return "off" if DB.get_global("ai_enabled", "1") == "0" else "all"  # legacy
+
+
+def _ai_on(user_id: int | None = None) -> bool:
+    """Нейросеть доступна этому пользователю прямо сейчас."""
+    if not ai_enabled():
+        return False
+    scope = _ai_scope()
+    if scope == "off":
+        return False
+    if scope == "owner":
+        return user_id is not None and _is_admin(user_id)
+    return True
 DB = Database(CFG.data_dir / "bot.db")
 dp = Dispatcher()
 BASE = Path(tempfile.gettempdir()) / "deepstick_jobs"
@@ -92,6 +110,7 @@ MENU_PACK = "📦 Стикерпаки"
 MENU_HISTORY = "🕐 История"
 MENU_SETTINGS = "⚙️ Настройки"
 MENU_HELP = "ℹ️ Помощь"
+MENU_REVIVE = "🎬 Оживить набор"
 
 EMOJIS = ["😂", "😍", "😮", "🔥", "😎", "🤬", "🥺", "👍",
           "💃", "🚀", "😴", "🏆", "💸", "😭", "🤪"]
@@ -105,6 +124,8 @@ class Flow(StatesGroup):
     waiting_emoji = State()
     waiting_pack_title = State()
     waiting_new_pack_title = State()
+    waiting_revive_pack = State()
+    waiting_revive_custom = State()
 
 
 # ------------------------------------------------------------------ клавиатуры
@@ -113,6 +134,7 @@ def main_menu() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=MENU_NEW)],
             [KeyboardButton(text=MENU_PACK), KeyboardButton(text=MENU_HISTORY)],
+            [KeyboardButton(text=MENU_REVIVE)],
             [KeyboardButton(text=MENU_SETTINGS), KeyboardButton(text=MENU_HELP)],
         ], resize_keyboard=True)
 
@@ -184,10 +206,11 @@ def settings_kb(user_id: int) -> InlineKeyboardMarkup:
     s = DB.get_settings(user_id)
     mark = {True: "✅ вкл", False: "❌ выкл"}
     rows = []
-    if _is_admin(user_id):  # глобальный рубильник видит только владелец
-        ai_on = DB.get_global("ai_enabled", "1") == "1"
+    if _is_admin(user_id):  # охват нейросети настраивает только владелец
+        scope_label = {"all": "✅ для всех", "owner": "👤 только я",
+                       "off": "❌ выключена"}[_ai_scope()]
         rows.append([InlineKeyboardButton(
-            text=f"🧠 Нейросеть для всех: {mark[ai_on]}", callback_data="adm:ai")])
+            text=f"🧠 Нейросеть: {scope_label}", callback_data="adm:aiscope")])
     rows += [
         [InlineKeyboardButton(text=f"🎯 Пак для новых стикеров: {_active_title(user_id)}",
                               callback_data="pk:list")],
@@ -315,11 +338,11 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
         f"🎬 Генерирую: {scenario.emoji} «{custom_text or scenario.title}»…\n"
         + ("🧠 Нейросеть создаёт движения персонажа по твоему сценарию.\n"
            "Бесплатная очередь: обычно 1–10 минут, не пугайся."
-           if _ai_on() else "Обычно 5–15 секунд."),
+           if _ai_on(user.id) else "Обычно 5–15 секунд."),
         reply_markup=generating_kb())
 
     progress_task: asyncio.Task | None = None
-    if _ai_on():
+    if _ai_on(user.id):
         async def _progress() -> None:
             started = time.monotonic()
             while True:
@@ -337,7 +360,7 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
     try:
         await message.bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
         settings = DB.get_settings(user.id)
-        if _ai_on():
+        if _ai_on(user.id):
             prompt = build_prompt(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
@@ -416,10 +439,13 @@ async def _start_flow(message: Message, state: FSMContext) -> None:
 # ------------------------------------------------------------------ команды
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
+    uid = message.from_user.id if message.from_user else 0
     if not ai_enabled():
         mode = "🆓 бесплатный локальный режим (нейросеть вырезания фона + анимация)"
-    elif _ai_on():
+    elif _ai_on(uid):
         mode = "🧠 нейро-режим включён"
+    elif _ai_scope() == "owner":
+        mode = "🆓 локальный режим (нейросеть — только у владельца бота)"
     else:
         mode = "🆓 локальный режим (нейросеть временно отключена владельцем)"
     await message.answer(
@@ -660,23 +686,35 @@ async def cmd_history(message: Message) -> None:
 async def cmd_settings(message: Message) -> None:
     user = message.from_user
     assert user
-    mode = ("нейро (AI)" if _ai_on()
-            else "локальный" + ("" if ai_enabled() else " бесплатный")
-            + (" (нейросеть отключена владельцем)" if ai_enabled() else ""))
+    if not ai_enabled():
+        mode = "локальный бесплатный"
+    elif _ai_on(user.id):
+        mode = "нейро (AI)"
+    elif _ai_scope() == "owner":
+        mode = "локальный (нейросеть только у владельца)"
+    else:
+        mode = "локальный (нейросеть отключена владельцем)"
     await message.answer(f"⚙️ *Настройки*\nРежим генерации: {mode}",
                          parse_mode="Markdown", reply_markup=settings_kb(user.id))
 
 
-@dp.callback_query(F.data == "adm:ai")
-async def cb_admin_ai(cb: CallbackQuery) -> None:
+_AI_SCOPE_TEXT = {
+    "all": "🧠 Нейросеть включена для всех пользователей",
+    "owner": "👤 Нейросеть включена только для тебя (владельца), у остальных — локальная анимация",
+    "off": "🔕 Нейросеть выключена для всех: локальная анимация",
+}
+
+
+@dp.callback_query(F.data == "adm:aiscope")
+async def cb_admin_aiscope(cb: CallbackQuery) -> None:
     if not _is_admin(cb.from_user.id):
         await cb.answer("Это настройка владельца бота", show_alert=True)
         return
-    new = DB.get_global("ai_enabled", "1") != "1"
-    DB.set_global("ai_enabled", "1" if new else "0")
+    nxt = _AI_SCOPES[(_AI_SCOPES.index(_ai_scope()) + 1) % len(_AI_SCOPES)]
+    DB.set_global("ai_scope", nxt)
+    DB.set_global("ai_enabled", "0" if nxt == "off" else "1")  # legacy-ключ
     await cb.message.edit_reply_markup(reply_markup=settings_kb(cb.from_user.id))
-    await cb.answer("🧠 Нейросеть включена для всех" if new
-                    else "🔕 Нейросеть выключена: все получают локальную анимацию")
+    await cb.answer(_AI_SCOPE_TEXT[nxt], show_alert=True)
 
 
 @dp.callback_query(F.data.startswith("set:"))
@@ -1062,7 +1100,7 @@ async def on_custom(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.message.edit_text(
         "✍️ Опиши сценарий одним предложением, например:\n"
         "«лечу на ракете», «открываю холодильник-портал», «дирижирую оркестром котов»\n\n"
-        + ("🧠 Нейросеть выполнит его буквально." if _ai_on() else
+        + ("🧠 Нейросеть выполнит его буквально." if _ai_on(cb.from_user.id) else
            "Подберу ближайший эффект по ключевым словам."))
     await cb.answer()
 
@@ -1150,6 +1188,281 @@ async def cb_gen_cancel(cb: CallbackQuery) -> None:
         await cb.answer("Сейчас ничего не генерируется")
 
 
+
+# ------------------------------------------------------------------ оживление набора
+REVIVE_LIMIT_LOCAL = 25  # стикеров за раз локально (быстро)
+REVIVE_LIMIT_AI = 10     # нейро-режим: долго и ест квоту — поменьше
+
+
+def revive_scenarios_kb() -> InlineKeyboardMarkup:
+    rows, row = [], []
+    for sc in SCENARIOS:
+        row.append(InlineKeyboardButton(text=f"{sc.emoji} {sc.title}",
+                                        callback_data=f"rvs:{sc.id}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(text="✍️ Свой сценарий (текстом)",
+                                      callback_data="rvs:custom")])
+    rows.append([InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def revive_engine_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🧠 Нейросеть (живое движение, долго)",
+                              callback_data="rveng:ai")],
+        [InlineKeyboardButton(text="⚡ Локально (вырезать фон + эффект, быстро)",
+                              callback_data="rveng:local")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel")],
+    ])
+
+
+def _to_png(raw: Path, out: Path) -> None:
+    from PIL import Image
+
+    with Image.open(raw) as img:
+        img.convert("RGBA").save(out, format="PNG")
+
+
+@dp.message(F.text == MENU_REVIVE)
+async def cmd_revive(message: Message, state: FSMContext) -> None:
+    await state.set_state(Flow.waiting_revive_pack)
+    await message.answer(
+        "🎬 *Оживление набора стикеров*\n\n"
+        "Пришли *ссылку на набор* (например, `https://t.me/addstickers/Cats`) "
+        "или *любой стикер* из него.\n\n"
+        "Я создам новый набор: вырежу фон у каждого стикера и применю одно "
+        "движение ко всем. Видеостикеры скопирую как есть, анимированные "
+        "(.tgs) — пропущу.",
+        parse_mode="Markdown")
+
+
+@dp.message(Flow.waiting_revive_pack, F.sticker | F.text)
+async def on_revive_input(message: Message, state: FSMContext) -> None:
+    if message.sticker:
+        name = message.sticker.set_name
+        if not name:
+            await message.answer("У этого стикера нет набора 😕 Пришли ссылку на набор.")
+            return
+    else:
+        name = packs.parse_pack_name(message.text or "")
+        if not name:
+            await message.answer("Не вижу ссылки. Формат: `https://t.me/addstickers/ИмяНабора`",
+                                 parse_mode="Markdown")
+            return
+    try:
+        sset = await message.bot.get_sticker_set(name=name)
+    except TelegramBadRequest:
+        await message.answer("😕 Такой набор не нашёл. Проверь ссылку.")
+        return
+    static_n = sum(1 for st in sset.stickers if not st.is_video and not st.is_animated)
+    video_n = sum(1 for st in sset.stickers if st.is_video)
+    tgs_n = len(sset.stickers) - static_n - video_n
+    if not static_n and not video_n:
+        await message.answer("В этом наборе только .tgs-стикеры — их оживить не могу 😕")
+        return
+    await state.update_data(revive_src=name, revive_title=sset.title)
+    await message.answer(
+        f"📦 Набор *«{sset.title}»*: {len(sset.stickers)} стикеров "
+        f"(статика {static_n}, видео {video_n}"
+        + (f", пропущу .tgs: {tgs_n}" if tgs_n else "") + ").\n\n"
+        "Выбери *одно движение для всех* стикеров набора:",
+        parse_mode="Markdown", reply_markup=revive_scenarios_kb())
+
+
+@dp.callback_query(F.data.startswith("rvs:"))
+async def cb_revive_scenario(cb: CallbackQuery, state: FSMContext) -> None:
+    choice = (cb.data or "").split(":", 1)[1]
+    if choice == "custom":
+        await state.set_state(Flow.waiting_revive_custom)
+        await cb.message.edit_text(
+            "✍️ Опиши движение одним предложением — применю его ко всем "
+            "стикерам набора:")
+        await cb.answer()
+        return
+    if choice not in SCENARIOS_BY_ID:
+        await cb.answer("Такого сценария нет", show_alert=True)
+        return
+    await state.update_data(revive_scenario=choice, revive_custom=None)
+    await _revive_engine_or_start(cb.message, cb.from_user, state, edit=True)
+    await cb.answer()
+
+
+@dp.message(Flow.waiting_revive_custom, F.text)
+async def on_revive_custom(message: Message, state: FSMContext) -> None:
+    user = message.from_user
+    assert user
+    text = (message.text or "").strip()
+    if len(text) < 3:
+        await message.answer("Слишком коротко — опиши движение чуть подробнее.")
+        return
+    await state.update_data(revive_scenario=None, revive_custom=text)
+    await _revive_engine_or_start(message, user, state, edit=False)
+
+
+async def _revive_engine_or_start(message: Message, user: User, state: FSMContext,
+                                  *, edit: bool) -> None:
+    if _ai_on(user.id):
+        text = ("Чем оживлять?\n\n"
+                "🧠 *Нейросеть* — настоящее движение по сценарию, но медленно "
+                "(минуты на стикер) и тратит бесплатную квоту: оживлю до "
+                f"{REVIVE_LIMIT_AI} стикеров.\n"
+                "⚡ *Локально* — вырезание фона + анимация-эффект, быстро: до "
+                f"{REVIVE_LIMIT_LOCAL} стикеров.")
+        if edit:
+            await message.edit_text(text, parse_mode="Markdown",
+                                    reply_markup=revive_engine_kb())
+        else:
+            await message.answer(text, parse_mode="Markdown",
+                                 reply_markup=revive_engine_kb())
+    else:
+        await _revive_begin(message, user, state, "local")
+
+
+@dp.callback_query(F.data.startswith("rveng:"))
+async def cb_revive_engine(cb: CallbackQuery, state: FSMContext) -> None:
+    engine = (cb.data or "").split(":", 1)[1]
+    await _revive_begin(cb.message, cb.from_user, state, engine)
+    await cb.answer()
+
+
+async def _revive_begin(message: Message, user: User, state: FSMContext,
+                        engine: str) -> None:
+    if _busy(user.id):
+        await message.answer("⏳ Сначала дождись текущей генерации "
+                             "(или отмени её кнопкой выше).")
+        return
+    data = await state.get_data()
+    await state.clear()
+    task = asyncio.create_task(_revive_run(
+        message, user, data["revive_src"], data.get("revive_scenario"),
+        data.get("revive_custom"), engine))
+    _tasks[user.id] = task
+
+
+async def _revive_run(message: Message, user: User, src_name: str,
+                      scenario_id: str | None, custom_text: str | None,
+                      engine: str) -> None:
+    bot = message.bot
+    scenario = (SCENARIOS_BY_ID[scenario_id] if scenario_id
+                else match_scenario(custom_text or ""))
+    style = STYLES_BY_ID["original"]
+    settings = DB.get_settings(user.id)
+    remove_bg = CFG.remove_bg and settings["remove_bg"]
+    status = await message.answer("🎬 Оживляю набор…", reply_markup=generating_kb())
+    job = _job_dir(user.id)
+    done = fail = skip = 0
+    created = False
+    url = ""
+    try:
+        sset = await bot.get_sticker_set(name=src_name)
+        title = f"🎬 {sset.title} — оживлённые"[:64]
+        me = await bot.me()
+        new_name = packs.alive_pack_name(src_name, me.username or "")
+        url = f"https://t.me/addstickers/{new_name}"
+        limit = REVIVE_LIMIT_AI if engine == "ai" else REVIVE_LIMIT_LOCAL
+        todo, gen_seen = [], 0
+        for st in sset.stickers:
+            if st.is_animated:
+                skip += 1
+            elif st.is_video:
+                todo.append(("copy", st))
+            else:
+                gen_seen += 1
+                if gen_seen > limit:
+                    skip += 1
+                else:
+                    todo.append(("gen", st))
+        total = len(todo)
+        for i, (kind, st) in enumerate(todo, 1):
+            try:
+                out = job / f"s{i}.webm"
+                if kind == "copy":
+                    file = await bot.get_file(st.file_id)
+                    await bot.download(file, destination=out)
+                else:
+                    raw, src = job / f"s{i}.raw", job / f"s{i}.png"
+                    file = await bot.get_file(st.file_id)
+                    await bot.download(file, destination=raw)
+                    await asyncio.to_thread(_to_png, raw, src)
+                    if engine == "ai":
+                        mp4 = job / f"s{i}.mp4"
+                        try:
+                            await generate_ai_video(
+                                src, build_prompt(style, scenario, custom_text), mp4)
+                            if not await asyncio.to_thread(matte_encode, mp4, out):
+                                await asyncio.to_thread(convert_video, mp4, out)
+                        except Exception:
+                            log.warning("Оживление: нейросеть упала на стикере %s — локально", i)
+                            await asyncio.to_thread(_render_local, src, "original",
+                                                    scenario.effect, out, remove_bg)
+                    else:
+                        await asyncio.to_thread(_render_local, src, "original",
+                                                scenario.effect, out, remove_bg)
+                _link, _fid, err = await packs.add_to_named_pack(
+                    bot, user.id, new_name, out, st.emoji or scenario.emoji,
+                    create_title=None if created else title)
+                if err:
+                    fail += 1
+                    log.warning("Оживление: добавление стикера %s не удалось: %s", i, err)
+                else:
+                    created = True
+                    done += 1
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                fail += 1
+                log.exception("Оживление набора: стикер %s не удался", i)
+            try:
+                await status.edit_text(
+                    f"🎬 Оживляю набор «{sset.title}»: обработано {i}/{total}\n"
+                    f"✅ добавлено {done}"
+                    + (f", ❌ не удалось {fail}" if fail else "")
+                    + (f", ⏭ пропущено {skip}" if skip else ""),
+                    reply_markup=generating_kb())
+            except TelegramBadRequest:
+                pass
+        if created:
+            rec = next((r for r in DB.list_packs(user.id) if r["name"] == new_name), None)
+            rec_id = int(rec["id"]) if rec else DB.add_pack(user.id, new_name, title)
+            DB.set_active_pack(user.id, str(rec_id))
+            await status.edit_text(
+                f"✅ *Готово!* Оживил {done} стикеров"
+                + (f", не удалось {fail}" if fail else "")
+                + (f", пропущено {skip} (.tgs или сверх лимита)" if skip else "")
+                + f"\n\n📦 Новый набор: {url}\n"
+                "Сделал его текущим — новые стикеры будут падать сюда.",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="📦 Открыть набор", url=url)],
+                    [InlineKeyboardButton(text="📦 Стикерпаки", callback_data="pk:list")],
+                ]))
+        else:
+            await status.edit_text(
+                "😖 Не удалось оживить ни одного стикера из этого набора. "
+                "Попробуй другой набор или локальный режим.")
+    except asyncio.CancelledError:
+        try:
+            await status.edit_text(
+                f"⏹ Оживление остановлено. Успел добавить {done} стикеров."
+                + (f"\n📦 {url}" if created else ""))
+        except TelegramBadRequest:
+            pass
+        raise
+    except Exception as e:
+        log.exception("Оживление набора упало")
+        try:
+            await status.edit_text(f"😖 Не получилось оживить набор: {e}")
+        except TelegramBadRequest:
+            pass
+    finally:
+        shutil.rmtree(job, ignore_errors=True)
+        _tasks.pop(user.id, None)
+
+
 # ------------------------------------------------------------------ видео -> стикер
 @dp.message(F.video | F.animation | F.document)
 async def on_video(message: Message, state: FSMContext) -> None:
@@ -1226,8 +1539,8 @@ async def _setup_commands(bot: Bot) -> None:
         BotCommand(command="cancel", description="⏹ Сбросить / отменить"),
     ])
     me = await bot.get_me()
-    log.info("Бот @%s запущен. AI=%s, юзеров в БД: %s",
-             me.username, _ai_on(), DB.stats()["users"])
+    log.info("Бот @%s запущен. AI-провайдер=%s охват=%s, юзеров в БД: %s",
+             me.username, ai_enabled(), _ai_scope(), DB.stats()["users"])
 
 
 async def _polling_supervisor() -> None:

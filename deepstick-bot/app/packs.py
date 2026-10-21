@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import re
+import re
 from pathlib import Path
 
 from aiogram import Bot
@@ -178,3 +179,23 @@ async def rename_pack_by_name(bot: Bot, name: str, title: str) -> tuple[bool, st
     except TelegramBadRequest as e:
         log.exception("Не удалось переименовать пак %s", name)
         return False, _err(e)
+
+
+_PACK_LINK_RE = re.compile(r"addstickers/([A-Za-z0-9_]{3,64})")
+
+
+def parse_pack_name(text: str) -> str | None:
+    """Извлечь имя набора: ссылка t.me/addstickers/<name>, просто имя или None."""
+    text = (text or "").strip()
+    m = _PACK_LINK_RE.search(text)
+    if m:
+        return m.group(1)
+    if re.fullmatch(r"[A-Za-z0-9_]{3,64}", text):
+        return text
+    return None
+
+
+def alive_pack_name(src_name: str, bot_username: str) -> str:
+    """Имя нового «оживлённого» набора: <src>_alive_by_<bot>, безопасно и <=64."""
+    base = re.sub(r"[^A-Za-z0-9_]", "_", src_name)[:36].strip("_") or "pack"
+    return f"{base}_alive_by_{bot_username}"[:64]
