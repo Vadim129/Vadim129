@@ -1,0 +1,16 @@
+name: Set bot avatar
+on:
+  workflow_dispatch:
+
+jobs:
+  set-avatar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Поставить аватарку боту
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python deepstick-bot/tools/set_avatar.py deepstick-bot/bot_avatar.png
