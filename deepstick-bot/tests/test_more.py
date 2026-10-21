@@ -65,6 +65,28 @@ def test_build_prompt_strong_motion():
     assert "tears stream down" in p          # прописное движение сценария
 
 
+def test_wan_prompt_preserves_character():
+    from app.scenarios import (
+        SCENARIOS,
+        WAN_ACTIONS,
+        SCENARIOS_BY_ID,
+        STYLES_BY_ID,
+        build_prompt_wan,
+    )
+
+    # У каждого сценария есть своё укрощённое действие для Wan.
+    assert set(WAN_ACTIONS) == {s.id for s in SCENARIOS}
+    p = build_prompt_wan(STYLES_BY_ID["cartoon"], SCENARIOS_BY_ID["dance"], None)
+    assert "already applied to the input frame" in p   # стиль уже в кадре
+    assert "do not restyle or redraw" in p
+    assert "Preserve the exact same face" in p         # защита идентичности
+    assert "Static locked camera" in p
+    assert "BIG, CLEAR, CONTINUOUS" not in p           # старый вредный суффикс
+    custom = build_prompt_wan(
+        STYLES_BY_ID["original"], SCENARIOS_BY_ID["bounce"], "маши рукой")
+    assert "маши рукой" in custom                      # свой текст не потерян
+
+
 def test_new_keywords():
     assert match_scenario("хочу дождь из денег").id == "money"
     assert match_scenario("я так устал, сплю").id == "sleep"

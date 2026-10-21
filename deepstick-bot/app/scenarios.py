@@ -305,22 +305,197 @@ def build_prompt(style: Style, scenario: Scenario, custom_text: str | None) -> s
     return " ".join(parts)
 
 
+# --------------------------------------------------- промпты именно под Wan
+# У Wan/FastWan прежняя схема («стиль словами + BIG CONTINUOUS movements +
+# exaggerated expression») ломала главное — персонажа: модель перерисовывала
+# лицо и тело под текст. Здесь наоборот: стиль уже применён к входному кадру
+# локально, а модель получает ОДНО простое движение из WAN_ACTIONS и жёсткий
+# запрет менять внешность. Действия специально укрощены: без взрывов головы,
+# акробатики и полных разворотов — всё, что гарантированно сносит лицо.
+WAN_IDENTITY_SUFFIX = (
+    "Animate only the character already visible in the first frame. "
+    "Preserve the exact same face, identity, facial features, hairstyle, "
+    "skin tone, clothing, colours, body proportions and final art style "
+    "in every frame. Do not redesign, beautify, age or replace the "
+    "character, and do not invent a new body, outfit, person or face. "
+    "If only the head and shoulders are visible, animate only the head, "
+    "face and shoulders. Keep the character centered and fully visible, "
+    "ending close to the starting pose so the clip loops seamlessly. "
+    "Static locked camera: no zoom, no pan, no tilt, no camera shake, "
+    "no scene change; the background stays the same except for the simple "
+    "requested effect around the character. No text, no watermark, "
+    "no extra people."
+)
+
+WAN_ACTIONS: dict[str, str] = {
+    # эмоции
+    "laugh": "gives a short joyful laugh: mouth opens in a smile, eyes squint, head tilts back slightly, shoulders shake gently",
+    "cry": "looks sad and cries softly: eyebrows rise, eyes glisten, shoulders tremble slightly",
+    "love": "falls in love: soft dreamy smile, eyes brighten, head tilts slightly, hands if visible move gently toward the chest",
+    "wow": "reacts with surprise: eyes widen, eyebrows rise, mouth opens slightly, head pulls back a little",
+    "mind_blown": "reacts amazed: eyes widen, eyebrows rise, hands if visible touch the sides of the head",
+    "angry": "looks annoyed: brows lower, lips press together, head shakes a tiny bit side to side",
+    "rage": "shows controlled anger: shoulders tense, fists clench if visible, one short sharp head shake",
+    "sleep": "looks sleepy: eyelids droop, one slow blink, head nods down slightly and lifts again",
+    "dizzy": "looks dizzy: eyes glance in a small circle, head sways gently side to side",
+    "scared": "reacts startled: eyes widen, mouth opens slightly, shoulders jump once",
+    "shy": "looks shy: small smile, eyes glance down, head tilts slightly",
+    "sick": "looks unwell: weak expression, head sways slowly, shoulders slump a little",
+    "proud": "looks proud: chin lifts slightly, calm confident smile, one slow nod",
+    "bored": "looks bored: eyelids lower, a small sigh, head tilts lazily to one side",
+    "kiss": "blows one gentle kiss toward the camera: lips purse briefly, then a warm smile",
+    "wink": "winks once playfully and gives a small cheeky smile",
+    "dead": "play-acts fainting: eyes close, head tilts to the side, then returns to the starting pose",
+    "drool": "looks delighted: dreamy smile, head tilts slightly, happy relaxed sway",
+    # жесты
+    "hello": "waves hello with one hand if hands are visible; otherwise nods warmly with a big friendly smile",
+    "yes": "nods yes twice with an approving smile",
+    "no": "shakes the head no slowly twice with a firm expression",
+    "ok": "gives a satisfied nod and, if a hand is visible, shows a brief OK gesture",
+    "thanks": "bows the head slightly in thanks, hands together if visible, warm smile",
+    "applause": "claps briefly if hands are visible; otherwise bounces happily with a cheering smile",
+    "facepalm": "does a brief facepalm if a hand is visible; otherwise closes the eyes and shakes the head slowly",
+    "shrug": "shrugs gently: shoulders rise, eyebrows lift, palms turn up if visible",
+    "think": "thinks: eyes glance upward, head tilts, then eyebrows rise as if an idea arrived",
+    "salute": "gives a crisp small salute if a hand is visible, standing tall with a serious smile",
+    "fist": "pumps one fist once if visible; otherwise gives an energetic triumphant nod",
+    "please": "makes a pleading cute expression: eyebrows rise, hands clasp if visible, gentle sway",
+    "stop": "raises one palm in a stop gesture if visible; otherwise leans back slightly with a firm look",
+    "point": "points toward the camera if a hand is visible, then smiles; otherwise leans forward slightly and winks",
+    # движения
+    "bounce": "bounces happily in place twice with a joyful smile",
+    "jump_big": "does one small crouch and one happy hop in place, staying centered",
+    "hop_small": "does three quick tiny hops in place with a giggling expression",
+    "run": "mimes running in place at a moderate pace, arms swinging only if visible",
+    "walk": "mimes a confident walk in place with a gentle arm swing if visible",
+    "swim": "mimes slow swimming strokes in place if arms are visible; otherwise bobs gently",
+    "glide": "leans gently left and right as if gliding, arms slightly out if visible",
+    "carve": "leans smoothly left then right as if carving turns, staying centered",
+    "surf": "balances as if on a surfboard: knees bend slightly if visible, arms out gently",
+    "skate": "glides side to side in place as if roller-skating, small controlled steps if feet are visible",
+    "zombie": "does a playful zombie sway: arms forward if visible, slow side-to-side lean",
+    "rope": "does small rhythmic hops as if jumping rope, staying in place",
+    "workout": "does two controlled exercise reps in place: a small squat or an arm flex if visible",
+    "stretch": "stretches gently: reaches upward if arms are visible, then relaxes",
+    "yoga": "holds a calm meditative pose, breathing slowly with a peaceful expression",
+    "levitate": "rises slightly and floats in place with a gentle bob and a calm expression",
+    "float": "floats weightlessly in place with a slow gentle bob",
+    "sway": "sways gently side to side in a smooth rhythm",
+    "pendulum": "swings slowly side to side like a pendulum, staying centered",
+    "spin_slow": "rotates slowly only a quarter turn and returns to face the camera",
+    "twirl": "does one joyful slow twirl and returns to face the camera",
+    "peek": "peeks left then right curiously and returns to center",
+    "dash": "leans quickly left then right in place with playful energy, never leaving the frame",
+    # танцы
+    "dance": "dances gently in place: shoulders bounce, head bobs, arms move rhythmically if visible",
+    "spin": "does one slow dance turn and returns to face the camera",
+    "disco": "does simple disco moves in place: one arm points up then down if visible, hips sway gently",
+    "breakdance": "does a playful low dance bounce in place, with no floor spin and no acrobatics",
+    "moonwalk": "glides the feet in a moonwalk motion while staying centered, then returns",
+    "robot": "does stiff robot-dance moves: small stepped head and arm movements if visible",
+    # праздник
+    "winner": "celebrates victory: arms rise if visible, one happy bounce, cheering smile",
+    "money": "celebrates as a few banknotes fall around the character, reaching happily toward them if hands are visible",
+    "party": "parties in place: happy bounce, arms wave if visible, confetti falls around",
+    "fireworks": "looks up in awe and points upward if a hand is visible, fireworks sparkle in the background",
+    "gift": "reacts with excited surprise as confetti pops around, reaching forward if hands are visible",
+    "champagne": "makes a cheerful toast gesture if a hand is visible, joyful bounce and smile",
+    "crown": "acts proudly like royalty: chin up, a royal wave if a hand is visible",
+    "medal": "celebrates proudly with one happy bounce and a champion smile",
+    "cheers": "raises a toast gesture if a hand is visible, then smiles warmly",
+    "cake": "celebrates a birthday: claps if hands are visible, leans forward slightly as if blowing out candles, then smiles",
+    "balloons": "floats upward slightly as if lifted by balloons, waving gently if a hand is visible",
+    # природа
+    "rain": "stands in gentle rain: looks up, smiles, raindrops fall around the character",
+    "snow": "turns slightly in falling snow, catching a snowflake if a hand is visible, winter smile",
+    "sunny": "basks in sunshine: stretches happily if arms are visible, relaxed smile",
+    "rainbow": "points in wonder toward a rainbow in the background if a hand is visible, happy smile",
+    "autumn": "smiles as autumn leaves drift and fall around the character, gentle sway",
+    "spring": "stands among falling cherry petals with a gentle sway and a serene smile",
+    "ocean": "rocks gently as if riding a small wave, water splashes around the lower frame",
+    "wind": "leans into a breeze: hair and clothes flutter naturally while the character stays in place",
+    "night": "waves gently under moonlight with a peaceful sleepy smile, stars twinkle in the background",
+    "storm": "reacts to a brief lightning flash with a startled jump as rain falls around",
+    "campfire": "warms hands by a campfire if hands are visible, cozy gentle sway",
+    "freeze": "shivers in the cold: shoulders shake in small fast movements, arms hug inward if visible",
+    # магия и космос
+    "portal": "gestures as if opening a small magical portal beside the character, sparkles swirling nearby",
+    "magic": "waves hands gently if visible as sparkles burst around, amazed smile",
+    "rocket": "rises slightly as if riding a small rocket below the frame, waving happily if a hand is visible",
+    "ufo": "floats upward slightly in a soft beam of light from above, surprised expression",
+    "comet": "glides in a small gentle arc with a sparkling trail behind, staying in frame",
+    "orbit": "floats weightlessly in a slow small circle and returns to center",
+    "astronaut": "floats in zero gravity with a slow quarter-turn and returns upright",
+    "witch": "glides side to side as if flying on a broom below the frame, clothes fluttering",
+    "crystal": "makes mystical hand gestures if hands are visible, gazing forward with a focused look",
+    "potion": "mimes stirring a bubbling potion if hands are visible, excited alchemist expression, green sparkles around",
+    "ghost": "floats like a cute ghost: gentle bob, slight fade, friendly wave if a hand is visible",
+    "teleport": "flickers in place with brief magical flashes, never leaving the frame",
+    "dream": "daydreams with a dreamy smile, floating gently as soft bubbles rise around",
+    "timewarp": "looks around in wonder as glowing rings swirl slowly in the background",
+    "sparkle": "poses and shines like a star: small glamorous turns of the head, glitter sparkles around",
+    # экшн и спорт
+    "fire": "acts cool and epic: confident nod, then points at the camera if a hand is visible",
+    "superhero": "flies in place like a superhero: one fist forward if visible, clothes flutter, heroic smile",
+    "hero": "strikes a heroic pose: chest out if visible, chin up, confident stance",
+    "boxer": "does light boxing in place: two small jabs if arms are visible, bouncy footwork",
+    "karate": "does one controlled karate chop and stance if the body is visible, focused expression",
+    "ninja": "moves stealthily side to side in small quick steps with a sneaky expression",
+    "race": "leans as if racing at speed, hair blown by wind, thrilled expression",
+    "power": "flexes or lifts with effort if arms are visible, proud strained grin",
+    "football": "celebrates a goal with a happy bounce; if feet are visible, juggles an imaginary ball briefly",
+    "basketball": "mimes dribbling and one shot if arms are visible, then a happy jump",
+    "sneak": "sneaks in place: tiptoe steps if feet are visible, looking left and right",
+    "fishing": "mimes holding a fishing rod and reeling in a catch if hands are visible, excited smile",
+    "idea": "gets an idea: eyes widen, one finger rises if visible, excited smile",
+    "alarm": "reacts to an alarm: startled jump, quick look around, hurried playful panic",
+    "photo": "poses for photos: two small pose changes and a confident smile, brief camera flashes",
+    "panic": "panics playfully: looks left and right quickly, shoulders shake, hands flutter if visible",
+}
+
+
+def build_prompt_wan(style: Style, scenario: Scenario,
+                     custom_text: str | None) -> str:
+    """Промпт для Wan/FastWan: стиль уже в кадре, одно простое движение,
+    жёсткое сохранение персонажа. Отдельно от build_prompt: HF/LTX-моделям
+    по-прежнему нужен сильный MOTION_SUFFIX, а Wan он вредит."""
+    style_note = style.wan_prompt or style.ai_prompt
+    if custom_text:
+        action = ("performs the user's requested action, interpreted as one "
+                  f"simple visible movement: {custom_text}")
+    else:
+        action = WAN_ACTIONS.get(scenario.id) or scenario.ai_prompt
+    return (f"The input frame already shows the final character in the final "
+            f"style ({style_note}); do not restyle or redraw it. "
+            f"The character {action}. {WAN_IDENTITY_SUFFIX}")
+
+
 @dataclass(frozen=True)
 class Style:
     id: str
     emoji: str
     title: str
     ai_prompt: str
+    # Как стиль описан для Wan: стиль уже применён к входному кадру локально
+    # (app.effects.stylize), модели запрещаем перерисовывать персонажа.
+    wan_prompt: str = ""
 
 
 STYLES: list[Style] = [
-    Style("original", "📸", "Как есть", "photorealistic, natural look"),
-    Style("cartoon", "🎨", "Мультяшный", "bright cartoon style, bold colours"),
-    Style("pixel", "👾", "Пиксель-арт", "retro pixel-art style"),
-    Style("neon", "🌆", "Неон", "cyberpunk neon glow style"),
-    Style("anime", "⛩️", "Аниме", "anime style, clean line art"),
-    Style("vintage", "🎞️", "Винтаж", "vintage sepia film photo style"),
-    Style("bw", "🖤", "Ч/Б", "dramatic black and white style"),
+    Style("original", "📸", "Как есть", "photorealistic, natural look",
+          "photorealistic appearance identical to the input frame"),
+    Style("cartoon", "🎨", "Мультяшный", "bright cartoon style, bold colours",
+          "bright flat cartoon look already applied to the input frame"),
+    Style("pixel", "👾", "Пиксель-арт", "retro pixel-art style",
+          "retro pixel-art look already applied to the input frame"),
+    Style("neon", "🌆", "Неон", "cyberpunk neon glow style",
+          "neon-lit look already applied to the input frame"),
+    Style("anime", "⛩️", "Аниме", "anime style, clean line art",
+          "clean anime look already applied to the input frame"),
+    Style("vintage", "🎞️", "Винтаж", "vintage sepia film photo style",
+          "vintage sepia film look already applied to the input frame"),
+    Style("bw", "🖤", "Ч/Б", "dramatic black and white style",
+          "black-and-white look already applied to the input frame"),
 ]
 
 STYLES_BY_ID = {s.id: s for s in STYLES}

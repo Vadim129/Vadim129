@@ -8,13 +8,32 @@ from app.comfy import build_notebook, build_workflow, extract_tunnel, find_tunne
 def test_build_workflow_structure():
     wf = build_workflow("a cat dances", "photo.png", seed=42)
     types = {node["class_type"] for node in wf.values()}
-    assert {"UNETLoader", "CLIPLoader", "VAELoader", "LoadImage",
-            "WanImageToVideo", "KSampler", "VAEDecode",
+    assert {"UNETLoader", "LoraLoaderModelOnly", "CLIPLoader", "VAELoader",
+            "LoadImage", "WanImageToVideo", "KSampler", "VAEDecode",
             "CreateVideo", "SaveVideo"} <= types
     assert wf["4"]["inputs"]["image"] == "photo.png"
     assert wf["7"]["inputs"]["start_image"] == ["4", 0]
     assert wf["8"]["inputs"]["latent_image"] == ["7", 2]
     assert wf["11"]["inputs"]["video"] == ["10", 0]
+
+
+def test_workflow_is_fastwan_fast_and_identity_safe():
+    from app.comfy import FASTWAN_LORA
+
+    wf = build_workflow("prompt", "photo.png", seed=1)
+    # FastWan LoRA поверх базовой 5B, текстовый кодировщик на CPU.
+    assert wf["13"]["inputs"]["lora_name"] == FASTWAN_LORA
+    assert wf["13"]["inputs"]["model"] == ["1", 0]
+    assert wf["12"]["inputs"]["model"] == ["13", 0]
+    assert wf["2"]["inputs"]["device"] == "cpu"
+    # Быстрый режим автора LoRA: мало шагов, CFG 1, ролик влезает в 3 c.
+    assert wf["8"]["inputs"]["steps"] == 6
+    assert wf["8"]["inputs"]["cfg"] == 1.0
+    assert wf["7"]["inputs"]["length"] == 41  # 41/16 = 2.56 c < 3 c
+    # Негатив нацелен на морфинг/потерю лица, а не generic.
+    from app.comfy import NEGATIVE
+
+    assert "changing identity" in NEGATIVE and "morphing" in NEGATIVE
 
 
 def test_build_notebook_cells():
@@ -34,6 +53,19 @@ def test_kernel_has_no_internet_marker():
             / "notebooks" / "comfy_kernel.py").read_text()
     assert "KAGGLE_NO_INTERNET" in code
     assert "wait_for_internet" in code
+
+
+def test_kernel_downloads_fastwan_lora():
+    from pathlib import Path
+
+    from app.comfy import FASTWAN_REPO_PATH
+
+    code = (Path(__file__).resolve().parent.parent
+            / "notebooks" / "comfy_kernel.py").read_text()
+    assert "Kijai/WanVideo_comfy" in code
+    assert FASTWAN_REPO_PATH in code
+    assert "models/loras" in code
+    assert "DEEPSTICK_ENGINE fastwan-v2" in code
 
 
 def test_find_and_extract_tunnel():

@@ -19,24 +19,44 @@ from pathlib import Path
 import httpx
 
 NEGATIVE = (
+    "morphing, warping, face deformation, changing identity, different person, "
+    "face swap, distorted face, bad anatomy, deformed hands, extra fingers, "
+    "extra limbs, flickering, jitter, camera shake, zoom, pan, scene change, "
     "low quality, worst quality, blurry, static, still image, deformed, "
-    "distorted face, extra fingers, watermark, text, logo, jpeg artifacts"
+    "watermark, text, logo, jpeg artifacts"
 )
+
+# Быстрая дистиллированная модель поверх Wan 2.2 TI2V-5B: FastWan LoRA
+# (Kijai/WanVideo_comfy). Рекомендованный режим автора воркфлоу: 4-6 шагов,
+# CFG 1.0 — вместо 20 шагов/CFG 5 у базовой модели. При CFG 1 негативный
+# промпт почти не влияет, поэтому вся защита персонажа — в позитивном
+# промпте (см. build_prompt_wan в app/scenarios.py).
+FASTWAN_LORA = "Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors"
+FASTWAN_REPO_PATH = f"FastWan/{FASTWAN_LORA}"
 
 _TUNNEL_RE = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
 
 def build_workflow(prompt_text: str, image_name: str, seed: int,
-                   width: int = 512, height: int = 512, length: int = 49,
-                   steps: int = 20, cfg: float = 5.0, fps: int = 16) -> dict:
-    """API-воркфлоу Wan 2.2 TI2V-5B: картинка + промпт -> mp4."""
+                   width: int = 512, height: int = 512, length: int = 41,
+                   steps: int = 6, cfg: float = 1.0, fps: int = 16) -> dict:
+    """API-воркфлоу быстрой генерации: Wan 2.2 TI2V-5B + FastWan LoRA.
+
+    41 кадр @16 fps = 2.56 c: влезает в лимит видеостикера (3 c) без обрезки
+    хвоста и считается заметно быстрее прежних 49 кадров. Текстовый
+    кодировщик держим на CPU: на T4 (16 ГБ) он иначе постоянно свапается
+    с UNet в VRAM и съедает больше времени, чем экономит.
+    """
     return {
         "1": {"class_type": "UNETLoader",
               "inputs": {"unet_name": "wan2.2_ti2v_5B_fp16.safetensors",
                          "weight_dtype": "default"}},
+        "13": {"class_type": "LoraLoaderModelOnly",
+               "inputs": {"model": ["1", 0], "lora_name": FASTWAN_LORA,
+                          "strength_model": 1.0}},
         "2": {"class_type": "CLIPLoader",
               "inputs": {"clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-                         "type": "wan", "device": "default"}},
+                         "type": "wan", "device": "cpu"}},
         "3": {"class_type": "VAELoader",
               "inputs": {"vae_name": "wan2.2_vae.safetensors"}},
         "4": {"class_type": "LoadImage", "inputs": {"image": image_name}},
@@ -50,7 +70,7 @@ def build_workflow(prompt_text: str, image_name: str, seed: int,
                          "length": length, "batch_size": 1,
                          "start_image": ["4", 0]}},
         "12": {"class_type": "ModelSamplingSD3",
-               "inputs": {"model": ["1", 0], "shift": 8.0}},
+               "inputs": {"model": ["13", 0], "shift": 8.0}},
         "8": {"class_type": "KSampler",
               "inputs": {"model": ["12", 0], "seed": seed, "steps": steps,
                          "cfg": cfg, "sampler_name": "uni_pc",
@@ -222,11 +242,35 @@ def build_notebook(kernel_code: str) -> str:
     })
 
 
+async def comfy_has_fastwan(base_url: str) -> bool:
+    """Есть ли в этом ComfyUI FastWan LoRA (т.е. сессия поднята новым кернелом).
+
+    Старая сессия без LoRA честно отвергается: иначе воркфлоу упадёт уже на
+    /prompt, а пользователь получит тихий откат не по той причине.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            r = await client.get(
+                f"{base_url.rstrip('/')}/object_info/LoraLoaderModelOnly")
+            r.raise_for_status()
+            node = (r.json() or {}).get("LoraLoaderModelOnly") or {}
+            spec = ((node.get("input") or {}).get("required") or {}).get(
+                "lora_name") or [[], {}]
+            options = spec[0] if isinstance(spec, (list, tuple)) else []
+            return FASTWAN_LORA in (options or [])
+    except Exception:
+        return False
+
+
 async def comfy_generate(base_url: str, photo: Path, prompt: str, out: Path,
                          timeout_s: float = 720.0) -> None:
     """Сгенерировать mp4 через ComfyUI. Любая проблема — исключение наверх."""
     base = base_url.rstrip("/")
     deadline = time.monotonic() + timeout_s
+    if not await comfy_has_fastwan(base):
+        raise RuntimeError(
+            "В Kaggle-сессии нет FastWan LoRA — это старая сессия. "
+            "Останови её в Kaggle и запусти сессию заново из бота.")
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
         with open(photo, "rb") as fh:
             r = await client.post(

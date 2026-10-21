@@ -1,4 +1,4 @@
-# DeepStick ComfyUI kernel (Wan 2.2 TI2V-5B) — запускается ботом через
+# DeepStick ComfyUI kernel (Wan 2.2 TI2V-5B + FastWan LoRA) — запускается ботом через
 # Kaggle API, но можно гонять и руками: Run All, сессия живёт до 12 часов.
 # Бот находит адрес туннеля в выходных файлах (tunnel.json) этого ноутбука.
 
@@ -79,17 +79,21 @@ from huggingface_hub import hf_hub_download  # noqa: E402
 
 REPO = "Comfy-Org/Wan_2.2_ComfyUI_Repackaged"
 FILES = [
-    ("split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
+    (REPO, "split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
      "models/diffusion_models"),
-    ("split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+    (REPO, "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
      "models/text_encoders"),
-    ("split_files/vae/wan2.2_vae.safetensors", "models/vae"),
+    (REPO, "split_files/vae/wan2.2_vae.safetensors", "models/vae"),
+    # FastWan: дистиллированная LoRA быстрой генерации (6 шагов, CFG 1)
+    ("Kijai/WanVideo_comfy",
+     "FastWan/Wan2_2_5B_FastWanFullAttn_lora_rank_128_bf16.safetensors",
+     "models/loras"),
 ]
-for repo_path, sub in FILES:
+for repo, repo_path, sub in FILES:
     try:
-        src = hf_hub_download(REPO, repo_path)
+        src = hf_hub_download(repo, repo_path)
     except Exception:
-        src = hf_hub_download(REPO, repo_path.split("/", 1)[1])
+        src = hf_hub_download(repo, repo_path.split("/", 1)[1])
     dst_dir = os.path.join(COMFY, sub)
     os.makedirs(dst_dir, exist_ok=True)
     dst = os.path.join(dst_dir, os.path.basename(repo_path))
@@ -110,6 +114,7 @@ CF = os.path.join(WORK, "cloudflared")
 if not os.path.exists(CF):
     sh(f"wget -q https://github.com/cloudflare/cloudflared/releases/latest/"
        f"download/cloudflared-linux-amd64 -O {CF} && chmod +x {CF}")
+print("DEEPSTICK_ENGINE fastwan-v2", flush=True)
 print("SETUP DONE", flush=True)
 
 # CELL: 2. Запуск ComfyUI и туннеля, публикация адреса для бота
@@ -128,10 +133,12 @@ def tail_text(path, limit=5000):
 
 
 comfy_log = open(COMFY_LOG, "wb")
+comfy_env = dict(os.environ)
+comfy_env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 proc = subprocess.Popen(
     [sys.executable, "main.py", "--listen", "127.0.0.1", "--port", "8188",
      "--disable-auto-launch", "--preview-method", "none"],
-    cwd=COMFY, stdout=comfy_log, stderr=subprocess.STDOUT)
+    cwd=COMFY, stdout=comfy_log, stderr=subprocess.STDOUT, env=comfy_env)
 
 comfy_ready = False
 for _ in range(90):  # ждём ComfyUI до ~7 минут

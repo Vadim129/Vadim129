@@ -59,8 +59,10 @@ def _cut_frame(png_bytes: bytes, session) -> Image.Image:  # noqa: ANN001
 
     out = remove(png_bytes, session=session)
     img = Image.open(io.BytesIO(out)).convert("RGBA")
-    # лёгкое сглаживание рваных краёв маски
+    # Лёгкое сглаживание рваных краёв маски + отсечение полупрозрачного
+    # «призрачного» ореола по краям (низкая альфа) и недобитой непрозрачности.
     alpha = img.split()[3].filter(ImageFilter.GaussianBlur(1.0))
+    alpha = alpha.point(lambda a: 0 if a < 18 else 255 if a > 238 else a)
     img.putalpha(alpha)
     return img  # без обводок и рамок
 
@@ -108,12 +110,21 @@ def matte_encode(mp4: Path, webm: Path, fps_cap: int = 16) -> bool:
         matted_dir = tmp / "matted"
         matted_dir.mkdir()
         kept: list[Path] = []
+        prev_alpha: Image.Image | None = None
         for i, frame_path in enumerate(raw_frames):
             try:
                 img = _cut_frame(frame_path.read_bytes(), session)
             except Exception:
                 log.exception("Вырезание кадра %s упало", frame_path.name)
                 return False
+            # rembg режет каждый кадр независимо — края маски «дышат» и
+            # мерцают. Подмешиваем долю предыдущей альфы: края стабильнее,
+            # а движение персонажа при доле 0.22 ещё не смазывается.
+            alpha = img.split()[3]
+            if prev_alpha is not None and prev_alpha.size == alpha.size:
+                alpha = Image.blend(alpha, prev_alpha, 0.22)
+                img.putalpha(alpha)
+            prev_alpha = alpha.copy()
             out_path = matted_dir / f"{i:04d}.png"
             img.save(out_path)
             kept.append(out_path)

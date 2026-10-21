@@ -55,10 +55,12 @@ from aiogram.types import (  # noqa: E402
 
 from app import packs  # noqa: E402
 from app.ai_video import ai_enabled, generate_ai_video  # noqa: E402
-from app.comfy import build_notebook, comfy_generate, extract_tunnel, format_log_tail, parse_log_blob, parse_sse_payload, pick_kernel  # noqa: E402
+from app.comfy import build_notebook, comfy_generate, comfy_has_fastwan, extract_tunnel, format_log_tail, parse_log_blob, parse_sse_payload, pick_kernel  # noqa: E402
 import httpx  # noqa: E402
 from app.db import Database  # noqa: E402
-from app.effects import prepare_subject, render_frames  # noqa: E402
+from PIL import Image, ImageOps  # noqa: E402
+
+from app.effects import prepare_subject, render_frames, stylize  # noqa: E402
 from app.encode import convert_video, encode_frames  # noqa: E402
 from app.matting import matte_encode  # noqa: E402
 from app.scenarios import (  # noqa: E402
@@ -70,6 +72,7 @@ from app.scenarios import (  # noqa: E402
     STYLES,
     STYLES_BY_ID,
     build_prompt,
+    build_prompt_wan,
     match_scenario,
 )
 from config import Config  # noqa: E402
@@ -437,8 +440,8 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
     neuro = _ai_on(user.id) or (await _comfy_alive() and _scope_allows(user.id))
     status = await message.answer(
         f"🎬 Генерирую: {scenario.emoji} «{custom_text or scenario.title}»…\n"
-        + ("🧠 Нейросеть создаёт движения персонажа по твоему сценарию.\n"
-           "Бесплатная очередь: обычно 1–10 минут, не пугайся."
+        + ("🧠 Быстрая нейросеть оживляет именно твоего персонажа с фото.\n"
+           "На тёплой Kaggle-сессии обычно 1–5 минут, не пугайся."
            if neuro else "Обычно 5–15 секунд."),
         reply_markup=generating_kb())
 
@@ -463,9 +466,11 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
         settings = DB.get_settings(user.id)
         if neuro:
             prompt = build_prompt(style, scenario, custom_text)
+            wan_prompt = build_prompt_wan(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
-                await _neuro_video_q(photo, prompt, mp4, user.id)
+                await _neuro_video_q(photo, prompt, mp4, user.id,
+                                     style_id=style_id, wan_prompt=wan_prompt)
                 # Стикер = вырезанная фигурка на прозрачности, а не прямоугольник:
                 # вырезаем фон из сгенерированного видео покадрово.
                 if progress_task:
@@ -541,13 +546,41 @@ async def _matte_q(mp4: Path, webm: Path) -> bool:
         return await asyncio.to_thread(matte_encode, mp4, webm)
 
 
-async def _neuro_video_q(photo: Path, prompt: str, out: Path, user_id: int) -> None:
-    """Нейрогенерация видео: живой Kaggle-ComfyUI первым, дальше HF-цепочка."""
+def _prepare_neuro_input(photo: Path, style_id: str, out: Path) -> Path:
+    """Входной кадр для Wan: стиль применяем ЗДЕСЬ, локально и попиксельно.
+
+    Раньше стиль уходил в модель словами («cartoon style») — и Wan
+    перерисовывал персонажа заново, теряя лицо. Теперь первый кадр уже
+    финальный (та же геометрия лица/тела, только локальная стилизация),
+    а модель по промпту build_prompt_wan только анимирует его и не имеет
+    права перерисовывать. Кадр приводим к квадрату 512x512 — формату
+    воркфлоу, чтобы модель не кадрировала фото по-своему.
+    """
+    with Image.open(photo) as im:
+        rgb = im.convert("RGB")
+    rgb.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+    styled = stylize(rgb, style_id)
+    framed = ImageOps.fit(styled, (512, 512), method=Image.Resampling.LANCZOS)
+    framed.save(out, "PNG")
+    return out
+
+
+async def _neuro_video_q(photo: Path, prompt: str, out: Path, user_id: int,
+                         style_id: str = "original",
+                         wan_prompt: str | None = None) -> None:
+    """Нейрогенерация видео: живой Kaggle-ComfyUI первым, дальше HF-цепочка.
+
+    В ComfyUI уходит подготовленный кадр (стиль уже применён) и Wan-промпт
+    с сохранением персонажа; в HF-цепочку — исходное фото и прежний
+    сильный промпт (LTX/Wan-спейсам он нужен)."""
     async with _AI_SEM:
         url = _comfy_url()
         if url and _scope_allows(user_id):
             try:
-                await comfy_generate(url, photo, prompt, out)
+                prepared = out.with_name(out.stem + "_input.png")
+                await asyncio.to_thread(
+                    _prepare_neuro_input, photo, style_id, prepared)
+                await comfy_generate(url, prepared, wan_prompt or prompt, out)
                 return
             except Exception:
                 log.warning("ComfyUI не справился — пробую HF-цепочку",
@@ -1306,7 +1339,7 @@ async def cb_kaggle_open(cb: CallbackQuery) -> None:
             show_alert=True)
         return
     url = _comfy_url()
-    text = ("☁️ *Kaggle-нейросеть (ComfyUI, Wan 2.2)*\nСтатус: "
+    text = ("☁️ *Kaggle-нейросеть (ComfyUI, Wan 2.2 + FastWan)*\nСтатус: "
             + ("🟢 онлайн. Генерации идут через Kaggle, пока жива сессия "
                "(до ~12 ч с запуска)." if url else
                "⚪ выключена. Запуск сессии занимает 5–10 минут (скачать "
@@ -1389,7 +1422,7 @@ async def _comfy_quick(url: str) -> bool:
 
 async def _kaggle_launch(message: Message, user: User) -> None:
     status = await message.answer(
-        "☁️ Запускаю Kaggle-сессию с ComfyUI (Wan 2.2)…\n"
+        "☁️ Запускаю Kaggle-сессию с ComfyUI (Wan 2.2 + FastWan)…\n"
         "Первый старт — 5–10 минут: скачать модели и поднять сервер.")
     try:
         info = await asyncio.to_thread(_kaggle_find_kernel_sync)
@@ -1422,12 +1455,23 @@ async def _kaggle_launch(message: Message, user: User) -> None:
             log_text = await asyncio.to_thread(_kaggle_log_sync, ref)
             url = extract_tunnel({"log": log_text}, exclude=dead)
             if url:
-                if await _comfy_quick(url):
+                quick = await _comfy_quick(url)
+                if quick and not await comfy_has_fastwan(url):
+                    # Жива сессия СТАРОГО кернела (без FastWan LoRA): работать
+                    # она будет по-старому и плохо. Честно просим перезапуск.
+                    await status.edit_text(
+                        "⚠️ Нашлась старая Kaggle-сессия без быстрой модели "
+                        "FastWan. Останови её в Kaggle (My Code → Deepstick "
+                        "Comfy → Stop) и нажми «▶️ Запустить сессию» ещё раз — "
+                        "новая поднимет быструю модель и новый промпт "
+                        "сохранения персонажа.")
+                    return
+                if quick:
                     DB.set_global("comfy_url", url)
                     DB.set_global("comfy_ts", str(time.time()))
                     _comfy_health.update(ok=True, checked=time.monotonic())
                     await status.edit_text(
-                        "✅ *Нейросеть Kaggle онлайн!* ComfyUI (Wan 2.2) "
+                        "✅ *Нейросеть Kaggle онлайн!* ComfyUI (Wan 2.2 + FastWan, быстрая модель) "
                         "живёт до ~12 часов или пока не кончится недельная "
                         "квота Kaggle.\nГенерации теперь идут через неё "
                         "(охват — настройкой «🧠 Нейросеть» выше), откат на "
@@ -2216,10 +2260,11 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     if eng == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
+                            revive_custom = custom_text if mode == "single" else None
                             await _neuro_video_q(
-                                src, build_prompt(style, per,
-                                                  custom_text if mode == "single" else None),
-                                mp4, user.id)
+                                src, build_prompt(style, per, revive_custom),
+                                mp4, user.id, style_id="original",
+                                wan_prompt=build_prompt_wan(style, per, revive_custom))
                             if not await _matte_q(mp4, out):
                                 await asyncio.to_thread(convert_video, mp4, out)
                             used_ai = True
