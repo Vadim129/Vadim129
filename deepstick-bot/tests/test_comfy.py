@@ -33,5 +33,14 @@ def test_find_and_extract_tunnel():
     payload = base64.b64encode(json.dumps({"url": url}).encode()).decode()
     out = {"files": [{"fileName": "tunnel.json", "fileData": payload}]}
     assert extract_tunnel(out) == url
-    assert extract_tunnel({"log": f"COMFY_URL {url}"}) == url
+    assert extract_tunnel({"log": f"COMFY_URL {url}"}) == url  # noqa: F821
     assert extract_tunnel({"files": []}) is None
+
+
+def test_extract_tunnel_exclude_and_latest():
+    old = "https://old-session.trycloudflare.com"
+    new = "https://new-session.trycloudflare.com"
+    payload = {"log": f"COMFY_URL {old}\n... later ...\nCOMFY_URL {new}"}
+    assert extract_tunnel(payload) == new  # свежий адрес — последний в логе
+    assert extract_tunnel(payload, exclude={new}) == old
+    assert extract_tunnel(payload, exclude={new, old}) is None

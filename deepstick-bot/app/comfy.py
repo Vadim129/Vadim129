@@ -73,21 +73,31 @@ def find_tunnel_url(text: str) -> str | None:
     return m.group(0) if m else None
 
 
-def extract_tunnel(output: dict) -> str | None:
+def extract_tunnel(output: dict, exclude: set[str] | None = None) -> str | None:
     """URL туннеля из ответа Kaggle kernels/output: tunnel.json или лог.
 
     Формат Kaggle API: {"files": [{"fileName": ..., "fileData": "<base64>"}],
     "log": "..."} — поля могут отсутствовать, всё проверяем мягко.
+    exclude — уже проверенные мёртвые адреса прошлых сессий: пропускаем,
+    чтобы не зациклиться на устаревшем туннеле.
     """
+    skip = exclude or set()
     for f in output.get("files") or []:
         if f.get("fileName") == "tunnel.json" and f.get("fileData"):
             try:
                 data = json.loads(base64.b64decode(f["fileData"]))
-                if data.get("url"):
-                    return str(data["url"])
+                url = str(data.get("url") or "").rstrip("/")
+                if url and url not in skip:
+                    return url
             except Exception:
                 pass
-    return find_tunnel_url(output.get("log") or "")
+    # В тексте берём ПОСЛЕДНИЙ адрес: свежий туннель печатается позже.
+    text = (output.get("log") or "") + "\n" + json.dumps(output)
+    for url in reversed(_TUNNEL_RE.findall(text)):
+        url = url.rstrip("/")
+        if url not in skip:
+            return url
+    return None
 
 
 def build_notebook(kernel_code: str) -> str:
