@@ -107,6 +107,14 @@ jobs:
           cd deepstick-bot && python tools/probe_packs.py || true
           cd ..
 
+      # Только факт наличия и длина — значения секретов в лог не пишем.
+      - name: Диагностика — секреты Kaggle
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          echo "::notice title=Kaggle секреты::username задан: $([ -n "$KAGGLE_USERNAME" ] && echo да || echo НЕТ) (длина ${#KAGGLE_USERNAME}); key задан: $([ -n "$KAGGLE_KEY" ] && echo да || echo НЕТ) (длина ${#KAGGLE_KEY})"
+
       - name: Бот (поллинг Telegram)
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
