@@ -35,6 +35,10 @@ class Database:
             CREATE TABLE IF NOT EXISTS pack_refs(
                 ref TEXT PRIMARY KEY, user_id INTEGER, pack_name TEXT, file_id TEXT);
             """)
+            # Миграция: текущий пак, в который падают новые стикеры
+            cols = [r[1] for r in c.execute("PRAGMA table_info(settings)")]
+            if "active_pack" not in cols:
+                c.execute("ALTER TABLE settings ADD COLUMN active_pack TEXT DEFAULT 'main'")
 
     def _db(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
@@ -54,11 +58,20 @@ class Database:
     # --------------------------------------------------------------- настройки
     def get_settings(self, user_id: int) -> dict:
         with self._db() as c:
-            row = c.execute("SELECT remove_bg, auto_pack FROM settings WHERE user_id=?",
-                            (user_id,)).fetchone()
+            row = c.execute("SELECT remove_bg, auto_pack, active_pack FROM settings "
+                            "WHERE user_id=?", (user_id,)).fetchone()
         if row is None:
-            return {"remove_bg": True, "auto_pack": True}
-        return {"remove_bg": bool(row["remove_bg"]), "auto_pack": bool(row["auto_pack"])}
+            return {"remove_bg": True, "auto_pack": True, "active_pack": "main"}
+        return {"remove_bg": bool(row["remove_bg"]), "auto_pack": bool(row["auto_pack"]),
+                "active_pack": row["active_pack"] or "main"}
+
+    def set_active_pack(self, user_id: int, target: str) -> None:
+        """target: 'main' или id именного пака — куда падают новые стикеры."""
+        with self._db() as c:
+            c.execute(
+                "INSERT INTO settings(user_id, active_pack) VALUES(?,?) "
+                "ON CONFLICT(user_id) DO UPDATE SET active_pack=excluded.active_pack",
+                (user_id, str(target)))
 
     def toggle_setting(self, user_id: int, key: str) -> bool:
         if key not in ("remove_bg", "auto_pack"):

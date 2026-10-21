@@ -41,20 +41,23 @@ def _err(e: Exception) -> str:
     return f"{type(e).__name__}: {e}"[:220]
 
 
-async def add_to_pack(bot: Bot, user_id: int, first_name: str,
-                      webm: Path, emoji: str) -> tuple[str | None, str | None, str | None]:
-    """Добавить стикер (создать пак при первом разе) -> (ссылка, file_id, ошибка)."""
-    name = await _name(bot, user_id)
+async def add_to_named_pack(bot: Bot, user_id: int, name: str, webm: Path, emoji: str,
+                            create_title: str | None = None,
+                            ) -> tuple[str | None, str | None, str | None]:
+    """Добавить стикер файлом в пак `name` -> (ссылка, file_id, ошибка).
+
+    Если пака нет и задан create_title — создаёт пак с этим стикером.
+    """
     sticker = InputSticker(sticker=FSInputFile(webm), format="video", emoji_list=[emoji])
     try:
         await bot.add_sticker_to_set(user_id=user_id, name=name, sticker=sticker)
     except TelegramBadRequest as e:
         msg = str(e).lower()
-        if "stickerset_invalid" in msg or "not found" in msg or "invalid" in msg:
+        missing = "stickerset_invalid" in msg or "not found" in msg
+        if missing and create_title:
             try:
                 await bot.create_new_sticker_set(
-                    user_id=user_id, name=name,
-                    title=f"🎬 Мои стикеры — {first_name}"[:64],
+                    user_id=user_id, name=name, title=create_title[:64],
                     stickers=[sticker], sticker_type="regular",
                 )
             except TelegramBadRequest as e2:
@@ -63,21 +66,18 @@ async def add_to_pack(bot: Bot, user_id: int, first_name: str,
         else:
             log.exception("Не удалось добавить стикер в пак %s", name)
             return None, None, _err(e)
-    pack = await get_pack(bot, user_id)
+    pack = await get_pack_by_name(bot, name)
     file_id = pack.stickers[-1].file_id if pack and pack.stickers else None
     return f"https://t.me/addstickers/{name}", file_id, None
 
 
-async def delete_last_sticker(bot: Bot, user_id: int) -> bool:
-    pack = await get_pack(bot, user_id)
-    if not pack or not pack.stickers:
-        return False
-    try:
-        await bot.delete_sticker_from_set(pack.stickers[-1].file_id)
-        return True
-    except TelegramBadRequest:
-        log.exception("Не удалось удалить стикер из пака")
-        return False
+async def add_to_pack(bot: Bot, user_id: int, first_name: str,
+                      webm: Path, emoji: str) -> tuple[str | None, str | None, str | None]:
+    """Добавить стикер в основной личный пак (создать при первом разе)."""
+    name = await _name(bot, user_id)
+    return await add_to_named_pack(
+        bot, user_id, name, webm, emoji,
+        create_title=f"🎬 Мои стикеры — {first_name}")
 
 
 async def rename_pack(bot: Bot, user_id: int, title: str) -> tuple[bool, str | None]:

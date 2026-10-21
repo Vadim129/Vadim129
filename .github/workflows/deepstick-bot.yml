@@ -17,6 +17,9 @@ on:
         description: "Перезапускать себя перед выключением раннера"
         type: boolean
         default: true
+  schedule:
+    # Страховка: поднять бота, если цепочка перезапусков оборвалась
+    - cron: "25 */6 * * *"
 
 permissions:
   contents: read
@@ -116,10 +119,11 @@ jobs:
           DATA_DIR: data
         run: |
           cd deepstick-bot
-          # 124 = timeout 5.5 ч (норма, ниже перезапуск). Любой другой код = краш:
-          # валим задачу, чтобы цепочка перезапуска не крутилась вхолостую.
-          timeout 19800 python bot.py; code=$?
-          if [ $code -ne 124 ]; then exit $code; fi
+          # 124 = timeout 5.5 ч (норма). `|| code=$?` обязательно: с bash -e
+          # ненулевой код timeout убил бы скрипт до обработки (бот умирал).
+          code=0
+          timeout 19800 python bot.py || code=$?
+          if [ "$code" -ne 124 ]; then exit "$code"; fi
 
       - name: Подготовить папки данных
         if: always()
@@ -146,7 +150,7 @@ jobs:
           key: deepstick-models-${{ github.run_id }}
 
       - name: Перезапустить себя
-        if: ${{ github.event_name == 'push' || inputs.chain }}
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deepstick-bot.yml --ref "$GITHUB_REF_NAME" -f chain=true

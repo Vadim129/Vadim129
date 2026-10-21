@@ -39,3 +39,15 @@ def test_custom_pack_name_format():
     assert len(name) <= 64
     long_name = custom_pack_name(1, "a" * 40, "zz")
     assert len(long_name) <= 64
+
+
+def test_active_pack_setting(tmp_path):
+    db = Database(tmp_path / "t.db")
+    assert db.get_settings(7)["active_pack"] == "main"
+    db.set_active_pack(7, "3")
+    assert db.get_settings(7)["active_pack"] == "3"
+    # переключение других настроек не должно сбрасывать текущий пак
+    db.toggle_setting(7, "remove_bg")
+    assert db.get_settings(7)["active_pack"] == "3"
+    db.set_active_pack(7, "main")
+    assert db.get_settings(7)["active_pack"] == "main"

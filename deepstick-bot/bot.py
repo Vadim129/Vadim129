@@ -162,10 +162,20 @@ def after_kb(pack_url: str | None, gen_id: int | None = None) -> InlineKeyboardM
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def _active_title(user_id: int) -> str:
+    target = DB.get_settings(user_id)["active_pack"]
+    if target == "main":
+        return "Основной"
+    rec = DB.get_pack_rec(user_id, int(target)) if target.isdigit() else None
+    return rec["title"] if rec else "Основной"
+
+
 def settings_kb(user_id: int) -> InlineKeyboardMarkup:
     s = DB.get_settings(user_id)
     mark = {True: "✅ вкл", False: "❌ выкл"}
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"🎯 Пак для новых стикеров: {_active_title(user_id)}",
+                              callback_data="pk:list")],
         [InlineKeyboardButton(text=f"✂️ Вырезать фон: {mark[s['remove_bg']]}",
                               callback_data="set:remove_bg")],
         [InlineKeyboardButton(text=f"📦 Добавлять в пак: {mark[s['auto_pack']]}",
@@ -240,8 +250,19 @@ async def _deliver(message: Message, user: User, webm: Path, emoji: str, kind: s
     settings = DB.get_settings(user.id)
     pack_url, file_id, pack_err = None, None, None
     if settings["auto_pack"]:
-        pack_url, file_id, pack_err = await packs.add_to_pack(
-            message.bot, user.id, user.first_name, webm, emoji)
+        target = settings["active_pack"]
+        rec = (DB.get_pack_rec(user.id, int(target))
+               if target != "main" and target.isdigit() else None)
+        if target != "main" and rec is not None:
+            # именной текущий пак: добавляем в него; если пак удалили в
+            # Telegram — add_to_named_pack честно вернёт ошибку
+            pack_url, file_id, pack_err = await packs.add_to_named_pack(
+                message.bot, user.id, rec["name"], webm, emoji)
+        else:
+            if target != "main":  # запись пака пропала — откатываемся на основной
+                DB.set_active_pack(user.id, "main")
+            pack_url, file_id, pack_err = await packs.add_to_pack(
+                message.bot, user.id, user.first_name, webm, emoji)
     if file_id:
         await message.bot.send_sticker(message.chat.id, file_id)
     else:
@@ -462,9 +483,14 @@ async def cmd_stats(message: Message) -> None:
 
 # ------------------------------------------------------------------ пак / история / настройки
 def _packs_list_kb(user_id: int) -> InlineKeyboardMarkup:
-    rows = [[InlineKeyboardButton(text="📦 Основной пак", callback_data="pk:main")]]
+    active = DB.get_settings(user_id)["active_pack"]
+
+    def mark(t: str) -> str:
+        return "🎯" if active == t else "📦"
+
+    rows = [[InlineKeyboardButton(text=f"{mark('main')} Основной пак", callback_data="pk:main")]]
     for rec in DB.list_packs(user_id):
-        rows.append([InlineKeyboardButton(text=f"📦 {rec['title']}"[:60],
+        rows.append([InlineKeyboardButton(text=f"{mark(str(rec['id']))} {rec['title']}"[:60],
                                            callback_data=f"pk:{rec['id']}")])
     rows.append([InlineKeyboardButton(text="➕ Создать пак", callback_data="pk:new")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -479,14 +505,18 @@ async def _resolve_pack(bot: Bot, user_id: int, target: str):  # noqa: ANN202
     return (rec["name"], rec) if rec else (None, None)
 
 
-def _pack_card_kb(target: str, url: str, custom: bool) -> InlineKeyboardMarkup:
-    rows = [
-        [InlineKeyboardButton(text="🔗 Открыть пак", url=url)],
-        [InlineKeyboardButton(text="🖼 Стикеры пака (и удаление)",
-                              callback_data=f"pkv:{target}"),
-         InlineKeyboardButton(text="➕ Добавить стикер", callback_data=f"pkadd:{target}")],
-        [InlineKeyboardButton(text="✏️ Переименовать", callback_data=f"pkr:{target}")],
-    ]
+def _pack_card_kb(target: str, url: str, custom: bool, is_active: bool) -> InlineKeyboardMarkup:
+    rows = [[InlineKeyboardButton(text="🔗 Открыть пак", url=url)]]
+    if not is_active:
+        rows.append([InlineKeyboardButton(text="🎯 Сюда новые стикеры",
+                                          callback_data=f"pkact:{target}")])
+    rows.append([InlineKeyboardButton(text="🎬 Сделать стикер в этот пак",
+                                      callback_data=f"pkmk:{target}")])
+    rows.append([InlineKeyboardButton(text="🖼 Стикеры пака (и удаление)",
+                                      callback_data=f"pkv:{target}:0"),
+                 InlineKeyboardButton(text="➕ Добавить из истории",
+                                      callback_data=f"pkadd:{target}")])
+    rows.append([InlineKeyboardButton(text="✏️ Переименовать", callback_data=f"pkr:{target}")])
     if custom:
         rows.append([InlineKeyboardButton(text="🗑 Удалить пак целиком",
                                           callback_data=f"pkd:{target}")])
@@ -498,8 +528,9 @@ async def _show_pack(message: Message) -> None:
     user = message.from_user
     assert user
     await message.answer(
-        "📦 *Твои стикерпаки*\nОсновной пак создаётся сам с первым стикером.\n"
-        "Открой любой пак: там можно добавлять и удалять стикеры.",
+        "📦 *Твои стикерпаки*\n🎯 — пак, в который падают *новые* стикеры.\n"
+        "Нажми на пак: внутри — сделать стикер прямо в него, добавить из истории, "
+        "удалить лишние, переименовать или удалить пак.",
         parse_mode="Markdown", reply_markup=_packs_list_kb(user.id))
 
 
@@ -623,17 +654,6 @@ async def cb_setting(cb: CallbackQuery) -> None:
     await cb.answer("Сохранено")
 
 
-@dp.callback_query(F.data == "pack:show")
-async def cb_pack_show(cb: CallbackQuery) -> None:
-    pack = await packs.get_pack(cb.bot, cb.from_user.id)
-    if not pack or not pack.stickers:
-        await cb.answer("Пак пуст", show_alert=True)
-        return
-    for st in pack.stickers[-5:]:
-        await cb.bot.send_sticker(cb.message.chat.id, st.file_id)
-    await cb.answer()
-
-
 @dp.callback_query(F.data == "pack:rename")
 async def cb_pack_rename(cb: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(rename_target="main")
@@ -658,28 +678,6 @@ async def on_pack_title(message: Message, state: FSMContext) -> None:
     await message.answer("✅ Пак переименован." if ok else "😖 Не вышло — возможно, пака ещё нет.")
 
 
-@dp.callback_query(F.data == "pack:del")
-async def cb_pack_del(cb: CallbackQuery) -> None:
-    kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="🗑 Да, удалить последний", callback_data="pack:del_yes"),
-        InlineKeyboardButton(text="Отмена", callback_data="pack:del_no")]])
-    await cb.message.answer("Удалить последний стикер из пака?", reply_markup=kb)
-    await cb.answer()
-
-
-@dp.callback_query(F.data == "pack:del_no")
-async def cb_pack_del_no(cb: CallbackQuery) -> None:
-    await cb.message.delete()
-    await cb.answer()
-
-
-@dp.callback_query(F.data == "pack:del_yes")
-async def cb_pack_del_yes(cb: CallbackQuery) -> None:
-    ok = await packs.delete_last_sticker(cb.bot, cb.from_user.id)
-    await cb.message.edit_text("🗑 Последний стикер удалён." if ok else "Пак уже пуст.")
-    await cb.answer()
-
-
 # ------------------------------------------------------ управление паками (v2)
 @dp.callback_query(F.data == "pk:list")
 async def cb_packs_list(cb: CallbackQuery) -> None:
@@ -688,43 +686,80 @@ async def cb_packs_list(cb: CallbackQuery) -> None:
     await cb.answer()
 
 
-@dp.callback_query(F.data.func(lambda d: d.startswith("pk:") and d not in ("pk:new", "pk:list")))
-async def cb_pack_card(cb: CallbackQuery) -> None:
-    target = cb.data.split(":", 1)[1]
+async def _send_pack_card(cb: CallbackQuery, target: str) -> bool:
     name, rec = await _resolve_pack(cb.bot, cb.from_user.id, target)
     if not name:
         await cb.answer("Пак не найден", show_alert=True)
-        return
+        return False
     pack = await packs.get_pack_by_name(cb.bot, name)
     if not pack:
         await cb.answer("Этого пака в Telegram пока нет — сделай стикер, и он появится.",
                         show_alert=True)
-        return
+        return False
     url = f"https://t.me/addstickers/{name}"
+    is_active = DB.get_settings(cb.from_user.id)["active_pack"] == target
     await cb.message.answer(
-        f"📦 *{pack.title}*\nСтикеров в паке: {len(pack.stickers)}\n{url}",
+        f"📦 *{pack.title}*" + (" 🎯 — сюда падают новые стикеры" if is_active else "")
+        + f"\nСтикеров в паке: {len(pack.stickers)}\n{url}",
         parse_mode="Markdown",
-        reply_markup=_pack_card_kb(target, url, custom=rec is not None))
+        reply_markup=_pack_card_kb(target, url, custom=rec is not None,
+                                   is_active=is_active))
+    return True
+
+
+@dp.callback_query(F.data.func(lambda d: d.startswith("pk:") and d not in ("pk:new", "pk:list")))
+async def cb_pack_card(cb: CallbackQuery) -> None:
+    await _send_pack_card(cb, cb.data.split(":", 1)[1])
+    await cb.answer()
+
+
+@dp.callback_query(F.data.startswith("pkact:"))
+async def cb_pack_set_active(cb: CallbackQuery) -> None:
+    target = cb.data.split(":", 1)[1]
+    DB.set_active_pack(cb.from_user.id, target)
+    await cb.answer("🎯 Теперь новые стикеры будут падать в этот пак")
+    await _send_pack_card(cb, target)
+
+
+@dp.callback_query(F.data.startswith("pkmk:"))
+async def cb_pack_make(cb: CallbackQuery, state: FSMContext) -> None:
+    target = cb.data.split(":", 1)[1]
+    DB.set_active_pack(cb.from_user.id, target)
+    await state.set_state(Flow.waiting_photo)
+    await cb.message.answer(
+        f"🎬 Делаем стикер в пак «{_active_title(cb.from_user.id)}».\n"
+        "📸 Пришли фото — и выбери стиль и сценарий, как обычно.",
+        reply_markup=main_menu())
     await cb.answer()
 
 
 @dp.callback_query(F.data.startswith("pkv:"))
 async def cb_pack_view(cb: CallbackQuery) -> None:
-    target = cb.data.split(":", 1)[1]
+    parts = cb.data.split(":")
+    target = parts[1]
+    offset = int(parts[2]) if len(parts) > 2 else 0
     name, _rec = await _resolve_pack(cb.bot, cb.from_user.id, target)
     pack = await packs.get_pack_by_name(cb.bot, name) if name else None
     if not pack or not pack.stickers:
         await cb.answer("Пак пуст", show_alert=True)
         return
-    shown = pack.stickers[:30]  # кнопки удаления — только у показанных
-    for st in shown:
+    page = pack.stickers[offset:offset + 10]  # по 10, чтобы не спамить чат
+    for st in page:
         ref = uuid.uuid4().hex[:10]
         DB.put_ref(cb.from_user.id, name, st.file_id, ref)
         kb = InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(text="❌ Удалить из пака", callback_data=f"pkdel:{ref}")]])
         await cb.bot.send_sticker(cb.message.chat.id, st.file_id, reply_markup=kb)
-    tail = f" (показаны первые 30 из {len(pack.stickers)})" if len(pack.stickers) > 30 else ""
-    await cb.message.answer(f"🖼 Стикеры пака — под каждым кнопка удаления.{tail}")
+    total = len(pack.stickers)
+    rows = []
+    if offset + 10 < total:
+        rows.append([InlineKeyboardButton(
+            text=f"➡️ Ещё стикеры ({offset + 10} из {total})",
+            callback_data=f"pkv:{target}:{offset + 10}")])
+    await cb.message.answer(
+        f"🖼 Стикеры {offset + 1}–{offset + len(page)} из {total} — "
+        "под каждым кнопка удаления.",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=rows) if rows else None)
     await cb.answer()
 
 
@@ -848,11 +883,13 @@ async def cb_pack_new_first(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.answer(f"😖 Telegram отказал в создании пака: {err}", show_alert=True)
         return
     pack_id = DB.add_pack(user.id, name, title)
+    DB.set_active_pack(user.id, str(pack_id))  # новый пак — сразу текущий
     url = f"https://t.me/addstickers/{name}"
     await cb.message.answer(
-        f"✅ Пак «{title}» создан!\n{url}\nДобавляй в него стикеры кнопкой "
-        "«➕ Добавить стикер» в карточке пака.",
-        reply_markup=_pack_card_kb(str(pack_id), url, custom=True))
+        f"✅ Пак «{title}» создан и выбран текущим 🎯\n{url}\n"
+        "Новые стикеры теперь будут падать сюда. Ещё стикеры — кнопками ниже "
+        "или «🎬 Сделать стикер в этот пак».",
+        reply_markup=_pack_card_kb(str(pack_id), url, custom=True, is_active=True))
     await cb.answer()
 
 
@@ -889,6 +926,8 @@ async def cb_pack_delete_do(cb: CallbackQuery) -> None:
         return
     ok, _err = await packs.delete_pack(cb.bot, rec["name"])
     DB.delete_pack_rec(user.id, rec["id"])
+    if DB.get_settings(user.id)["active_pack"] == str(rec["id"]):
+        DB.set_active_pack(user.id, "main")
     await cb.message.edit_text(
         "🗑 Пак удалён." if ok else "🗑 Убрал пак из списка (в Telegram он мог уже отсутствовать).")
     await cb.answer()

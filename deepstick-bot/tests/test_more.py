@@ -13,7 +13,8 @@ from app.scenarios import SCENARIOS, STYLES, match_scenario  # noqa: E402
 def test_db_roundtrip(tmp_path):
     db = Database(tmp_path / "t.db")
     db.ensure_user(7, "Ann", "Ann")
-    assert db.get_settings(7) == {"remove_bg": True, "auto_pack": True}
+    assert db.get_settings(7) == {"remove_bg": True, "auto_pack": True,
+                                  "active_pack": "main"}
     assert db.toggle_setting(7, "remove_bg") is False
     assert db.get_settings(7)["remove_bg"] is False
     gid = db.log_generation(7, "photo", "🚀 Лечу на ракете", "original", "🚀", "FILE1")
