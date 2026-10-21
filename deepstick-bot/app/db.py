@@ -34,6 +34,8 @@ class Database:
                 name TEXT UNIQUE, title TEXT, created_at REAL);
             CREATE TABLE IF NOT EXISTS pack_refs(
                 ref TEXT PRIMARY KEY, user_id INTEGER, pack_name TEXT, file_id TEXT);
+            CREATE TABLE IF NOT EXISTS globals(
+                key TEXT PRIMARY KEY, value TEXT);
             """)
             # Миграция: текущий пак, в который падают новые стикеры
             cols = [r[1] for r in c.execute("PRAGMA table_info(settings)")]
@@ -121,6 +123,24 @@ class Database:
         with self._db() as c:
             row = c.execute("SELECT * FROM last_job WHERE user_id=?", (user_id,)).fetchone()
         return dict(row) if row else None
+
+    # ------------------------------------------------- глобальные настройки
+    def get_global(self, key: str, default: str = "") -> str:
+        with self._db() as c:
+            row = c.execute("SELECT value FROM globals WHERE key=?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def set_global(self, key: str, value: str) -> None:
+        with self._db() as c:
+            c.execute("INSERT INTO globals(key, value) VALUES(?,?) "
+                      "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                      (key, value))
+
+    def first_user_id(self) -> int | None:
+        """Первый зарегистрированный пользователь = владелец бота."""
+        with self._db() as c:
+            row = c.execute("SELECT user_id FROM users ORDER BY created_at LIMIT 1").fetchone()
+        return int(row["user_id"]) if row else None
 
     # ------------------------------------------------------------- стикерпаки
     def add_pack(self, user_id: int, name: str, title: str) -> int:

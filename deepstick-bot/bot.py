@@ -68,6 +68,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("deepstick")
 
 CFG = Config.load()
+
+
+def _is_admin(user_id: int) -> bool:
+    """Владелец бота: из ADMIN_IDS или первый пользователь (личный бот)."""
+    return user_id in CFG.admin_ids or DB.first_user_id() == user_id
+
+
+def _ai_on() -> bool:
+    """Нейросеть: провайдер задан (AI_PROVIDER) и не выключена владельцем."""
+    return ai_enabled() and DB.get_global("ai_enabled", "1") == "1"
 DB = Database(CFG.data_dir / "bot.db")
 dp = Dispatcher()
 BASE = Path(tempfile.gettempdir()) / "deepstick_jobs"
@@ -173,7 +183,12 @@ def _active_title(user_id: int) -> str:
 def settings_kb(user_id: int) -> InlineKeyboardMarkup:
     s = DB.get_settings(user_id)
     mark = {True: "✅ вкл", False: "❌ выкл"}
-    return InlineKeyboardMarkup(inline_keyboard=[
+    rows = []
+    if _is_admin(user_id):  # глобальный рубильник видит только владелец
+        ai_on = DB.get_global("ai_enabled", "1") == "1"
+        rows.append([InlineKeyboardButton(
+            text=f"🧠 Нейросеть для всех: {mark[ai_on]}", callback_data="adm:ai")])
+    rows += [
         [InlineKeyboardButton(text=f"🎯 Пак для новых стикеров: {_active_title(user_id)}",
                               callback_data="pk:list")],
         [InlineKeyboardButton(text=f"✂️ Вырезать фон: {mark[s['remove_bg']]}",
@@ -181,7 +196,8 @@ def settings_kb(user_id: int) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text=f"📦 Добавлять в пак: {mark[s['auto_pack']]}",
                               callback_data="set:auto_pack")],
         [InlineKeyboardButton(text="✏️ Переименовать пак", callback_data="pack:rename")],
-    ])
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 # ------------------------------------------------------------------ middleware
@@ -299,11 +315,11 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
         f"🎬 Генерирую: {scenario.emoji} «{custom_text or scenario.title}»…\n"
         + ("🧠 Нейросеть создаёт движения персонажа по твоему сценарию.\n"
            "Бесплатная очередь: обычно 1–10 минут, не пугайся."
-           if ai_enabled() else "Обычно 5–15 секунд."),
+           if _ai_on() else "Обычно 5–15 секунд."),
         reply_markup=generating_kb())
 
     progress_task: asyncio.Task | None = None
-    if ai_enabled():
+    if _ai_on():
         async def _progress() -> None:
             started = time.monotonic()
             while True:
@@ -321,7 +337,7 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
     try:
         await message.bot.send_chat_action(message.chat.id, ChatAction.UPLOAD_VIDEO)
         settings = DB.get_settings(user.id)
-        if ai_enabled():
+        if _ai_on():
             prompt = build_prompt(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
@@ -400,8 +416,12 @@ async def _start_flow(message: Message, state: FSMContext) -> None:
 # ------------------------------------------------------------------ команды
 @dp.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext) -> None:
-    mode = ("🧠 нейро-режим включён" if ai_enabled()
-            else "🆓 бесплатный локальный режим (нейросеть вырезания фона + анимация)")
+    if not ai_enabled():
+        mode = "🆓 бесплатный локальный режим (нейросеть вырезания фона + анимация)"
+    elif _ai_on():
+        mode = "🧠 нейро-режим включён"
+    else:
+        mode = "🆓 локальный режим (нейросеть временно отключена владельцем)"
     await message.answer(
         "👋 Я делаю *персональные видеостикеры* из фото.\n\n"
         "Как пользоваться:\n"
@@ -470,7 +490,7 @@ async def _quota_line() -> str:
 @dp.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
     user = message.from_user
-    if not user or user.id not in CFG.admin_ids:
+    if not user or not _is_admin(user.id):
         return
     s = DB.stats()
     top = "\n".join(f"  • {name}: {n}" for name, n in s["top"]) or "  — пока пусто"
@@ -640,9 +660,23 @@ async def cmd_history(message: Message) -> None:
 async def cmd_settings(message: Message) -> None:
     user = message.from_user
     assert user
-    mode = "нейро (AI)" if ai_enabled() else "локальный бесплатный"
+    mode = ("нейро (AI)" if _ai_on()
+            else "локальный" + ("" if ai_enabled() else " бесплатный")
+            + (" (нейросеть отключена владельцем)" if ai_enabled() else ""))
     await message.answer(f"⚙️ *Настройки*\nРежим генерации: {mode}",
                          parse_mode="Markdown", reply_markup=settings_kb(user.id))
+
+
+@dp.callback_query(F.data == "adm:ai")
+async def cb_admin_ai(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    new = DB.get_global("ai_enabled", "1") != "1"
+    DB.set_global("ai_enabled", "1" if new else "0")
+    await cb.message.edit_reply_markup(reply_markup=settings_kb(cb.from_user.id))
+    await cb.answer("🧠 Нейросеть включена для всех" if new
+                    else "🔕 Нейросеть выключена: все получают локальную анимацию")
 
 
 @dp.callback_query(F.data.startswith("set:"))
@@ -1028,7 +1062,7 @@ async def on_custom(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.message.edit_text(
         "✍️ Опиши сценарий одним предложением, например:\n"
         "«лечу на ракете», «открываю холодильник-портал», «дирижирую оркестром котов»\n\n"
-        + ("🧠 Нейросеть выполнит его буквально." if ai_enabled() else
+        + ("🧠 Нейросеть выполнит его буквально." if _ai_on() else
            "Подберу ближайший эффект по ключевым словам."))
     await cb.answer()
 
@@ -1193,7 +1227,7 @@ async def _setup_commands(bot: Bot) -> None:
     ])
     me = await bot.get_me()
     log.info("Бот @%s запущен. AI=%s, юзеров в БД: %s",
-             me.username, ai_enabled(), DB.stats()["users"])
+             me.username, _ai_on(), DB.stats()["users"])
 
 
 async def _polling_supervisor() -> None:

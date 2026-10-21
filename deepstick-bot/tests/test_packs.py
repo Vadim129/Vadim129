@@ -51,3 +51,16 @@ def test_active_pack_setting(tmp_path):
     assert db.get_settings(7)["active_pack"] == "3"
     db.set_active_pack(7, "main")
     assert db.get_settings(7)["active_pack"] == "main"
+
+
+def test_globals_and_first_user(tmp_path):
+    db = Database(tmp_path / "t.db")
+    assert db.get_global("ai_enabled", "1") == "1"  # дефолт, пока не задано
+    db.set_global("ai_enabled", "0")
+    assert db.get_global("ai_enabled", "1") == "0"
+    db.set_global("ai_enabled", "1")
+    assert db.get_global("ai_enabled", "0") == "1"
+    assert db.first_user_id() is None
+    db.ensure_user(42, "Ann", "Ann")
+    db.ensure_user(7, "Bob", "Bob")
+    assert db.first_user_id() == 42  # владелец — первый по времени регистрации
