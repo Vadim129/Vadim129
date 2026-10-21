@@ -364,7 +364,7 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
             prompt = build_prompt(style, scenario, custom_text)
             try:
                 mp4 = job / "ai.mp4"
-                await generate_ai_video(photo, prompt, mp4)
+                await _ai_video_q(photo, prompt, mp4)
                 # Стикер = вырезанная фигурка на прозрачности, а не прямоугольник:
                 # вырезаем фон из сгенерированного видео покадрово.
                 if progress_task:
@@ -374,7 +374,7 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
                     await status.edit_text("✂️ Видео готово — вырезаю фон у фигурки…")
                 except TelegramBadRequest:
                     pass
-                matted = await asyncio.to_thread(matte_encode, mp4, webm)
+                matted = await _matte_q(mp4, webm)
                 if not matted:
                     log.warning("Вырезание фона не удалось — делаю прямоугольный стикер")
                     await asyncio.to_thread(convert_video, mp4, webm)
@@ -387,11 +387,11 @@ async def _generate(message: Message, user: User, src_photo: Path, style_id: str
                     progress_task = None
                 await status.edit_text("⚠️ Нейросеть сейчас недоступна (очередь/лимит) — "
                                        "делаю обычную анимацию…")
-                await asyncio.to_thread(_render_local, photo, style_id, scenario.effect,
-                                        webm, CFG.remove_bg and settings["remove_bg"])
+                await _render_local_q(photo, style_id, scenario.effect,
+                                      webm, CFG.remove_bg and settings["remove_bg"])
         else:
-            await asyncio.to_thread(_render_local, photo, style_id, scenario.effect,
-                                    webm, CFG.remove_bg and settings["remove_bg"])
+            await _render_local_q(photo, style_id, scenario.effect,
+                                  webm, CFG.remove_bg and settings["remove_bg"])
         await status.delete()
         await _deliver(message, user, webm, emoji, "photo", custom_text or scenario.title, style_id)
     except asyncio.CancelledError:
@@ -421,6 +421,28 @@ def _start_generation(message: Message, user: User, src_photo: Path, style_id: s
     task = asyncio.create_task(
         _generate(message, user, src_photo, style_id, scenario_id, custom_text, emoji_choice))
     _tasks[user.id] = task
+
+
+# Локальный рендер (rembg + VP9) тяжёлый по CPU/RAM — не более 3 параллельно,
+# остальные задачи честно ждут в очереди, а не убивают процесс по OOM.
+# Нейро-генерация — это ожидание внешней очереди, ей отдельный лимит.
+_RENDER_SEM = asyncio.Semaphore(3)
+_AI_SEM = asyncio.Semaphore(4)
+
+
+async def _render_local_q(*args) -> None:
+    async with _RENDER_SEM:
+        await asyncio.to_thread(_render_local, *args)
+
+
+async def _matte_q(mp4: Path, webm: Path) -> bool:
+    async with _RENDER_SEM:
+        return await asyncio.to_thread(matte_encode, mp4, webm)
+
+
+async def _ai_video_q(photo: Path, prompt: str, out: Path) -> None:
+    async with _AI_SEM:
+        await generate_ai_video(photo, prompt, out)
 
 
 def _busy(user_id: int) -> bool:
@@ -1390,17 +1412,17 @@ async def _revive_run(message: Message, user: User, src_name: str,
                     if engine == "ai":
                         mp4 = job / f"s{i}.mp4"
                         try:
-                            await generate_ai_video(
+                            await _ai_video_q(
                                 src, build_prompt(style, scenario, custom_text), mp4)
-                            if not await asyncio.to_thread(matte_encode, mp4, out):
+                            if not await _matte_q(mp4, out):
                                 await asyncio.to_thread(convert_video, mp4, out)
                         except Exception:
                             log.warning("Оживление: нейросеть упала на стикере %s — локально", i)
-                            await asyncio.to_thread(_render_local, src, "original",
-                                                    scenario.effect, out, remove_bg)
+                            await _render_local_q(src, "original",
+                                                  scenario.effect, out, remove_bg)
                     else:
-                        await asyncio.to_thread(_render_local, src, "original",
-                                                scenario.effect, out, remove_bg)
+                        await _render_local_q(src, "original",
+                                              scenario.effect, out, remove_bg)
                 _link, _fid, err = await packs.add_to_named_pack(
                     bot, user.id, new_name, out, st.emoji or scenario.emoji,
                     create_title=None if created else title)
