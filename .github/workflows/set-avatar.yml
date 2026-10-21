@@ -1,6 +1,12 @@
 name: Set bot avatar
 on:
   workflow_dispatch:
+  push:
+    branches: [arena/1d4df997-vadim129]
+    paths:
+      - "deepstick-bot/bot_avatar.png"
+      - "deepstick-bot/tools/set_avatar.py"
+      - ".github/workflows/set-avatar.yml"
 
 jobs:
   set-avatar:
