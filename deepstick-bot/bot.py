@@ -96,13 +96,19 @@ def _ai_scope() -> str:
 
 
 def _scope_allows(user_id: int | None) -> bool:
-    """Разрешает ли текущий охват (all/owner/off) нейросеть этому юзеру."""
+    """Разрешает ли нейросеть этому юзеру: охват + индивидуальный список.
+
+    all — всем; owner — владельцу и пользователям из индивидуального
+    списка (кнопка «👥 Доступ к нейросети» в настройках); off — никому.
+    """
     scope = _ai_scope()
     if scope == "off":
         return False
-    if scope == "owner":
-        return user_id is not None and _is_admin(user_id)
-    return True
+    if scope == "all":
+        return True
+    if user_id is None:
+        return False
+    return _is_admin(user_id) or DB.is_ai_allowed(user_id)
 
 
 def _ai_on(user_id: int | None = None) -> bool:
@@ -185,6 +191,7 @@ class Flow(StatesGroup):
     waiting_new_pack_title = State()
     waiting_revive_pack = State()
     waiting_revive_custom = State()
+    waiting_ai_user = State()
 
 
 # ------------------------------------------------------------------ клавиатуры
@@ -291,13 +298,18 @@ def settings_kb(user_id: int) -> InlineKeyboardMarkup:
     mark = {True: "✅ вкл", False: "❌ выкл"}
     rows = []
     if _is_admin(user_id):  # охват нейросети настраивает только владелец
-        scope_label = {"all": "✅ для всех", "owner": "👤 только я",
+        scope_label = {"all": "✅ для всех", "owner": "👤 только я + список",
                        "off": "❌ выключена"}[_ai_scope()]
         rows.append([InlineKeyboardButton(
             text=f"🧠 Нейросеть: {scope_label}", callback_data="adm:aiscope")])
         rows.append([InlineKeyboardButton(
             text=f"☁️ Kaggle-нейросеть: {_comfy_status_text()}",
             callback_data="kg:open")])
+        rows.append([InlineKeyboardButton(
+            text=f"👥 Доступ к нейросети: разрешено {len(DB.ai_allowed_ids())}",
+            callback_data="aiu:list:0")])
+        rows.append([InlineKeyboardButton(
+            text="📊 Пользователи и статистика", callback_data="stats:open")])
     rows += [
         [InlineKeyboardButton(text=f"🎯 Пак для новых стикеров: {_active_title(user_id)}",
                               callback_data="pk:list")],
@@ -572,7 +584,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     elif _scope_allows(uid) and _comfy_url():
         mode = "🧠 нейро-режим включён (Kaggle ComfyUI)"
     elif _ai_scope() == "owner":
-        mode = "🆓 локальный режим (нейросеть — только у владельца бота)"
+        mode = "🆓 локальный режим (нейросеть — у владельца и разрешённых им)"
     else:
         mode = "🆓 локальный режим (нейросеть временно отключена владельцем)"
     await message.answer(
@@ -645,13 +657,8 @@ async def cmd_stats(message: Message) -> None:
     user = message.from_user
     if not user or not _is_admin(user.id):
         return
-    s = DB.stats()
-    top = "\n".join(f"  • {name}: {n}" for name, n in s["top"]) or "  — пока пусто"
-    await message.answer(
-        f"📊 *Статистика*\nПользователей: {s['users']}\n"
-        f"Генераций всего: {s['generations']} (за 24 ч: {s['today']})\n"
-        f"Активных генераций: {sum(1 for t in _tasks.values() if not t.done())}\n"
-        f"Топ сценариев:\n{top}" + await _quota_line(), parse_mode="Markdown")
+    await message.answer(_stats_text() + await _quota_line(),
+                         reply_markup=_stats_kb())
 
 
 # ------------------------------------------------------------------ пак / история / настройки
@@ -820,7 +827,7 @@ async def cmd_settings(message: Message) -> None:
     elif _scope_allows(user.id) and _comfy_url():
         mode = "нейро (Kaggle ComfyUI)"
     elif _ai_scope() == "owner":
-        mode = "локальный (нейросеть только у владельца)"
+        mode = "локальный (нейросеть у владельца и разрешённых им)"
     else:
         mode = "локальный (нейросеть отключена владельцем)"
     await message.answer(f"⚙️ *Настройки*\nРежим генерации: {mode}",
@@ -829,7 +836,7 @@ async def cmd_settings(message: Message) -> None:
 
 _AI_SCOPE_TEXT = {
     "all": "🧠 Нейросеть включена для всех пользователей",
-    "owner": "👤 Нейросеть включена только для тебя (владельца), у остальных — локальная анимация",
+    "owner": "👤 Нейросеть: только ты и пользователи из списка «👥 Доступ к нейросети», у остальных — локальная анимация",
     "off": "🔕 Нейросеть выключена для всех: локальная анимация",
 }
 
@@ -844,6 +851,264 @@ async def cb_admin_aiscope(cb: CallbackQuery) -> None:
     DB.set_global("ai_enabled", "0" if nxt == "off" else "1")  # legacy-ключ
     await cb.message.edit_reply_markup(reply_markup=settings_kb(cb.from_user.id))
     await cb.answer(_AI_SCOPE_TEXT[nxt], show_alert=True)
+
+
+
+
+# ------------------------------------- пользователи, нейродоступ и статистика
+AI_USERS_PER_PAGE = 8
+
+
+def _user_identity(u: dict) -> str:
+    username = (u.get("username") or "").strip().lstrip("@")
+    first = (u.get("first_name") or "").strip()
+    if username:
+        base = f"@{username}"
+    elif first:
+        base = first
+    elif not u.get("known", True):
+        base = "ещё не запускал бота"
+    else:
+        base = "без имени"
+    return f"{base} · ID {int(u['user_id'])}"
+
+
+def _known_user(user_id: int) -> dict | None:
+    for row in DB.list_users():
+        if int(row["user_id"]) == user_id:
+            return dict(row)
+    return None
+
+
+def _ai_user_entries() -> list[dict]:
+    """Пользователи бота + заранее разрешённые ID, которых в базе ещё нет."""
+    allowed = DB.ai_allowed_ids()
+    entries: list[dict] = []
+    known: set[int] = set()
+    for row in DB.list_users():
+        u = dict(row)
+        uid = int(u["user_id"])
+        known.add(uid)
+        u.update(known=True, allowed=uid in allowed)
+        entries.append(u)
+    for uid in sorted(allowed - known):
+        entries.append({"user_id": uid, "first_name": "", "username": "",
+                        "created_at": 0, "last_seen": 0,
+                        "known": False, "allowed": True})
+    return entries
+
+
+def _ai_users_view(page: int) -> tuple[str, InlineKeyboardMarkup]:
+    entries = _ai_user_entries()
+    s = DB.stats()
+    total_pages = max(1, (len(entries) + AI_USERS_PER_PAGE - 1) // AI_USERS_PER_PAGE)
+    page = min(max(page, 0), total_pages - 1)
+    part = entries[page * AI_USERS_PER_PAGE:(page + 1) * AI_USERS_PER_PAGE]
+    scope_human = {"all": "для всех", "owner": "только владелец + этот список",
+                   "off": "выключена для всех"}[_ai_scope()]
+    lines = [
+        "👥 Доступ к нейросети",
+        f"Пользователей бота: {s['users']}",
+        f"Режим нейросети: {scope_human}",
+        f"Индивидуально разрешено: {len(DB.ai_allowed_ids())}",
+        "",
+        "Нажимай на человека, чтобы открыть или закрыть ему нейросеть.",
+        "👑 — владелец (доступ всегда), ✅ — доступ открыт, ⬜ — закрыт.",
+        "Список работает в режиме «👤 только я + список». В режиме "
+        "«для всех» нейросеть и так у всех, в «выключена» — ни у кого.",
+    ]
+    if part:
+        lines.append("")
+        for e in part:
+            status = ("владелец" if _is_admin(int(e["user_id"])) else
+                      "доступ открыт" if e["allowed"] else "доступа нет")
+            lines.append(f"• {_user_identity(e)} — {status}")
+    else:
+        lines.append("\nПока никто не запускал бота.")
+    if total_pages > 1:
+        lines.append(f"\nСтраница {page + 1} из {total_pages}")
+    rows: list[list[InlineKeyboardButton]] = []
+    for e in part:
+        uid = int(e["user_id"])
+        prefix = "👑" if _is_admin(uid) else ("✅" if e["allowed"] else "⬜")
+        rows.append([InlineKeyboardButton(
+            text=f"{prefix} {_user_identity(e)}"[:64],
+            callback_data=f"aiu:tgl:{uid}:{page}")])
+    if total_pages > 1:
+        nav = []
+        if page > 0:
+            nav.append(InlineKeyboardButton(text="⬅️ Назад",
+                                            callback_data=f"aiu:list:{page - 1}"))
+        if page < total_pages - 1:
+            nav.append(InlineKeyboardButton(text="Вперёд ➡️",
+                                            callback_data=f"aiu:list:{page + 1}"))
+        rows.append(nav)
+    rows.append([InlineKeyboardButton(text="➕ Добавить по ID или @username",
+                                      callback_data="aiu:add")])
+    rows.append([InlineKeyboardButton(text="📊 Общая статистика",
+                                      callback_data="stats:open")])
+    rows.append([InlineKeyboardButton(text="⚙️ К настройкам",
+                                      callback_data="aiu:settings")])
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _stats_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="👥 Пользователи и доступ к нейросети",
+                              callback_data="aiu:list:0")],
+        [InlineKeyboardButton(text="⚙️ К настройкам", callback_data="aiu:settings")],
+    ])
+
+
+def _stats_text() -> str:
+    s = DB.stats()
+    users = [dict(r) for r in DB.list_users()]
+    scope_human = {"all": "для всех", "owner": "только владелец + индивидуальный список",
+                   "off": "выключена"}[_ai_scope()]
+    top = "\n".join(f"  • {name}: {n}" for name, n in s["top"]) or "  — пока пусто"
+    lines = [
+        "📊 Статистика бота",
+        f"Пользователей: {s['users']} (с @username: {s['with_username']}, "
+        f"без: {s['users'] - s['with_username']})",
+        f"Генераций всего: {s['generations']} (за 24 ч: {s['today']})",
+        f"Стикерпаков в реестре: {s['packs']}",
+        f"Нейросеть: {scope_human}; индивидуально разрешено: {s['ai_allowed']}",
+        f"Kaggle-ComfyUI: {_comfy_status_text()}",
+        f"Активных генераций сейчас: {sum(1 for t in _tasks.values() if not t.done())}",
+        "",
+        "Топ сценариев:",
+        top,
+        "",
+        "Пользователи (сначала недавно активные):",
+    ]
+    # Бюджет символов: сообщение Telegram ограничено, длинные списки
+    # постранично доступны в «👥 Пользователи и доступ к нейросети».
+    shown: list[str] = []
+    budget = 2600
+    for i, u in enumerate(users[:80], 1):
+        line = f"{i}. {_user_identity(u)}"
+        if shown and budget - len(line) < 0:
+            break
+        shown.append(line)
+        budget -= len(line) + 1
+    lines += shown
+    if len(users) > len(shown):
+        lines.append(f"…и ещё {len(users) - len(shown)} — все есть постранично "
+                     "в «👥 Пользователи и доступ к нейросети».")
+    if not users:
+        lines.append("— пока никого")
+    return "\n".join(lines)
+
+
+@dp.callback_query(F.data.startswith("aiu:list:"))
+async def cb_ai_users(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    try:
+        page = int((cb.data or "").rsplit(":", 1)[1])
+    except ValueError:
+        page = 0
+    text, kb = _ai_users_view(page)
+    try:
+        await cb.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest:
+        await cb.message.answer(text, reply_markup=kb)
+    await cb.answer()
+
+
+@dp.callback_query(F.data.startswith("aiu:tgl:"))
+async def cb_ai_user_toggle(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    parts = (cb.data or "").split(":")
+    try:
+        uid, page = int(parts[2]), int(parts[3])
+    except (IndexError, ValueError):
+        await cb.answer("Не понял пользователя")
+        return
+    if _is_admin(uid):
+        await cb.answer("👑 У владельца доступ есть всегда", show_alert=True)
+        return
+    allowed = DB.set_ai_allowed(uid, not DB.is_ai_allowed(uid))
+    text, kb = _ai_users_view(page)
+    try:
+        await cb.message.edit_text(text, reply_markup=kb)
+    except TelegramBadRequest:
+        pass
+    await cb.answer("✅ Доступ к нейросети открыт" if allowed
+                    else "⬜ Доступ к нейросети закрыт")
+
+
+@dp.callback_query(F.data == "aiu:add")
+async def cb_ai_user_add(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    await state.set_state(Flow.waiting_ai_user)
+    await cb.message.answer(
+        "Пришли одним сообщением:\n"
+        "• Telegram ID цифрами — это надёжнее всего, ID не меняется;\n"
+        "• или @username — сработает, если человек уже запускал бота.\n\n"
+        "Если человека ещё нет в списке: пусть откроет бота и нажмёт /start — "
+        "появится в списке, либо пришли его ID (его можно узнать через @userinfobot).")
+    await cb.answer()
+
+
+@dp.message(Flow.waiting_ai_user, F.text)
+async def on_ai_user_input(message: Message, state: FSMContext) -> None:
+    user = message.from_user
+    assert user
+    if not _is_admin(user.id):
+        return
+    text = (message.text or "").strip()
+    uid: int | None = None
+    if text.isdigit():
+        uid = int(text)
+    else:
+        row = DB.find_user_by_username(text)
+        if row is not None:
+            uid = int(row["user_id"])
+    if not uid or uid <= 0:
+        await message.answer(
+            "Не нашёл такого пользователя. По @username ищу только тех, кто "
+            "уже запускал бота. Пришли Telegram ID цифрами — по нему выдам "
+            "доступ точно. Или /cancel, чтобы выйти.")
+        return
+    await state.clear()
+    if _is_admin(uid):
+        await message.answer("👑 Это владелец — у него доступ к нейросети есть всегда.")
+        return
+    DB.set_ai_allowed(uid, True)
+    known = _known_user(uid)
+    label = _user_identity(known or {"user_id": uid, "known": False,
+                                     "username": "", "first_name": ""})
+    view_text, kb = _ai_users_view(0)
+    await message.answer(
+        f"✅ Доступ к нейросети открыт: {label}\n"
+        + ("Доступ уже действует." if known else
+           "Человек ещё не запускал бота — доступ применится, когда придёт.")
+        + "\n\n" + view_text, reply_markup=kb)
+
+
+@dp.callback_query(F.data == "aiu:settings")
+async def cb_ai_settings(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это настройка владельца бота", show_alert=True)
+        return
+    await cb.message.answer("⚙️ Настройки", reply_markup=settings_kb(cb.from_user.id))
+    await cb.answer()
+
+
+@dp.callback_query(F.data == "stats:open")
+async def cb_stats_open(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Это статистика владельца бота", show_alert=True)
+        return
+    await cb.message.answer(_stats_text() + await _quota_line(),
+                            reply_markup=_stats_kb())
+    await cb.answer()
 
 
 # ------------------------------------------------------------- Kaggle ComfyUI

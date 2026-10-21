@@ -36,6 +36,8 @@ class Database:
                 ref TEXT PRIMARY KEY, user_id INTEGER, pack_name TEXT, file_id TEXT);
             CREATE TABLE IF NOT EXISTS globals(
                 key TEXT PRIMARY KEY, value TEXT);
+            CREATE TABLE IF NOT EXISTS ai_access(
+                user_id INTEGER PRIMARY KEY, created_at REAL);
             """)
             # Миграция: текущий пак, в который падают новые стикеры
             cols = [r[1] for r in c.execute("PRAGMA table_info(settings)")]
@@ -56,6 +58,41 @@ class Database:
                 "VALUES(?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET "
                 "first_name=excluded.first_name, username=excluded.username, last_seen=excluded.last_seen",
                 (user_id, first_name, username, now, now))
+
+    def list_users(self) -> list[sqlite3.Row]:
+        """Все известные боту пользователи, сначала недавно активные."""
+        with self._db() as c:
+            return list(c.execute(
+                "SELECT * FROM users "
+                "ORDER BY COALESCE(last_seen, created_at, 0) DESC, user_id")) 
+
+    def find_user_by_username(self, username: str) -> sqlite3.Row | None:
+        """Найти известного боту пользователя по @username (без учёта регистра)."""
+        name = (username or "").strip().lstrip("@").lower()
+        if not name:
+            return None
+        with self._db() as c:
+            return c.execute(
+                "SELECT * FROM users WHERE lower(username)=?", (name,)).fetchone()
+
+    # ------------------------------------------------- индивидуальный нейродоступ
+    def ai_allowed_ids(self) -> set[int]:
+        with self._db() as c:
+            return {int(r["user_id"]) for r in c.execute("SELECT user_id FROM ai_access")}
+
+    def is_ai_allowed(self, user_id: int) -> bool:
+        with self._db() as c:
+            return c.execute("SELECT 1 FROM ai_access WHERE user_id=?",
+                             (user_id,)).fetchone() is not None
+
+    def set_ai_allowed(self, user_id: int, allowed: bool) -> bool:
+        with self._db() as c:
+            if allowed:
+                c.execute("INSERT OR IGNORE INTO ai_access(user_id, created_at) "
+                          "VALUES(?,?)", (user_id, time.time()))
+            else:
+                c.execute("DELETE FROM ai_access WHERE user_id=?", (user_id,))
+        return allowed
 
     # --------------------------------------------------------------- настройки
     def get_settings(self, user_id: int) -> dict:
@@ -197,10 +234,16 @@ class Database:
         day = time.time() - 86400
         with self._db() as c:
             users = c.execute("SELECT COUNT(*) n FROM users").fetchone()["n"]
+            with_username = c.execute(
+                "SELECT COUNT(*) n FROM users WHERE username IS NOT NULL "
+                "AND trim(username)<>''").fetchone()["n"]
+            packs = c.execute("SELECT COUNT(*) n FROM packs").fetchone()["n"]
+            ai_allowed = c.execute("SELECT COUNT(*) n FROM ai_access").fetchone()["n"]
             gens = c.execute("SELECT COUNT(*) n FROM generations").fetchone()["n"]
             today = c.execute("SELECT COUNT(*) n FROM generations WHERE ts>?", (day,)).fetchone()["n"]
             top = c.execute(
                 "SELECT scenario, COUNT(*) n FROM generations GROUP BY scenario "
                 "ORDER BY n DESC LIMIT 5").fetchall()
-        return {"users": users, "generations": gens, "today": today,
+        return {"users": users, "with_username": with_username, "packs": packs,
+                "ai_allowed": ai_allowed, "generations": gens, "today": today,
                 "top": [(r["scenario"], r["n"]) for r in top]}
