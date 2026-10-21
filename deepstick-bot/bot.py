@@ -661,7 +661,7 @@ async def cmd_packtest(message: Message) -> None:
         lines.append(f"❌ Проверка упала: {e}")
     finally:
         shutil.rmtree(job, ignore_errors=True)
-    await message.answer("\n".join(lines), parse_mode="Markdown")
+    await message.answer("\n".join(lines))
 
 
 @dp.message(Command("history"))
@@ -771,9 +771,8 @@ async def _send_pack_card(cb: CallbackQuery, target: str) -> bool:
     url = f"https://t.me/addstickers/{name}"
     is_active = DB.get_settings(cb.from_user.id)["active_pack"] == target
     await cb.message.answer(
-        f"📦 *{pack.title}*" + (" 🎯 — сюда падают новые стикеры" if is_active else "")
+        f"📦 {pack.title}" + (" 🎯 — сюда падают новые стикеры" if is_active else "")
         + f"\nСтикеров в паке: {len(pack.stickers)}\n{url}",
-        parse_mode="Markdown",
         reply_markup=_pack_card_kb(target, url, custom=rec is not None,
                                    is_active=is_active))
     return True
@@ -1266,11 +1265,11 @@ async def on_revive_input(message: Message, state: FSMContext) -> None:
         return
     await state.update_data(revive_src=name, revive_title=sset.title)
     await message.answer(
-        f"📦 Набор *«{sset.title}»*: {len(sset.stickers)} стикеров "
+        f"📦 Набор «{sset.title}»: {len(sset.stickers)} стикеров "
         f"(статика {static_n}, видео {video_n}"
         + (f", пропущу .tgs: {tgs_n}" if tgs_n else "") + ").\n\n"
-        "Выбери *одно движение для всех* стикеров набора:",
-        parse_mode="Markdown", reply_markup=revive_scenarios_kb())
+        "Выбери одно движение для всех стикеров набора:",
+        reply_markup=revive_scenarios_kb())
 
 
 @dp.callback_query(F.data.startswith("rvs:"))
@@ -1430,12 +1429,11 @@ async def _revive_run(message: Message, user: User, src_name: str,
             rec_id = int(rec["id"]) if rec else DB.add_pack(user.id, new_name, title)
             DB.set_active_pack(user.id, str(rec_id))
             await status.edit_text(
-                f"✅ *Готово!* Оживил {done} стикеров"
+                f"✅ Готово! Оживил {done} стикеров"
                 + (f", не удалось {fail}" if fail else "")
                 + (f", пропущено {skip} (.tgs или сверх лимита)" if skip else "")
                 + f"\n\n📦 Новый набор: {url}\n"
                 "Сделал его текущим — новые стикеры будут падать сюда.",
-                parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📦 Открыть набор", url=url)],
                     [InlineKeyboardButton(text="📦 Стикерпаки", callback_data="pk:list")],
