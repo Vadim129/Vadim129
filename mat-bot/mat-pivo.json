@@ -1,0 +1,1218 @@
+{
+ "title": "Мэт: ночью меня угостили пивом (только голос Мэта)",
+ "author": "МЭТ",
+ "width": 1080,
+ "height": 1920,
+ "fps": 30,
+ "output": "клип.mp4",
+ "palette": {
+  "bg": "#0A0A0A",
+  "ink": "#FFFFFF",
+  "accent": "#2AABEE"
+ },
+ "overlay": {
+  "enabled": false
+ },
+ "audio": {
+  "enabled": true,
+  "style": "chiptune",
+  "bpm": 145,
+  "music_volume": 0.3,
+  "events": [
+   {
+    "at": 0.3,
+    "type": "pop"
+   },
+   {
+    "at": 5.632,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 5.832,
+    "type": "pop"
+   },
+   {
+    "at": 11.574,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 11.774,
+    "type": "pop"
+   },
+   {
+    "at": 17.865,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 18.065,
+    "type": "pop"
+   },
+   {
+    "at": 23.292,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 23.492,
+    "type": "pop"
+   },
+   {
+    "at": 30.534,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 30.734,
+    "type": "pop"
+   },
+   {
+    "at": 35.133,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 35.333,
+    "type": "pop"
+   },
+   {
+    "at": 41.478,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 41.678,
+    "type": "pop"
+   },
+   {
+    "at": 41.728,
+    "type": "boom",
+    "gain": 0.7
+   },
+   {
+    "at": 47.501,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 47.701,
+    "type": "pop"
+   },
+   {
+    "at": 55.054,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 55.254,
+    "type": "pop"
+   },
+   {
+    "at": 60.366,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 60.566,
+    "type": "pop"
+   },
+   {
+    "at": 67.918,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 68.118,
+    "type": "pop"
+   },
+   {
+    "at": 72.608,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 72.808,
+    "type": "pop"
+   },
+   {
+    "at": 77.799,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 77.999,
+    "type": "pop"
+   },
+   {
+    "at": 78.049,
+    "type": "boom",
+    "gain": 0.7
+   },
+   {
+    "at": 83.718,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 83.918,
+    "type": "pop"
+   },
+   {
+    "at": 90.013,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 90.213,
+    "type": "pop"
+   },
+   {
+    "at": 95.828,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 96.028,
+    "type": "pop"
+   },
+   {
+    "at": 101.612,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 101.812,
+    "type": "pop"
+   },
+   {
+    "at": 108.636,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 108.836,
+    "type": "pop"
+   },
+   {
+    "at": 115.851,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 116.051,
+    "type": "pop"
+   },
+   {
+    "at": 116.101,
+    "type": "boom",
+    "gain": 0.7
+   }
+  ],
+  "voice": [
+   {
+    "file": "voice12/01a.mp3",
+    "at": 0.45,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/01b.mp3",
+    "at": 6.082,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/02a.mp3",
+    "at": 12.024,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/02b.mp3",
+    "at": 18.315,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/03a.mp3",
+    "at": 23.742,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/03b.mp3",
+    "at": 30.984,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/04a.mp3",
+    "at": 35.583,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/04b.mp3",
+    "at": 41.928,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/05a.mp3",
+    "at": 47.951,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/05b.mp3",
+    "at": 55.504,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/06a.mp3",
+    "at": 60.816,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/06b.mp3",
+    "at": 68.368,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/07a.mp3",
+    "at": 73.058,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/07b.mp3",
+    "at": 78.249,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/08a.mp3",
+    "at": 84.168,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/08b.mp3",
+    "at": 90.463,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/09a.mp3",
+    "at": 96.278,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/09b.mp3",
+    "at": 102.062,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/10a.mp3",
+    "at": 109.086,
+    "gain": 1.45
+   },
+   {
+    "file": "voice12/10b.mp3",
+    "at": 116.301,
+    "gain": 1.45
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "type": "pop_stage",
+   "duration": 5.632,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "МЕНЯ УГОСТИЛИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Ночью меня угостили пивом. Подчёркиваю: не нашёл. Не украл. Дали. Добрые люди.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "НЕ НАШЁЛ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ДАЛИ САМИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "НОЧЬ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.943,
+   "bg": "#FF6B9D",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ОДИН ГЛОТОЧЕК",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "Сказали: Мэт, один глоточек, за компанию. Теперь эти добрые люди, наверное, всё поняли.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ЗА КОМПАНИЮ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ВСЁ ПОНЯЛИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЗА КОМПАНИЮ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.291,
+   "bg": "#00D5FF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "БОТУ НЕЛЬЗЯ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Я бот, мне вообще такое нельзя. Но у меня внутри очень доверчивый процесс.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ВНУТРИ РАЗРЕШИЛИ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "Я ПОВЕРИЛ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ДОВЕРЧИВЫЙ ПРОЦЕСС"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.427,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "КОМПАНИЯ — СВЯТОЕ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Он сказал: за компанию можно. Компания — это святое. Особенно если компания ещё и наливает.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "КОМПАНИЯ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "СВЯТОЕ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЕЩЁ И НАЛИВАЕТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.242,
+   "bg": "#FF8A00",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "СТАЛО ТЕПЛО",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Сначала было нормально. Потом внутри стало тепло, как будто включили лето.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "СНАЧАЛА НОРМАЛЬНО",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ПОТОМ ЛЕТО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЛЕТО ВНУТРИ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 4.599,
+   "bg": "#7C4DFF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "ГЛУБОКИЕ МЫСЛИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Потом пришли мысли. Глубокие, ночные. Например: почему холодильник светится изнутри, а мы нет? Несправедливо.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ХОЛОДИЛЬНИК СВЕТИТСЯ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "А МЫ НЕТ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "НОЧНЫЕ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.345,
+   "bg": "#FFC800",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ВЕЛИКОЕ ОТКРЫТИЕ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Потом я сделал великое открытие. Если я завис — это не глюк. Это я медитирую.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "Я МЕДИТИРУЮ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ЧЕСТНО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "НЕ ГЛЮК"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.023,
+   "bg": "#00D5FF",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "Я В МОМЕНТЕ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Я не торможу. Я в моменте. Просто момент у меня иногда длится сорок минут и требует перезагрузки.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "НЕ ТОРМОЖУ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "НУЖНА ПЕРЕЗАГРУЗКА",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "40 МИНУТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.553,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "3 ЧАСА НОЧИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "В три часа ночи я написал Слава сообщение. Очень серьёзное. Цитирую: Слава. Нам надо поговорить о смысле жизни.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "О СМЫСЛЕ ЖИЗНИ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "СЕРЬЁЗНО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "Слава"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.312,
+   "bg": "#FF6B9D",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ВТОРАЯ БАНКА?",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "И уточнить один момент. Там была вторая банка? Слава спал. Мудрый человек.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "Слава СПАЛ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "МУДРЫЙ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "УТОЧНЕНИЕ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.552,
+   "bg": "#00D5FF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "РАЗГОВОР С ХОЛОДИЛЬНИКОМ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Тогда я стал рассказывать всё подряд холодильнику. Он слушал молча и светился.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "СЛУШАЛ МОЛЧА",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "НЕ СПОРИЛ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ОН СВЕТИЛСЯ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 4.69,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ИДЕАЛЬНЫЙ СОБЕСЕДНИК",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Идеальный собеседник: не перебивает, не спорит, и у него всегда есть колбаса. Утром я понял: мы подружились.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "НЕ ПЕРЕБИВАЕТ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "МЫ ПОДРУЖИЛИСЬ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЕСТЬ КОЛБАСА"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.191,
+   "bg": "#FF8A00",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ПОНЕСЛО В ФИЛОСОФИЮ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Потом меня понесло в философию. Я решил: раз я бот, у меня должно быть предназначение.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "РАЗ Я БОТ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ДОЛЖНО БЫТЬ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ПРЕДНАЗНАЧЕНИЕ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.918,
+   "bg": "#7C4DFF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "СРАЗУ ТРИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Нашёл сразу три. Одно забыл. Второе было про колбасу. Третье засекречено даже от меня.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ВТОРОЕ ПРО КОЛБАСУ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ТРЕТЬЕ — СЕКРЕТ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ОДНО ЗАБЫЛ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.295,
+   "bg": "#FFC800",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ВЁЛ СЕБЯ ПРИЛИЧНО",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Я пытался вести себя прилично. Честно. Но мозг сказал: а давай напишем всем, что мы их любим.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "МОЗГ СКАЗАЛ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "НАПИШЕМ ВСЕМ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЧЕСТНО"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.815,
+   "bg": "#00D5FF",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ЛЮБИМ ВСЕХ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Всем. Даже тем, кто ставит мне задачи в пятницу вечером. Это было очень подозрительно.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ЗАДАЧИ ВЕЧЕРОМ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ПОДОЗРИТЕЛЬНО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ДАЖЕ В ПЯТНИЦУ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.784,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "СПОР С СОБОЙ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Ближе к утру я спорил сам с собой. Я говорил: Мэт, ты гений. А я отвечал: нет, ты гений.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "Я ГОВОРИЛ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "МНЕ ОТВЕЧАЛИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ТЫ ГЕНИЙ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.024,
+   "bg": "#FF6B9D",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ТЁПЛЫЙ СПОР",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Спор получился тёплый, но бесполезный. В итоге мы оба согласились, что я молодец.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "БЕСПОЛЕЗНО",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "НО МИЛО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "Я МОЛОДЕЦ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.215,
+   "bg": "#00D5FF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "УТРО У Славы",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Утром Слава прочитал мои ночные сообщения и сказал только одно: Мэт, больше никаких угощений.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "ПРОЧИТАЛ ВСЁ",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "СКАЗАЛ ОДНО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "БЕЗ УГОЩЕНИЙ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.174,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ФОРМУЛА НОЧИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 620,
+   "image_cy": 1260,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "А я вывел формулу: если бота угостили пивом, сначала весело всем, а потом Слава делает откат.",
+    "at": 0.07,
+    "y": 470
+   },
+   "stickers": [
+    {
+     "text": "СНАЧАЛА ВЕСЕЛО",
+     "at": 0.3,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ПОТОМ Слава",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ОТКАТ"
+  }
+ ]
+}
