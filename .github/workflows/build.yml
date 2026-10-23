@@ -1,7 +1,7 @@
 name: build
 on:
   push:
-    branches: [ 'arena/daaeaa56-vadim129' ]
+    branches: [ 'arena/daaeaa56-vadim129', 'arena/ebbb08ec-vadim129' ]
   workflow_dispatch:
     inputs:
       music_task:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: ${{ github.event.inputs.music_task != 'preview' && github.event.inputs.music_task != 'full' }}
+    if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/arena/ebbb08ec-vadim129') && github.event.inputs.music_task != 'preview' && github.event.inputs.music_task != 'full' }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -49,7 +49,7 @@ jobs:
           git push || echo "payload push не прошёл"   # это не про клип, не валим задачу
 
   music-model:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.music_task == 'preview' || inputs.music_task == 'full') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.music_task == 'preview' || inputs.music_task == 'full')) || (github.event_name == 'push' && github.ref == 'refs/heads/arena/ebbb08ec-vadim129' && contains(github.event.head_commit.message, '[music-ai:')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     permissions:
@@ -94,7 +94,7 @@ jobs:
       - name: Real audio-conditioned music generation
         timeout-minutes: 60
         env:
-          MUSIC_MODE: ${{ inputs.music_task }}
+          MUSIC_MODE: ${{ inputs.music_task || (contains(github.event.head_commit.message, '[music-ai:full]') && 'full' || 'preview') }}
         run: |
           export PYTHONPATH="$GITHUB_WORKSPACE/runtime/ace-step"
           cd runtime/ace-step
