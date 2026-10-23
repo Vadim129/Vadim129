@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,7 +47,7 @@ private val StudioColors=darkColorScheme(primary=Lime,onPrimary=Color(0xFF182000
 
 class MainActivity:ComponentActivity() {
     private val vm:StudioViewModel by viewModels()
-    override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge();if(savedInstanceState==null&&intent.getBooleanExtra("demo",false))vm.demo();setContent {MaterialTheme(colorScheme=StudioColors){StudioApp(vm)}}}
+    override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT));if(savedInstanceState==null&&intent.getBooleanExtra("demo",false))vm.demo();setContent {MaterialTheme(colorScheme=StudioColors){StudioApp(vm)}}}
     override fun onStop(){vm.stop();super.onStop()}
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +55,7 @@ class MainActivity:ComponentActivity() {
 fun StudioApp(vm:StudioViewModel){
     val s by vm.state.collectAsStateWithLifecycle();val context=LocalContext.current
     var export by remember{mutableStateOf(false)};var exportSource by remember{mutableStateOf("master")};var format by remember{mutableStateOf("wav24")}
+    var licenses by remember{mutableStateOf(false)}
     var savePreset by remember{mutableStateOf(false)};var presetName by remember{mutableStateOf("")};var help by remember{mutableStateOf(false)};var consent by remember{mutableStateOf(false)}
     val snackbar=remember{SnackbarHostState()}
     val importer=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){uri->uri?.let{vm.import(it)}}
@@ -85,7 +87,8 @@ fun StudioApp(vm:StudioViewModel){
         listOf(Triple("wav24","WAV · 24 бит","Без потерь · для дальнейшей работы"),Triple("wav16","WAV · 16 бит","Без потерь · универсальный формат"),Triple("m4a","M4A · AAC 256","Компактно · для отправки и публикации")).forEach{(id,label,detail)->Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable{format=id}.padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically){RadioButton(selected=format==id,onClick={format=id});Column{Text(label,fontSize=14.sp,fontWeight=FontWeight.SemiBold);Text(detail,color=Muted,fontSize=10.sp)}}}
         Text("Стерео · 44,1 кГц. Формат MP3 не экспортируется; MP3 можно импортировать.",fontSize=11.sp,color=Muted)
     }},confirmButton={Button(onClick={export=false;vm.prepareExport(exportSource,format){name,_->exporter.launch(name)}}){Text("Выбрать папку")}},dismissButton={TextButton(onClick={export=false}){Text("Отмена")}})
-    if(help)AlertDialog(onDismissRequest={help=false},title={Text("MASTR Studio 1.0")},text={Column(verticalArrangement=Arrangement.spacedBy(11.dp)){Text("Личная студия мастеринга. Без аккаунта, подписки и отправки аудио на сервер.");Text("32 пресета, ручная настройка, громкость LUFS с гейтированием, защита пиков, шумоподавление и разделение на вокал / инструментал. В этой версии — до 5 минут на трек.",fontSize=13.sp);Text("Мастеринг работает офлайн. Для AI-разделения сначала нужна модель ~67 МБ. Скорость и качество зависят от телефона и исходной записи; утечки между дорожками возможны. Это не полный аналог BandLab и не DAW.",fontSize=12.sp,color=Muted);TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://github.com/TRvlvr/model_repo")))}){Text("Авторы и источник AI-модели")}}},confirmButton={TextButton(onClick={help=false}){Text("Закрыть")}})
+    if(licenses)AlertDialog(onDismissRequest={licenses=false},title={Text("Лицензии компонентов")},text={val notices=remember{context.assets.open("THIRD_PARTY_NOTICES.txt").bufferedReader().use{it.readText()}};Text(notices,fontSize=10.sp,lineHeight=14.sp,modifier=Modifier.heightIn(max=400.dp).verticalScroll(rememberScrollState()))},confirmButton={TextButton(onClick={licenses=false}){Text("Закрыть")}})
+    if(help)AlertDialog(onDismissRequest={help=false},title={Text("MASTR Studio 1.0")},text={Column(verticalArrangement=Arrangement.spacedBy(11.dp)){Text("Личная студия мастеринга. Без аккаунта, подписки и отправки аудио на сервер.");Text("32 пресета, ручная настройка, громкость LUFS с гейтированием, защита пиков, шумоподавление и разделение на вокал / инструментал. В этой версии — до 5 минут на трек.",fontSize=13.sp);Text("Мастеринг работает офлайн. Для AI-разделения сначала нужна модель ~67 МБ. Скорость и качество зависят от телефона и исходной записи; утечки между дорожками возможны. Это не полный аналог BandLab и не DAW.",fontSize=12.sp,color=Muted);TextButton(onClick={context.startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://github.com/TRvlvr/model_repo")))}){Text("Авторы и источник AI-модели")};TextButton(onClick={help=false;licenses=true}){Text("Лицензии компонентов")}}},confirmButton={TextButton(onClick={help=false}){Text("Закрыть")}})
 }
 @Composable private fun Logo(modifier:Modifier){Canvas(modifier){val heights=listOf(.42f,.9f,.65f,.32f);val w=size.width/7;heights.forEachIndexed{i,h->drawRoundRect(Lime,Offset(i*w*1.8f,(size.height-size.height*h)/2),androidx.compose.ui.geometry.Size(w,size.height*h),androidx.compose.ui.geometry.CornerRadius(w/2))}}}
 @Composable private fun Eyebrow(text:String,color:Color=Muted){Text(text,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.7.sp,color=color)}

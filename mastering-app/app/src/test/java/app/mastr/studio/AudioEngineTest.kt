@@ -5,6 +5,7 @@ import kotlin.math.*
 
 class AudioEngineTest {
     @Test fun stftRoundTripMatchesPcm(){val f=SpectralTransform(512,257,32,128);val source=FloatArray(f.chunk*2){i->(.3*sin(2*PI*(i/2)*440/44100)+.1*cos(2*PI*(i/2)*1200/44100)).toFloat()};val restored=f.inverse(f.forward(source));val error=source.indices.maxOf{abs(source[it]-restored[it])};assertTrue("Reconstruction error: $error",error<.00001)}
+    @Test fun mdxMixedRadixWindowRoundTrip(){val f=SpectralTransform(7680,3841,256);val source=FloatArray(f.chunk*2){(.2*sin(2*PI*(it/2)*700/44100)).toFloat()};val restored=f.inverse(f.forward(source));val error=source.indices.maxOf{abs(source[it]-restored[it])};assertTrue("MDX 7680-point reconstruction error: $error",error<.00001)}
     @Test fun limiterPreventsOverload(){val x=FloatArray(30000){if(it%1024<4)3f else .05f};AudioEngine.limiter(x,.8);assertTrue(x.all{it.isFinite()&&abs(it)<=.80001f})}
     @Test fun silenceIsFinite(){val a=Audio(FloatArray(44100*2));val stats=AudioEngine.analyze(a);assertEquals(-70.0,stats.lufs,.01);val result=AudioEngine.master(a,Settings()){_,_->};assertTrue(result.samples.all{it==0f})}
     @Test fun knownStereoSineHasExpectedLoudness(){val a=Audio(FloatArray(44100*4){(.1*sin(2*PI*(it/2)*1000/44100)).toFloat()});val stats=AudioEngine.analyze(a);assertEquals(-20.0,stats.lufs,.25);assertEquals(-20.0,stats.peak,.01)}

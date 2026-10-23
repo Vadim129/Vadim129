@@ -44,7 +44,7 @@ class StemSeparator(private val context:Context) {
             env.createSession(model.absolutePath,options).use { session->
                 val inputName=session.inputNames.first();val shape=longArrayOf(1,4,transform.frequencies.toLong(),transform.times.toLong())
                 AudioIO.WavWriter(vocalFile,floating=true).use { vocalWriter->AudioIO.WavWriter(instFile,floating=true).use { instWriter->
-                    var start=0
+                    var start=0;var pending=FloatArray(0);val overlap=min(4096,usable/8)
                     while(start<audio.frames){
                         progress(start.toFloat()/audio.frames,"Разделение: ${(start/44100)} / ${audio.frames/44100} сек")
                         val chunk=FloatArray(transform.chunk*2)
@@ -57,10 +57,15 @@ class StemSeparator(private val context:Context) {
                             val buffer=output.floatBuffer;val data=FloatArray(buffer.remaining());buffer.get(data);data
                         }}
                         require(predicted.size==spectrum.size&&predicted.all {it.isFinite()}){"Модель вернула некорректный результат"}
-                        val time=transform.inverse(predicted);val count=min(usable,audio.frames-start);val vocals=FloatArray(count*2);val instrumental=FloatArray(count*2)
-                        for(i in vocals.indices){val v=time[trim*2+i]*compensate;vocals[i]=v;instrumental[i]=audio.samples[start*2+i]-v}
+                        val time=transform.inverse(predicted);val count=min(usable,audio.frames-start);val vocals=FloatArray(count*2)
+                        for(i in vocals.indices)vocals[i]=time[trim*2+i]*compensate
+                        // Crossfade shared PCM positions to suppress chunk-boundary seams.
+                        for(i in 0 until min(pending.size/2,count)){val blend=(.5-.5*cos(PI*(i+.5)/overlap)).toFloat();for(c in 0..1)vocals[i*2+c]=pending[i*2+c]*(1-blend)+vocals[i*2+c]*blend}
+                        val emit=if(start+count>=audio.frames)count else count-overlap
+                        val instrumental=FloatArray(emit*2){audio.samples[start*2+it]-vocals[it]}
+                        pending=if(emit<count)vocals.copyOfRange(emit*2,count*2)else FloatArray(0)
                         // Float WAV retains headroom. Export applies sample-peak protection.
-                        vocalWriter.append(vocals);instWriter.append(instrumental);start+=count
+                        vocalWriter.append(vocals,size=emit*2);instWriter.append(instrumental);start+=emit
                     }
                 }}
             }

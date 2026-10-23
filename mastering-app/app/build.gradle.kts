@@ -26,7 +26,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-    packaging { resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*") }
+    packaging { jniLibs.useLegacyPackaging = true; resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*") }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
