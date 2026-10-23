@@ -1,0 +1,6 @@
+-keep class ai.onnxruntime.** { *; }
+-keep class org.jtransforms.** { *; }
+-keep class pl.edu.icm.jlargearrays.** { *; }
+-dontwarn sun.misc.Unsafe
+-dontwarn java.lang.management.**
+-dontwarn javax.management.**
