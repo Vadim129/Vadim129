@@ -11,7 +11,10 @@ import kotlin.math.*
 
 object AudioIO {
     const val MAX_SECONDS=300
-    fun name(context:Context,uri:Uri):String = context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use { if(it.moveToFirst())it.getString(0) else null } ?: "Мой трек"
+    fun name(context:Context,uri:Uri):String = runCatching {
+        context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use { if(it.moveToFirst())it.getString(0) else null }
+    }.getOrNull()?.takeIf {it.isNotBlank()} ?: uri.lastPathSegment?.substringAfterLast('/')?.takeIf {it.isNotBlank()} ?: "Мой трек"
+
     fun decode(context:Context,uri:Uri,progress:(Float,String)->Unit):Audio {
         val temp=File(context.cacheDir,"import-${System.nanoTime()}")
         try {
