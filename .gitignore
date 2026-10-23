@@ -94,3 +94,9 @@ __pycache__/
 # Private local encryption key for remote audio artifacts
 /music_private/
 /runtime/
+
+# Permanent APK signing material: private workspace / private Drive backup only
+/.signing/
+*.p12
+*.jks
+*.keystore

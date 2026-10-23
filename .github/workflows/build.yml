@@ -196,3 +196,25 @@ jobs:
           git add -f payload/mastr-*
           git commit -m "Return MASTR APK build and test results"
           git push origin "HEAD:$GITHUB_REF_NAME"
+
+  android-signing-tools:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/arena/ebbb08ec-vadim129' && contains(github.event.head_commit.message, '[signing-tools]') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve official Android SDK signing verifier
+        run: |
+          set -euo pipefail
+          tool=$(find "$ANDROID_HOME/build-tools" -path '*/lib/apksigner.jar' | sort -V | tail -n 1)
+          test -n "$tool"
+          mkdir -p payload
+          cp "$tool" payload/android-apksigner.jar
+          java -jar payload/android-apksigner.jar version > payload/android-apksigner-version.txt
+          sha256sum payload/android-apksigner.jar > payload/android-apksigner-sha256.txt
+          git config user.email 'ci@local'
+          git config user.name 'Android signing tools worker'
+          git add -f payload/android-apksigner.jar payload/android-apksigner-version.txt payload/android-apksigner-sha256.txt
+          git commit -m 'Return official Android SDK APK signing verifier'
+          git push origin HEAD:arena/ebbb08ec-vadim129
