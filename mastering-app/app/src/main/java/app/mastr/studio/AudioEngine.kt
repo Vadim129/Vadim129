@@ -115,7 +115,9 @@ object AudioEngine {
         val source = analyze(a)
         val target = max(source.lufs, s.target)
         progress(.72f,"Контроль итоговой громкости и пиков")
-        matchLoudness(x, target, 10.0.pow(s.ceiling / 20), a.rate)
+        matchLoudness(x, target, 10.0.pow(s.ceiling / 20), a.rate) { pass ->
+            progress(.72f + .025f * pass, "Проверка громкости · шаг ${pass + 1}")
+        }
         // Short fades avoid filter-start clicks without changing the track length.
         val fade=min(220,a.frames/2);for(i in 0 until fade){val g=i.toFloat()/max(1,fade);x[2*i]*=g;x[2*i+1]*=g}
         require(x.all { it.isFinite() }) { "Некорректные отсчёты после обработки" }
@@ -136,9 +138,10 @@ object AudioEngine {
     }
 
     /** Closed-loop, measured post-limiter LUFS. Safety always wins over an impossible target. */
-    fun matchLoudness(x: FloatArray, target: Double, ceiling: Double, rate: Int = 44100) {
+    fun matchLoudness(x: FloatArray, target: Double, ceiling: Double, rate: Int = 44100, onPass: (Int) -> Unit = {}) {
         if (x.none { abs(it) > 1e-10f }) return
         for (pass in 0 until 10) {
+            onPass(pass)
             val measured = analyze(Audio(x, rate)).lufs
             val delta = (target - measured).coerceIn(-18.0, 12.0)
             if (pass > 0 && abs(delta) < .08) break

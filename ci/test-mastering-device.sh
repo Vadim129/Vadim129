@@ -25,4 +25,7 @@ sleep 4
 adb exec-out screencap -p > payload/mastr-screen.png
 adb logcat -d -s AndroidRuntime:E > payload/mastr-release-log.txt
 if grep -q 'Process: app.mastr.studio' payload/mastr-release-log.txt; then code=1; fi
+adb shell am start -W -S -n app.mastr.studio/.MainActivity
+sleep 2
+adb exec-out screencap -p > payload/mastr-welcome.png
 exit "$code"

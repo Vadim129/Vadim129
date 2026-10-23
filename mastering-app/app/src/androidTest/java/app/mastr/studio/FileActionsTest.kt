@@ -57,4 +57,11 @@ class FileActionsTest {
         assertFalse(AppUpdates.isNewer("1.0.0", "1.1.0"))
         assertFalse(AppUpdates.isNewer("1.2.0-beta", "1.1.0"))
     }
+    @Test fun upgradeRemovesPreviouslyDownloadedNetworkAndStemCache() {
+        val model = File(ctx.filesDir, "UVR_MDXNET_Main.onnx"); model.writeText("migration test")
+        val partial = File(ctx.filesDir, "UVR_MDXNET_Main.onnx.part"); partial.writeText("partial")
+        val stem = File(ctx.cacheDir, "vocals-test.wav"); stem.writeText("stem cache")
+        StudioViewModel(ctx.applicationContext as android.app.Application)
+        assertFalse(model.exists()); assertFalse(partial.exists()); assertFalse(stem.exists())
+    }
 }

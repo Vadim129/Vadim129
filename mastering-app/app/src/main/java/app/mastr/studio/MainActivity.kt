@@ -43,7 +43,7 @@ private val Accent = Color(0xFF79E8D4)
 private val Violet = Color(0xFFB9ABFF)
 private val Line = Color(0xFF2B3B54)
 private val StudioColors = darkColorScheme(primary = Accent, onPrimary = Bg, secondary = Violet,
-    background = Bg, surface = Panel, onSurface = Color(0xFFF3F6FF), surfaceVariant = Color(0xFF1D2B43), onSurfaceVariant = Muted, outline = Line)
+    background = Bg, onBackground = Color(0xFFF3F6FF), surface = Panel, onSurface = Color(0xFFF3F6FF), surfaceVariant = Color(0xFF1D2B43), onSurfaceVariant = Muted, outline = Line)
 
 class MainActivity : ComponentActivity() {
     private val vm: StudioViewModel by viewModels()
@@ -51,7 +51,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         if (savedInstanceState == null && intent.getBooleanExtra("demo", false)) vm.demo()
-        setContent { MaterialTheme(colorScheme = StudioColors) { StudioApp(vm) } }
+        window.decorView.setBackgroundColor(Bg.toArgb())
+        if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = false
+        setContent { MaterialTheme(colorScheme = StudioColors) {
+            CompositionLocalProvider(LocalContentColor provides StudioColors.onSurface) { StudioApp(vm) }
+        } }
     }
     override fun onStart() { super.onStart(); vm.checkUpdates(false) }
     override fun onStop() { vm.stop(); super.onStop() }
@@ -101,7 +106,7 @@ class MainActivity : ComponentActivity() {
     val open: () -> Unit = { importer.launch(Unit) }
     LaunchedEffect(s.message) { s.message?.let { snackbar.showSnackbar(it); vm.messageHandled() } }
     Aurora(Modifier.fillMaxSize()) {
-        Scaffold(containerColor = Color.Transparent, snackbarHost = { SnackbarHost(snackbar) }, topBar = {
+        Scaffold(containerColor = Color.Transparent, contentColor = StudioColors.onSurface, snackbarHost = { SnackbarHost(snackbar) }, topBar = {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.GraphicEq, null, tint = Accent, modifier = Modifier.size(34.dp))
                 Spacer(Modifier.width(10.dp))
