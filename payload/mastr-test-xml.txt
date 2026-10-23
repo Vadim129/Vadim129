@@ -1,17 +1,16 @@
 <?xml version='1.0' encoding='UTF-8' ?>
-<testsuite name="app.mastr.studio.FileActionsTest" tests="9" failures="0" errors="0" skipped="0" time="41.615" timestamp="2026-10-23T03:22:46" hostname="localhost">
+<testsuite name="app.mastr.studio.FileActionsTest" tests="8" failures="0" errors="0" skipped="0" time="31.189" timestamp="2026-10-23T05:56:01" hostname="localhost">
   <properties>
     <property name="device" value="emulator-5554 - 15" />
     <property name="flavor" value="" />
     <property name="project" value=":app" />
   </properties>
-  <testcase name="importOffersManagersAndAllFiles" classname="app.mastr.studio.FileActionsTest" time="0.011" />
-  <testcase name="wildcardExportIsRejected" classname="app.mastr.studio.FileActionsTest" time="0.002" />
-  <testcase name="androidProviderRecognizesSavedWavAndHeader" classname="app.mastr.studio.FileActionsTest" time="1.107" />
-  <testcase name="wavAndM4aCreateDocumentsHaveExactTypes" classname="app.mastr.studio.FileActionsTest" time="0.001" />
-  <testcase name="wavFormatsAndAacRoundTrip" classname="app.mastr.studio.StudioDeviceTest" time="1.064" />
-  <testcase name="realOnnxSeparationProducesComplementaryStems" classname="app.mastr.studio.StudioDeviceTest" time="26.232" />
-  <testcase name="demoMasterAndExportDialog" classname="app.mastr.studio.StudioUiTest" time="6.986" />
-  <testcase name="navigationWorks" classname="app.mastr.studio.StudioUiTest" time="1.947" />
-  <testcase name="importChoicesAreVisible" classname="app.mastr.studio.StudioUiTest" time="3.102" />
+  <testcase name="updateParserSkipsUnrelatedDraftAndUnsafeAssets" classname="app.mastr.studio.FileActionsTest" time="0.009" />
+  <testcase name="updateScheduleAndNumericVersions" classname="app.mastr.studio.FileActionsTest" time="0.001" />
+  <testcase name="downloadsPublishesValidWavWithNoPickerOrSecondLimiter" classname="app.mastr.studio.FileActionsTest" time="3.285" />
+  <testcase name="oneImportPathOffersAllFileManagersAndTypes" classname="app.mastr.studio.FileActionsTest" time="0.002" />
+  <testcase name="wavFormatsAndAacRoundTrip" classname="app.mastr.studio.StudioDeviceTest" time="2.355" />
+  <testcase name="aboutContainsVersionAndManualCheck" classname="app.mastr.studio.StudioUiTest" time="7.594" />
+  <testcase name="demoMasterAndExportDialog" classname="app.mastr.studio.StudioUiTest" time="13.733" />
+  <testcase name="libraryAndManualUpdatesAreAccessibleWithoutNeuralFeatures" classname="app.mastr.studio.StudioUiTest" time="2.675" />
 </testsuite>
