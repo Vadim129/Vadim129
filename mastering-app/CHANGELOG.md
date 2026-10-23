@@ -1,22 +1,15 @@
-# 1.0.1 — исправления работы с файлами
+# MASTR Studio
 
-- Экспорт WAV передаёт `audio/x-wav`, M4A — `audio/mp4` непосредственно
-  в ACTION_CREATE_DOCUMENT, вместо общего `audio/*`. Расширение и MIME
-  соответствуют выбранному формату. Используется канонический для Android
-  тип WAV `audio/x-wav`, которым MediaStore маркирует WAV после сканирования.
-  Формат самого аудио не изменён.
-- Открытие предлагает аудиофайлы (GET_CONTENT), все файлы/файловые менеджеры
-  (GET_CONTENT без фильтра) и системные хранилища (OPEN_DOCUMENT).
-  Список доступных приложений/провайдеров определяет Android.
-- Название исходника читается с запасным вариантом для файловых менеджеров,
-  не поддерживающих запрос DISPLAY_NAME.
-- Новые тесты проверяют MIME обоих форматов, запрет wildcard при экспорте,
-  оба маршрута выбора файла, отмену, MIME/RIFF/WAVE сохранённого файла через
-  настоящий Android MediaStore и меню выбора в интерфейсе.
-- versionCode 2; доставка тем же постоянным ключом. Обновляется поверх
-  предыдущего permanent-signature APK без удаления приложения.
+## 1.1.0 · versionCode 3
+- Automatic per-track settings and full preset strength; no intensity or manual mastering sliders.
+- Target cannot be below source LUFS. Measure and correct loudness after limiting (up to ten passes).
+- WAV export writes the measured PCM without another limiter. A safety warning appears if an extreme source cannot reach its input level safely.
+- Remove UVR/ONNX, separation, model downloads and the ONNX native runtime. Delete previously installed model/stem cache during migration.
+- One universal “Открыть аудиофайл” import action, including mislabelled WAVs.
+- Atomic export directly to Downloads (Android 10+ MediaStore, legacy permission on Android 8/9).
+- GitHub MASTR release checks weekly on app foreground and manually from About/Library. Explicit opt-in APK downloads; no silent installation.
+- Procedural aurora background, refreshed cards, persistent A/B controls and before/after loudness readings.
+- Same permanent signing certificate as 1.0.1.
 
-Ранее экспортированные файлы не меняются автоматически. Если провайдер записал
-неверный MIME, откройте их через «Все файлы» и сохраните заново обновлённым приложением.
-Широкие разрешения на всё хранилище не запрашиваются; ограниченные Android папки
-не разблокируются. Лимиты длительности и размера в этом исправлении не менялись.
+## 1.0.1
+- Canonical audio/x-wav exports and universal import option.

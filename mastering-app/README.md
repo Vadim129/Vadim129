@@ -1,110 +1,48 @@
-# MASTR Studio — Android
+# MASTR Studio 1.1.0
 
-Нативная небольшая студия на русском: мастеринг и разделение вокала/инструментала.
-Собственный интерфейс в тёмных тонах, а не копия ресурсов BandLab. Без регистрации,
-рекламы, покупок, сервера обработки и загрузки ваших треков в облако.
+Local Android mastering (Kotlin/Compose, Android 8+). Audio stays on-device.
+32 tonal presets, automatic per-track settings, source/master A/B, WAV 16/24 and AAC.
+No neural network, ONNX library, model downloader or stem separation.
 
-## Что работает
+## Loudness
 
-- Импорт через системный выбор файла: WAV (PCM 8/16/24/32, float32), MP3,
-  AAC/M4A, FLAC и другие аудиоформаты, которые умеет декодировать Android устройства.
-- 32 **различающихся по параметрам DSP** пресета: базовые, жанровые, для голоса,
-  площадок и исправления тонального баланса. Поиск, избранное, свои сохранённые пресеты.
-- EQ, RMS-компрессор, мягкое насыщение, M/S-ширина с центровкой низа,
-  консервативное спектральное шумоподавление, нормализация и lookahead-лимитер.
-- Ручные настройки интенсивности, четырёх полос EQ, компрессии, тепла,
-  ширины, громкости, потолка пиков и шумоподавления.
-- Форма волны из настоящего PCM, перемотка, воспроизведение, A/B исходник/мастер,
-  громкость мониторинга; LUFS, sample peak, стереокорреляция.
-- Настоящая **UVR-MDX-NET Main ONNX** модель: два отдельных WAV-файла,
-  **вокал и инструментал**, прослушивание и экспорт каждой дорожки.
-  Это не имитация эквалайзером и не разделение барабанов/баса/гитары.
-- WAV 16/24 бит и M4A/AAC 256 кбит/с. Выбор папки штатным диалогом Android.
-  Рабочая частота/экспорт — стерео 44,1 кГц. Экспорта MP3 нет.
-- История экспортов и свои/избранные пресеты сохраняются между запусками.
-  Сам открытый трек и несохранённый мастер — временная сессия: после закрытия
-  процесса трек нужно открыть заново. Сохраняйте нужный результат в файл.
+Settings default to full strength. On import, input loudness, crest and bass energy
+select conservative dynamics settings. The target is `max(input LUFS, preset target)`.
+After processing, a measured post-limiter feedback loop corrects level (up to 10
+passes, tolerance 0.08 LU). Safety ceiling takes precedence for pathological inputs;
+the UI explicitly warns when the result is >0.2 LU quieter than the input. WAV export
+writes exactly this measured PCM, with only format quantization, and never limits again.
+AAC is lossy and codec peaks/level can differ. Sample peaks are not true-peak meters.
+These heuristics do not claim a perceptually optimal result for every song.
 
-## Установка и первый запуск
+## Files
 
-Android **8.0+**. Разрешите установку APK из приложения, через которое открыли файл.
-Это standalone-сборка для прямой установки, не публикация в Google Play.
-Мастеринг работает сразу и без интернета. Есть синтетический 12-секундный демотрек;
-он не содержит пользовательских записей.
+Single GET_CONTENT */* chooser (“Открыть аудиофайл”), no all-files access.
+Android 10+: publish completed files to MediaStore Downloads with correct MIME,
+IS_PENDING and failure cleanup. Android 8/9: request WRITE_EXTERNAL_STORAGE once,
+write a unique Downloads filename and scan it. Never overwrite an existing export.
+Up to 5 minutes/250 MB per import remain memory safety limits.
 
-Для разделения подтвердите разовую загрузку модели (~67 МБ). Модель берётся
-с публичного GitHub-репозитория авторов, проверяется по размеру и SHA-256 и хранится
-в закрытой директории приложения. После загрузки интернет для разделения не нужен.
-Удалить модель можно на экране «Дорожки». Обычное удаление приложения также удаляет
-модель, пресеты и временные файлы; экспортированные во внешнюю папку записи остаются.
+## GitHub updates
 
-## Ограничения первой версии
+Repository: Vadim129/Vadim129. Stable releases tagged `mastr-vX.Y.Z`, exact asset
+`MASTR-Studio-X.Y.Z.apk`. Other applications' tags, drafts, prereleases, HTTP and
+unexpected asset URLs are ignored. Only numeric semver newer than VERSION_NAME
+is offered. Check when foregrounded, at most once per seven days (including failed
+attempts to avoid repeated network use). Manual checks bypass the interval.
+Requests have timeouts and bounded responses. Checks send no audio or identifiers.
+User-approved downloads use Android DownloadManager into Downloads; installation
+is confirmed by the user through Android and must match the existing signing cert.
 
-- До **5 минут** и **250 МБ** на исходный файл. Файлы с высокой частотой/разрядностью
-  требуют больше памяти; при нехватке памяти используйте более короткую запись.
-- Для AI-разделения рекомендуется от **4 ГБ ОЗУ**.
-- CPU-инференс: скорость и качество зависят от телефона и исходника.
-  Оставляйте приложение открытым во время обработки. Разделение не мгновенное,
-  возможны утечки голоса/музыки и артефакты. Облачного ускорителя нет.
-- LUFS с K-weighting и относительным/абсолютным гейтированием; метр предназначен
-  для работы со звуком, но не заявлен как сертифицированный broadcast-измеритель.
-  Лимитер контролирует **sample peak**, не oversampled true peak.
-- Целевая громкость — ориентир, а не гарантия: ограничение пиков и максимальная
-  компенсация уровня могут не позволить достичь цели на любом материале.
-- Экспорт применяет защиту пиков −1 dBFS (не поднимая более тихие пики). Поэтому
-  при индивидуальном лимитировании громких стемов точная сумма экспортов может
-  отличаться от оригинала. Внутренние float32-стемы сохраняют взаимодополняемость.
-- Нет многодорожечной DAW, записи микрофона, плагинов, четырёх стемов, аккаунтов,
-  совместной работы или интеграции с BandLab. Нет обещания «студийного качества»
-  из любой плохой записи — всегда сравнивайте результат на слух.
+Publish every future update using the same permanent key and higher versionCode.
+Never publish CI/debug-signed APKs. See SIGNING.md. For publishing:
+`gh release create mastr-vX.Y.Z MASTR-Studio-X.Y.Z.apk --target arena/ebbb08ec-vadim129 ...`
+(The application scans MASTR releases, not the repository's unrelated latest release.)
 
-## Приватность и разрешения
+## Tests
 
-Единственное сетевое разрешение — INTERNET, для скачивания модели.
-Нет широкого доступа к хранилищу, микрофону, контактам, локации или аналитики.
-Вход/выход идут через Storage Access Framework. При скачивании GitHub/CDN видит
-сетевой запрос/IP, **но не аудиозапись**. Треки не отправляются ни в GitHub, ни
-на какой-либо сервер для обработки. Если вы сами выберете облачный провайдер
-в диалоге экспорта, файл будет передан через него по вашему выбору. Backup отключён.
-
-## Сборка и проверки
-
-JDK 17, Gradle 8.10.2, Android SDK 35. Из корня репозитория:
-
-```sh
-python -m pip install numpy onnxruntime==1.20.1
-python ci/prepare-mastering-model.py
-gradle -p mastering-app testDebugUnitTest assembleDebug assembleRelease
-```
-
-Подготовка модели скачивает оригинальные веса, получает **реальные параметры**
-по UVR tail-MD5, сверяет форму/конечность настоящего ONNX-инференса и записывает
-SHA-256 в `app/src/main/assets/model_info.json`. Веса **не включены в APK**.
-Нельзя выпускать APK с пустой контрольной суммой модели.
-
-CI `[mastering-apk]` выполняет JVM DSP-тесты, сборку APK и Android 35 x86_64
-инструментальные тесты: Compose-навигация, demo→master→диалог экспорта,
-WAV16/24/float32 и AAC encode/decode, **реальный ONNX-инференс на Android**,
-проверка взаимодополняемости стемов. Дополнительно запускается minified release APK.
-Это не заменяет тестирование на всех физических телефонах.
-
-Пользовательский APK подписан постоянным приватным release-ключом. Его публичный
-сертификат зафиксирован в `signing-certificate.json` и `signing-certificate.pem`.
-Закрытый ключ и пароль не хранятся в Git. Сборки CI имеют временную подпись только
-для тестов, сохраняются отдельно как `mastr-studio-ci.apk` и обязательно
-переподписываются `ci/sign-mastering.py` перед выдачей. См. `SIGNING.md`.
-Старый APK 1.0 с одноразовым Android Debug ключом не поддерживает обновление
-на эту новую подпись без однократного удаления старой установки.
-
-## Компоненты и авторство
-
-- Jetpack Compose / AndroidX (Apache-2.0), Kotlin и Coroutines (Apache-2.0).
-- ONNX Runtime Android, Microsoft (MIT).
-- JTransforms 3.1 / JLargeArrays (BSD-2-Clause), FFT/STFT.
-- Модель и параметры: [UVR model repository](https://github.com/TRvlvr/model_repo),
-  [Ultimate Vocal Remover](https://github.com/Anjok07/ultimatevocalremovergui).
-  Ссылка на оригинальные файлы и SHA-256 — в `model_info.json`.
-  Сторонние веса не переиздаются в этом проекте; применяются условия их авторов.
-
-Обработка мастера — собственная DSP-реализация. Имена жанров/площадок — удобные
-тональные ориентиры, не официальная сертификация или интеграция этих площадок.
+`gradle -p mastering-app testDebugUnitTest assembleDebug assembleRelease`
+`gradle -p mastering-app connectedDebugAndroidTest`
+CI: DSP loudness/peak regressions for all presets, codec round trips, universal import,
+actual Downloads publication/readback, update parser/schedule, and Compose UI flows.
+No neural model is fetched or staged in CI. Release builds are separately smoke-tested.

@@ -1,38 +1,59 @@
 package app.mastr.studio
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.result.contract.ActivityResultContract
+import java.io.File
 
-/** A concrete MIME type is mandatory: wildcards are NOT valid document types. */
-data class AudioExportRequest(val name:String,val mime:String) {
-    init { require(mime=="audio/x-wav" || mime=="audio/mp4") }
-}
-enum class AudioImportMode { AUDIO, ALL_FILES, DOCUMENTS }
-
-class SaveAudioDocument:ActivityResultContract<AudioExportRequest,Uri?>() {
-    override fun createIntent(context:Context,input:AudioExportRequest):Intent =
-        Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
-            .setType(input.mime).putExtra(Intent.EXTRA_TITLE,input.name)
-    override fun parseResult(resultCode:Int,intent:Intent?):Uri? =
-        if(resultCode==Activity.RESULT_OK)intent?.data else null
+/** All providers, including those that mislabel WAV as application/octet-stream. */
+class OpenAudioFile : ActivityResultContract<Unit, Uri?>() {
+    override fun createIntent(context: Context, input: Unit): Intent = Intent.createChooser(
+        Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),
+        "Открыть аудиофайл"
+    )
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? =
+        if (resultCode == Activity.RESULT_OK) intent?.data else null
 }
 
-/** GET_CONTENT can expose installed file managers as well as DocumentsUI.
- * The all-files path handles WAVs incorrectly labelled as octet-stream by providers.
- * A separate OPEN_DOCUMENT path retains the standard provider sidebar option.
- * Access is scoped to the selected URI; no all-files / broad storage permission.
- */
-class OpenAudioFile:ActivityResultContract<AudioImportMode,Uri?>() {
-    override fun createIntent(context:Context,input:AudioImportMode):Intent {
-        val intent=Intent(if(input==AudioImportMode.DOCUMENTS)Intent.ACTION_OPEN_DOCUMENT else Intent.ACTION_GET_CONTENT)
-            .addCategory(Intent.CATEGORY_OPENABLE)
-            .setType(if(input==AudioImportMode.AUDIO)"audio/*" else "*/*")
-        return if(input==AudioImportMode.DOCUMENTS)intent
-            else Intent.createChooser(intent,if(input==AudioImportMode.AUDIO)"Откуда открыть аудио?" else "Выберите файл или файловый менеджер")
+object DownloadsStore {
+    /** Publish atomically; no folder picker and no broad storage access on Android 10+. */
+    fun save(context: Context, file: File, mime: String): Uri {
+        require(mime == "audio/x-wav" || mime == "audio/mp4")
+        val resolver = context.contentResolver
+        if (Build.VERSION.SDK_INT >= 29) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+                put(MediaStore.Downloads.MIME_TYPE, mime)
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val uri = requireNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)) {
+                "Не удалось создать файл в Загрузках"
+            }
+            try {
+                resolver.openOutputStream(uri, "w").use { out ->
+                    requireNotNull(out); file.inputStream().use { it.copyTo(out) }
+                }
+                check(resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null) > 0)
+                return uri
+            } catch (e: Throwable) { resolver.delete(uri, null, null); throw e }
+        }
+        @Suppress("DEPRECATION")
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        check(dir.isDirectory || dir.mkdirs()) { "Не удалось открыть Загрузки" }
+        var target = File(dir, file.name)
+        var suffix = 1
+        while (!target.createNewFile()) target = File(dir, "${file.nameWithoutExtension} (${suffix++}).${file.extension}")
+        try { file.inputStream().use { input -> target.outputStream().use { input.copyTo(it) } } }
+        catch (e: Throwable) { target.delete(); throw e }
+        MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(mime), null)
+        return Uri.fromFile(target)
     }
-    override fun parseResult(resultCode:Int,intent:Intent?):Uri? =
-        if(resultCode==Activity.RESULT_OK)intent?.data else null
 }

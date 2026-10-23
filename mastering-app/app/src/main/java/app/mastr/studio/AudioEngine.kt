@@ -13,12 +13,12 @@ data class Settings(
     val bass: Double = 0.0, val body: Double = -0.6, val presence: Double = 0.0,
     val air: Double = 0.0, val ratio: Double = 1.5, val threshold: Double = -18.0,
     val width: Double = 1.0, val warmth: Double = 0.0, val target: Double = -14.0,
-    val ceiling: Double = -1.0, val denoise: Double = 0.0, val amount: Double = 0.75
+    val ceiling: Double = -1.0, val denoise: Double = 0.0, val amount: Double = 1.0
 )
 data class Preset(val id: String, val name: String, val category: String, val description: String, val tag: String, val settings: Settings)
 object Presets {
     val all = listOf(
-        Preset("balanced", "Сбалансированный", "Базовые", "Чистый тон и естественная динамика", "НА КАЖДЫЙ ДЕНЬ", Settings()),
+        Preset("balanced", "Автоматический баланс", "Базовые", "Настройки по анализу вашего трека", "НА КАЖДЫЙ ДЕНЬ", Settings()),
         Preset("warm", "Аналоговое тепло", "Базовые", "Мягкая середина, округлый низ", "ТЁПЛЫЙ", Settings(bass=1.3, air=-0.5, warmth=.3, target=-14.5)),
         Preset("clarity", "Кристальная ясность", "Базовые", "Больше деталей без резкого верха", "ЧИСТЫЙ", Settings(body=-1.4,presence=.8,air=1.4,ratio=1.35)),
         Preset("punch", "Удар и плотность", "Базовые", "Собранный бас и упругий грув", "ПЛОТНЫЙ", Settings(bass=1.7,body=-1.2,ratio=2.4,threshold=-21.0,target=-12.0)),
@@ -106,21 +106,48 @@ object AudioEngine {
             val g=if(target<gain)ga else gr;gain=g*gain+(1-g)*target;l*=gain;r*=gain
             val warmth=s.warmth*amount
             if(warmth>0){ val drive=1+warmth*1.3;l=(1-warmth)*l+warmth*tanh(l*drive)/drive;r=(1-warmth)*r+warmth*tanh(r*drive)/drive }
-            val mid=(l+r)*.5;val side=(l-r)*.5;val low=sideLow.sample(side);val wide=(side-low)*width+low*(if(transparent)1.0 else 1-.7*amount)
+            val mid=(l+r)*.5;val side=(l-r)*.5;val low=sideLow.sample(side);val wide=(side-low)*width+low*(if(transparent)1.0 else 1-.15*amount)
             x[2*i]=(mid+wide).toFloat();x[2*i+1]=(mid-wide).toFloat()
             if(i%44100==0)progress(.22f+.35f*i/a.frames,"Эквалайзер · компрессор · стерео")
         }
         progress(.59f,"Расчёт громкости LUFS")
-        val before=analyze(Audio(x));val gainDb=(s.target-before.lufs).coerceIn(-24.0,18.0)
-        val makeup=10.0.pow(gainDb/20);for(i in x.indices)x[i]=(x[i]*makeup).toFloat()
-        progress(.72f,"Защита пиков")
-        limiter(x,10.0.pow(s.ceiling/20),a.rate)
+        // Never select a quieter target than the actual source, even for quiet presets.
+        val source = analyze(a)
+        val target = max(source.lufs, s.target)
+        progress(.72f,"Контроль итоговой громкости и пиков")
+        matchLoudness(x, target, 10.0.pow(s.ceiling / 20), a.rate)
         // Short fades avoid filter-start clicks without changing the track length.
         val fade=min(220,a.frames/2);for(i in 0 until fade){val g=i.toFloat()/max(1,fade);x[2*i]*=g;x[2*i+1]*=g}
         require(x.all { it.isFinite() }) { "Некорректные отсчёты после обработки" }
         progress(1f,"Готово")
         return Audio(x)
     }
+    /** Conservative, deterministic starting values; no user intensity knob needed. */
+    fun automaticSettings(a: Analysis, preset: Settings = Settings()): Settings {
+        val crest = a.peak - a.rms
+        return preset.copy(
+            amount = 1.0,
+            target = max(a.lufs, preset.target),
+            ratio = min(preset.ratio, if (crest < 7) 1.0 else if (crest < 11) 1.35 else 2.0),
+            threshold = (a.rms + 3.0).coerceIn(-30.0, -8.0),
+            bass = if (a.lowRatio > .57) min(preset.bass, -.8) else preset.bass,
+            denoise = 0.0 // Do not remove musical detail automatically.
+        )
+    }
+
+    /** Closed-loop, measured post-limiter LUFS. Safety always wins over an impossible target. */
+    fun matchLoudness(x: FloatArray, target: Double, ceiling: Double, rate: Int = 44100) {
+        if (x.none { abs(it) > 1e-10f }) return
+        for (pass in 0 until 10) {
+            val measured = analyze(Audio(x, rate)).lufs
+            val delta = (target - measured).coerceIn(-18.0, 12.0)
+            if (pass > 0 && abs(delta) < .08) break
+            val gain = 10.0.pow(delta / 20)
+            for (i in x.indices) x[i] = (x[i] * gain).toFloat()
+            limiter(x, ceiling, rate)
+        }
+    }
+
     fun limiter(x:FloatArray,ceiling:Double,rate:Int=44100) {
         val n=x.size/2;val look=max(1,(rate*.005).toInt())
         // Only the lookahead window is needed, not two track-length arrays.

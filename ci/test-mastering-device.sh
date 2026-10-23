@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -uo pipefail
 adb install -r mastering-app/app/build/outputs/apk/debug/app-debug.apk
-adb shell run-as app.mastr.studio mkdir -p files
-adb shell -T "run-as app.mastr.studio sh -c 'cat > files/UVR_MDXNET_Main.onnx'" < runtime/mastering/UVR_MDXNET_Main.onnx
-adb shell run-as app.mastr.studio ls -l files
 gradle --no-daemon -p mastering-app connectedDebugAndroidTest > runtime/mastering/device.log 2>&1
 code=$?
 export MASTR_DEVICE_EXIT="$code"
