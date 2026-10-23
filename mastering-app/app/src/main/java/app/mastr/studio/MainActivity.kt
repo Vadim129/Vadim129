@@ -110,9 +110,11 @@ fun StudioApp(vm:StudioViewModel){
 @Composable private fun Waveform(a:Audio,position:Float,color:Color,modifier:Modifier,onSeek:(Float)->Unit){val peaks=remember(a){FloatArray(160){b->val start=b.toLong()*a.frames/160;val end=((b+1).toLong()*a.frames/160).toInt();var p=0f;for(i in start.toInt() until end step max(1,(end-start.toInt())/96))p=max(p,max(abs(a.samples[i*2]),abs(a.samples[i*2+1])));p}};Canvas(modifier.pointerInput(a){detectTapGestures{onSeek((it.x/size.width).coerceIn(0f,1f))}}){val step=size.width/peaks.size;peaks.forEachIndexed{i,p->val h=max(3f,p.coerceAtMost(1f)*size.height*.9f);drawRoundRect(if(i.toFloat()/peaks.size<=position)color else color.copy(alpha=.28f),Offset(i*step,(size.height-h)/2),androidx.compose.ui.geometry.Size(max(1f,step*.55f),h),androidx.compose.ui.geometry.CornerRadius(step*.3f))};drawLine(color,Offset(position*size.width,0f),Offset(position*size.width,size.height),1.5f)}}
 
 @Composable private fun MasterPage(s:StudioState,vm:StudioViewModel,modifier:Modifier,open:()->Unit,export:()->Unit,savePreset:()->Unit){
+    val listState=rememberLazyListState()
+    LaunchedEffect(s.master){if(s.master!=null)listState.animateScrollToItem(2)}
     val all=Presets.all+s.customs
     val filtered=all.filter{(s.category=="Все"||(s.category=="Избранное"&&it.id in s.favorites)||it.category==s.category)&&(s.query.isBlank()||"${it.name} ${it.description} ${it.tag}".contains(s.query,ignoreCase=true))}
-    LazyColumn(modifier.fillMaxSize(),contentPadding=PaddingValues(start=22.dp,end=22.dp,bottom=28.dp),verticalArrangement=Arrangement.spacedBy(20.dp)){
+    LazyColumn(modifier.fillMaxSize(),state=listState,contentPadding=PaddingValues(start=22.dp,end=22.dp,bottom=28.dp),verticalArrangement=Arrangement.spacedBy(20.dp)){
         item{if(s.audio==null)OpenHero(open,{vm.demo()})else TrackCard(s,vm,open)}
         if(s.audio==null)item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Hint(Icons.Outlined.Lock,"Аудио остаётся у тебя");Hint(Icons.Outlined.OfflineBolt,"Без подписки")}}
         if(s.audio!=null){
@@ -127,6 +129,9 @@ fun StudioApp(vm:StudioViewModel){
                     ControlSlider("Присутствие",s.settings.presence,-4.0..4.0,"%+.1f dB".format(s.settings.presence)){vm.settings(s.settings.copy(presence=it))}
                     ControlSlider("Воздух",s.settings.air,-4.0..4.0,"%+.1f dB".format(s.settings.air)){vm.settings(s.settings.copy(air=it))}
                     ControlSlider("Компрессия",s.settings.ratio,1.0..3.5,"%.1f:1".format(s.settings.ratio)){vm.settings(s.settings.copy(ratio=it))}
+                    ControlSlider("Порог компрессора",s.settings.threshold,-30.0..-8.0,"%.1f dB".format(s.settings.threshold)){vm.settings(s.settings.copy(threshold=it))}
+                    ControlSlider("Тепло",s.settings.warmth,0.0..0.5,"${(s.settings.warmth*100).toInt()}%"){vm.settings(s.settings.copy(warmth=it))}
+                    ControlSlider("Потолок пиков",s.settings.ceiling,-3.0..-.3,"%.1f dBFS".format(s.settings.ceiling)){vm.settings(s.settings.copy(ceiling=it))}
                     ControlSlider("Ширина стерео",s.settings.width,.6..1.4,"${(s.settings.width*100).toInt()}% "){vm.settings(s.settings.copy(width=it))}
                     ControlSlider("Шумоподавление",s.settings.denoise,0.0..1.0,"${(s.settings.denoise*100).toInt()}%"){vm.settings(s.settings.copy(denoise=it))}
                     Text("Умеренное спектральное шумоподавление. Сильные значения могут затронуть тихие детали. Изменения применяются кнопкой ниже.",color=Muted,fontSize=10.sp)

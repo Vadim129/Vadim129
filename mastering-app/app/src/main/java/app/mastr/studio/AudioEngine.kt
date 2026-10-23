@@ -93,7 +93,8 @@ object AudioEngine {
     fun master(a:Audio,s:Settings,progress:(Float,String)->Unit):Audio {
         val amount=s.amount.coerceIn(0.0,1.0); var x=a.samples.copyOf()
         if(s.denoise>0.01) x=denoise(x,s.denoise*amount) { p->progress(p*.22f,"Мягкое шумоподавление") }
-        val filters=Array(2){ arrayOf(Biquad.highpass(27.0),Biquad.shelf(105.0,s.bass*amount,false),Biquad.peak(285.0,s.body*amount),Biquad.peak(2600.0,s.presence*amount),Biquad.shelf(9000.0,s.air*amount,true)) }
+        val transparent=amount<.0001 || (s.bass==0.0 && s.body==0.0 && s.presence==0.0 && s.air==0.0 && s.ratio==1.0 && s.warmth==0.0 && s.width==1.0)
+        val filters=Array(2){ if(transparent) emptyArray<Biquad>() else arrayOf(Biquad.highpass(27.0),Biquad.shelf(105.0,s.bass*amount,false),Biquad.peak(285.0,s.body*amount),Biquad.peak(2600.0,s.presence*amount),Biquad.shelf(9000.0,s.air*amount,true)) }
         val sideLow=Biquad.lowpass(140.0); var env=0.0;var gain=1.0
         val attack=exp(-1.0/(.022*a.rate));val release=exp(-1.0/(.17*a.rate));val ga=exp(-1.0/(.014*a.rate));val gr=exp(-1.0/(.16*a.rate))
         val ratio=1+(s.ratio-1)*amount;val width=1+(s.width-1)*amount
@@ -105,7 +106,7 @@ object AudioEngine {
             val g=if(target<gain)ga else gr;gain=g*gain+(1-g)*target;l*=gain;r*=gain
             val warmth=s.warmth*amount
             if(warmth>0){ val drive=1+warmth*1.3;l=(1-warmth)*l+warmth*tanh(l*drive)/drive;r=(1-warmth)*r+warmth*tanh(r*drive)/drive }
-            val mid=(l+r)*.5;val side=(l-r)*.5;val low=sideLow.sample(side);val wide=(side-low)*width+low*.3
+            val mid=(l+r)*.5;val side=(l-r)*.5;val low=sideLow.sample(side);val wide=(side-low)*width+low*(if(transparent)1.0 else 1-.7*amount)
             x[2*i]=(mid+wide).toFloat();x[2*i+1]=(mid-wide).toFloat()
             if(i%44100==0)progress(.22f+.35f*i/a.frames,"Эквалайзер · компрессор · стерео")
         }
