@@ -83,3 +83,14 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# Local Python environment
+.venv/
+
+# Downloaded user media
+/google_drive/
+__pycache__/
+
+# Private local encryption key for remote audio artifacts
+/music_private/
+/runtime/
