@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8' ?>
-<testsuite name="app.mastr.studio.FileActionsTest" tests="9" failures="0" errors="0" skipped="0" time="34.666" timestamp="2026-10-23T06:06:52" hostname="localhost">
+<testsuite name="app.mastr.studio.FileActionsTest" tests="9" failures="0" errors="0" skipped="0" time="46.79" timestamp="2026-10-23T06:17:23" hostname="localhost">
   <properties>
     <property name="device" value="emulator-5554 - 15" />
     <property name="flavor" value="" />
     <property name="project" value=":app" />
   </properties>
-  <testcase name="updateParserSkipsUnrelatedDraftAndUnsafeAssets" classname="app.mastr.studio.FileActionsTest" time="0.011" />
-  <testcase name="updateScheduleAndNumericVersions" classname="app.mastr.studio.FileActionsTest" time="0.0" />
-  <testcase name="downloadsPublishesValidWavWithNoPickerOrSecondLimiter" classname="app.mastr.studio.FileActionsTest" time="1.894" />
-  <testcase name="upgradeRemovesPreviouslyDownloadedNetworkAndStemCache" classname="app.mastr.studio.FileActionsTest" time="0.002" />
-  <testcase name="oneImportPathOffersAllFileManagersAndTypes" classname="app.mastr.studio.FileActionsTest" time="0.003" />
-  <testcase name="wavFormatsAndAacRoundTrip" classname="app.mastr.studio.StudioDeviceTest" time="1.327" />
-  <testcase name="aboutContainsVersionAndManualCheck" classname="app.mastr.studio.StudioUiTest" time="6.654" />
-  <testcase name="demoMasterAndExportDialog" classname="app.mastr.studio.StudioUiTest" time="19.585" />
-  <testcase name="libraryAndManualUpdatesAreAccessibleWithoutNeuralFeatures" classname="app.mastr.studio.StudioUiTest" time="3.109" />
+  <testcase name="updateParserSkipsUnrelatedDraftAndUnsafeAssets" classname="app.mastr.studio.FileActionsTest" time="0.013" />
+  <testcase name="updateScheduleAndNumericVersions" classname="app.mastr.studio.FileActionsTest" time="0.001" />
+  <testcase name="downloadsPublishesValidWavWithNoPickerOrSecondLimiter" classname="app.mastr.studio.FileActionsTest" time="2.702" />
+  <testcase name="upgradeRemovesPreviouslyDownloadedNetworkAndStemCache" classname="app.mastr.studio.FileActionsTest" time="0.025" />
+  <testcase name="oneImportPathOffersAllFileManagersAndTypes" classname="app.mastr.studio.FileActionsTest" time="0.004" />
+  <testcase name="wavFormatsAndAacRoundTrip" classname="app.mastr.studio.StudioDeviceTest" time="2.157" />
+  <testcase name="aboutContainsVersionAndManualCheck" classname="app.mastr.studio.StudioUiTest" time="10.377" />
+  <testcase name="demoMasterAndExportDialog" classname="app.mastr.studio.StudioUiTest" time="26.329" />
+  <testcase name="libraryAndManualUpdatesAreAccessibleWithoutNeuralFeatures" classname="app.mastr.studio.StudioUiTest" time="2.775" />
 </testsuite>
