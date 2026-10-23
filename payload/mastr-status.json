@@ -1,5 +1,5 @@
 {
-  "run_id": "39885421425",
-  "build": "failure",
-  "device_tests": "skipped"
+  "run_id": "39885959472",
+  "build": "success",
+  "device_tests": "success"
 }
