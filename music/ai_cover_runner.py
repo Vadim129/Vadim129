@@ -66,6 +66,19 @@ def main():
             self.dtype = torch.bfloat16
             return super()._load_main_model_from_checkpoint(**kwargs)
 
+    transcript=[]
+    if args.mode=='full':
+        from faster_whisper import WhisperModel
+        print('Preparing private lyric conditioning from the source vocal.',flush=True)
+        recognizer=WhisperModel('small',device='cpu',compute_type='int8',cpu_threads=4,num_workers=1)
+        speech,_=recognizer.transcribe(str(args.source),language='ru',beam_size=5,
+                                      condition_on_previous_text=False,vad_filter=False)
+        transcript=[{'start':seg.start,'end':seg.end,'text':seg.text.strip()}
+                    for seg in speech if seg.text.strip()]
+        del recognizer,speech
+        gc.collect()
+        (args.output/'transcript.json').write_text(json.dumps(transcript,ensure_ascii=False,indent=2)+'\n')
+
     handler = CpuCoverHandler()
     print('Initializing ACE-Step 1.5 Turbo on CPU.',flush=True)
     status,okay = handler.initialize_service(project_root=str(root),config_path='acestep-v15-turbo',
@@ -90,6 +103,8 @@ def main():
     reports=[]
     for name,path,seconds in jobs:
         t0=time.monotonic()
+        lines=[s['text'] for s in transcript if name=='full' or (s['end']>start and s['start']<start+clip_duration)]
+        lyrics=('\n'.join(lines))[:3900]
         params=GenerationParams(
             task_type='cover',src_audio=str(path),reference_audio=None,
             caption=('A polished intimate Russian lullaby with natural expressive lead vocals, '
@@ -97,7 +112,7 @@ def main():
                      'warm electric piano, restrained bass and delicate brushed percussion. '
                      'Gentle flowing dynamics, spacious clean stereo production, clear vocals. '
                      'No celesta, no violin, no heavy drums, no distortion.'),
-            lyrics='',vocal_language='ru',duration=seconds,bpm=76,keyscale='C minor',
+            lyrics=lyrics,vocal_language='ru',duration=seconds,bpm=76,keyscale='C minor',
             audio_cover_strength=.75,inference_steps=8,shift=3.0,seed=129,
             thinking=False,use_cot_metas=False,use_cot_caption=False,use_cot_language=False,
             enable_normalization=True,normalization_db=-1.5,
@@ -111,6 +126,8 @@ def main():
         dest=args.output/f'ace_step_{name}.wav'
         shutil.copyfile(generated,dest)
         y,rate=sf.read(dest,always_2d=True)
+        if abs(len(y)/rate-seconds)>.5:
+            raise RuntimeError('Generated output does not cover the requested duration.')
         if not np.isfinite(y).all() or np.sqrt(np.mean(y*y))<1e-5:
             raise RuntimeError('Generated audio is invalid or silent.')
         subprocess.run(['ffmpeg','-y','-v','error','-i',str(dest),'-c:a','libmp3lame',
@@ -118,6 +135,7 @@ def main():
         reports.append(dict(name=name,duration_seconds=len(y)/rate,
                             generation_seconds=round(time.monotonic()-t0,1),
                             model='ACE-Step 1.5 Turbo',task='cover',seed=129,
+                            lyrics_conditioned=bool(lyrics),
                             source_start_seconds=start if name=='preview' else 0,
                             note='Generated cover, not restoration: vocal timbre, pronunciation and arrangement may change.'))
         # Keep only final standardized files. Do not publish source-side captions,
