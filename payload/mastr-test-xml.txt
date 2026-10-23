@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="app.mastr.studio.StudioDeviceTest" tests="4" failures="0" errors="0" skipped="0" time="30.541" timestamp="2026-10-23T02:14:17" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="wavFormatsAndAacRoundTrip" classname="app.mastr.studio.StudioDeviceTest" time="1.136" />
+  <testcase name="realOnnxSeparationProducesComplementaryStems" classname="app.mastr.studio.StudioDeviceTest" time="20.543" />
+  <testcase name="demoMasterAndExportDialog" classname="app.mastr.studio.StudioUiTest" time="5.738" />
+  <testcase name="navigationWorks" classname="app.mastr.studio.StudioUiTest" time="1.336" />
+</testsuite>
