@@ -50,6 +50,7 @@ class StudioViewModel(app: Application) : AndroidViewModel(app) {
     fun tab(index: Int) { _state.update { it.copy(tab = index) } }
     fun category(c: String) { _state.update { it.copy(category = c) } }
     fun errorHandled() { _state.update { it.copy(error = null) } }
+    fun storagePermissionDenied() { _state.update { it.copy(error = "Чтобы сохранять в Загрузки на Android 8/9, разрешите запись в память. Файл пока не сохранён.") } }
     fun messageHandled() { _state.update { it.copy(message = null) } }
     fun favorite(id: String) {
         val ids = state.value.favorites.toMutableSet(); if (!ids.add(id)) ids.remove(id)

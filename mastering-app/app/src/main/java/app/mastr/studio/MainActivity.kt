@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -88,14 +89,15 @@ class MainActivity : ComponentActivity() {
     val s by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var export by remember { mutableStateOf(false) }
-    var format by remember { mutableStateOf("wav24") }
+    var format by rememberSaveable { mutableStateOf("wav24") }
     var help by remember { mutableStateOf(false) }
     var licenses by remember { mutableStateOf(false) }
-    var pendingDownload by remember { mutableStateOf(false) }
+    var pendingDownload by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val importer = rememberLauncherForActivityResult(OpenAudioFile()) { uri -> uri?.let { vm.import(it) } }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) { if (pendingDownload) vm.downloadUpdate() else vm.export(format) }
+        else vm.storagePermissionDenied()
     }
     fun saveOrDownload(update: Boolean) {
         pendingDownload = update
