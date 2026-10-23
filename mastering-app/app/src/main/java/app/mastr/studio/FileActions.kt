@@ -8,7 +8,7 @@ import androidx.activity.result.contract.ActivityResultContract
 
 /** A concrete MIME type is mandatory: wildcards are NOT valid document types. */
 data class AudioExportRequest(val name:String,val mime:String) {
-    init { require(mime=="audio/wav" || mime=="audio/mp4") }
+    init { require(mime=="audio/x-wav" || mime=="audio/mp4") }
 }
 enum class AudioImportMode { AUDIO, ALL_FILES, DOCUMENTS }
 
