@@ -249,6 +249,9 @@ jobs:
           set -euo pipefail
           version=$(cat runtime/publish/version)
           gh release create "mastr-v$version" "runtime/publish/MASTR-Studio-$version.apk" "runtime/publish/MASTR-Studio-$version.apk.sha256" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false --title "MASTR Studio $version" --notes-file mastering-app/RELEASE_NOTES_RU.md
+          mkdir -p runtime/publish/roundtrip
+          gh release download "mastr-v$version" --repo "$GITHUB_REPOSITORY" --pattern "MASTR-Studio-$version.apk" --dir runtime/publish/roundtrip
+          cmp "runtime/publish/MASTR-Studio-$version.apk" "runtime/publish/roundtrip/MASTR-Studio-$version.apk"
       - name: Return delivery install screenshot
         run: |
           set -euo pipefail
