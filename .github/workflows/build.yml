@@ -71,11 +71,14 @@ jobs:
           python music/ai_artifacts.py keygen runtime/worker_private.key runtime/offer/worker_public.key
           python -c "from pathlib import Path; print('::notice title=AI worker public key::'+Path('runtime/offer/worker_public.key').read_bytes().hex())"
       - name: Publish transfer offer
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-transfer-offer-${{ github.run_id }}
-          path: runtime/offer/worker_public.key
-          retention-days: 1
+        run: |
+          test "$GITHUB_REF_NAME" = 'arena/ebbb08ec-vadim129'
+          cp runtime/offer/worker_public.key music/ai_worker_public.key
+          git config user.email 'ci@local'
+          git config user.name 'Music inference worker'
+          git add music/ai_worker_public.key
+          git commit -m "Publish ephemeral music worker public key"
+          git push origin "HEAD:$GITHUB_REF_NAME"
       - name: Worker resources
         run: |
           free -h
