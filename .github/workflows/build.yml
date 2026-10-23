@@ -159,8 +159,10 @@ jobs:
         run: |
           python -m pip install --quiet numpy onnxruntime==1.20.1
           python ci/prepare-mastering-model.py
-      - name: Build installable APK and run DSP tests
+      - name: Build test APK and run DSP tests (permanent signing is required before delivery)
         id: apk
+        env:
+          MASTR_ALLOW_TEMPORARY_SIGNING: 'true'
         run: bash ci/build-mastering.sh
       - name: Enable KVM
         run: |

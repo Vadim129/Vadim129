@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+// Release identities never fall back to a newly generated CI debug key.
+val permanentKeyPath = System.getenv("MASTR_KEYSTORE_PATH")
+val permanentKeyPassword = System.getenv("MASTR_KEYSTORE_PASSWORD")
+val temporaryCiSigning = System.getenv("MASTR_ALLOW_TEMPORARY_SIGNING") == "true"
 android {
     namespace = "app.mastr.studio"
     compileSdk = 35
@@ -17,16 +21,36 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs {
+        if (permanentKeyPath != null) {
+            create("permanent") {
+                storeFile = file(permanentKeyPath)
+                storeType = "PKCS12"
+                storePassword = permanentKeyPassword
+                keyAlias = "mastr-studio"
+                keyPassword = permanentKeyPassword
+            }
+        }
+    }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // A directly installable standalone APK. No Play Store account required.
-            signingConfig = signingConfigs.getByName("debug")
+            // Throwaway signing is explicitly opt-in, for CI device tests ONLY.
+            // ci/sign-mastering.py must apply the permanent identity before delivery.
+            signingConfig = if (permanentKeyPath != null) signingConfigs.getByName("permanent")
+                else if (temporaryCiSigning) signingConfigs.getByName("debug") else null
         }
     }
     packaging { jniLibs.useLegacyPackaging = true; resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*") }
+}
+tasks.matching { it.name == "packageRelease" }.configureEach {
+    doFirst {
+        check(permanentKeyPath != null || temporaryCiSigning) {
+            "Permanent signing key missing. Restore the private backup; never generate a replacement. See SIGNING.md."
+        }
+    }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))

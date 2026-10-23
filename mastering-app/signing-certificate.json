@@ -1,0 +1,8 @@
+{
+  "alias": "mastr-studio",
+  "owner": "Vadim129",
+  "certificate_sha256": "815ac7c1f9b6967fb51406c947d8cc8e1ef28d34fafa02d8c1e6c42e483b6933",
+  "valid_until": "2126-10-24T02:45:03+00:00",
+  "key_type": "RSA 3072",
+  "private_key_location": "Private workspace / private owner-controlled Drive backup; never in Git"
+}
