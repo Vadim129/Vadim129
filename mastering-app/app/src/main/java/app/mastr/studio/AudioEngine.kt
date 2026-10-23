@@ -122,17 +122,26 @@ object AudioEngine {
         return Audio(x)
     }
     fun limiter(x:FloatArray,ceiling:Double,rate:Int=44100) {
-        val n=x.size/2;val look=max(1,(rate*.005).toInt()); val deque=IntArray(n+1);var head=0;var tail=0
-        val peaks=FloatArray(n){max(abs(x[it*2]),abs(x[it*2+1]))}
-        var scan=0;var gain=1.0;val release=exp(-1.0/(rate*.09))
-        for(i in 0 until n) {
-            while(scan<min(n,i+look+1)) {while(tail>head && peaks[deque[tail-1]]<=peaks[scan])tail--;deque[tail++]=scan++}
-            while(tail>head && deque[head]<i)head++
-            val wanted=min(1.0,ceiling/max(1e-12,peaks[deque[head]].toDouble()))
-            gain=if(wanted<gain) wanted else release*gain+(1-release)*wanted
+        val n=x.size/2;val look=max(1,(rate*.005).toInt())
+        // Only the lookahead window is needed, not two track-length arrays.
+        // A 5-minute master now uses ~2 KiB for the queue, instead of ~106 MiB.
+        var capacity=1;while(capacity<look+2)capacity*=2
+        val mask=capacity-1;val indices=IntArray(capacity);val peaks=FloatArray(capacity)
+        var head=0;var tail=0;var count=0;var scan=0;var gain=1.0
+        val release=exp(-1.0/(rate*.09))
+        for(i in 0 until n){
+            while(count>0&&indices[head]<i){head=(head+1) and mask;count--}
+            while(scan<min(n,i+look+1)){
+                val peak=max(abs(x[scan*2]),abs(x[scan*2+1]))
+                while(count>0&&peaks[(tail-1) and mask]<=peak){tail=(tail-1) and mask;count--}
+                indices[tail]=scan++;peaks[tail]=peak;tail=(tail+1) and mask;count++
+            }
+            val wanted=min(1.0,ceiling/max(1e-12,peaks[head].toDouble()))
+            gain=if(wanted<gain)wanted else release*gain+(1-release)*wanted
             x[2*i]=(x[2*i]*gain).coerceIn(-ceiling,ceiling).toFloat();x[2*i+1]=(x[2*i+1]*gain).coerceIn(-ceiling,ceiling).toFloat()
         }
     }
+
     private fun denoise(input:FloatArray,strength:Double,progress:(Float)->Unit):FloatArray {
         val fft=FloatFFT_1D(2048);val n=2048;val hop=512;val frames=input.size/2
         val window=FloatArray(n){(.5-.5*cos(2*PI*it/n)).toFloat()};val samples=96;val powers=Array(n/2+1){FloatArray(samples)};val temp=FloatArray(n*2)
