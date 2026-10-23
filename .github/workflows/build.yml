@@ -233,6 +233,7 @@ jobs:
       - name: Enable KVM for signed upgrade test
         run: sudo chmod 666 /dev/kvm
       - name: Test in-place update from signed 1.0.1 and launch the actual delivery APK
+        id: upgrade
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -241,8 +242,9 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -memory 4096
-          script: bash ci/test-mastering-upgrade.sh
+          script: bash ci/test-mastering-upgrade.sh > payload/mastr-upgrade-log.txt 2>&1
       - name: Publish MASTR release and its signed APK on GitHub
+        id: publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -252,12 +254,23 @@ jobs:
           mkdir -p runtime/publish/roundtrip
           gh release download "mastr-v$version" --repo "$GITHUB_REPOSITORY" --pattern "MASTR-Studio-$version.apk" --dir runtime/publish/roundtrip
           cmp "runtime/publish/MASTR-Studio-$version.apk" "runtime/publish/roundtrip/MASTR-Studio-$version.apk"
-      - name: Return delivery install screenshot
+      - name: Return delivery install diagnostics and screenshot
+        if: always()
+        env:
+          UPGRADE_OUTCOME: ${{ steps.upgrade.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
         run: |
           set -euo pipefail
+          python - <<'PYDATA'
+          import json,os
+          from pathlib import Path
+          Path('payload/mastr-publication.json').write_text(json.dumps({'run_id':os.environ['GITHUB_RUN_ID'],'upgrade':os.environ['UPGRADE_OUTCOME'],'publication':os.environ['PUBLISH_OUTCOME']},indent=2)+'\n')
+          PYDATA
           git pull --ff-only origin "$GITHUB_REF_NAME"
           git config user.email 'ci@local'
           git config user.name 'MASTR release worker'
-          git add payload/mastr-installed.png
-          git commit -m 'Verify signed MASTR in-place update and publish GitHub release'
+          git add payload/mastr-publication.json
+          if [ -f payload/mastr-upgrade-log.txt ]; then git add payload/mastr-upgrade-log.txt; fi
+          if [ -f payload/mastr-installed.png ]; then git add payload/mastr-installed.png; fi
+          git commit -m 'Return signed MASTR upgrade and release diagnostics'
           git push origin "HEAD:$GITHUB_REF_NAME"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # The old public APK, NOT its private signing key, is all an upgrade test needs.
+git fetch --no-tags origin 63186fe15fedfef705c73d9e6733c5f366b2d9c0
 git show 63186fe:payload/mastr-studio.apk > runtime/publish/previous.apk
 adb install runtime/publish/previous.apk
 adb shell am start -W -S -n app.mastr.studio/.MainActivity
