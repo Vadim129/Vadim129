@@ -378,3 +378,301 @@ drwxr-xr-x 4 runner runner  4096 Oct 24 12:45 ..
  161.24– 161.60  [low]  Не-не!
  161.68– 162.48  [medium]  Гердак, береги там!
 + set +x
++ git config user.email ci@local
++ git config user.name ci
++ get_drive 14OPoL0FOzTlowCUPGNMg-kaI1KNfBLOl /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 14OPoL0FOzTlowCUPGNMg-kaI1KNfBLOl -O /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/song.mp3
+  0%|          | 0.00/6.77M [00:00<?, ?B/s] 46%|████▋     | 3.15M/6.77M [00:00<00:00, 30.1MB/s] 93%|█████████▎| 6.29M/6.77M [00:00<00:00, 29.3MB/s]100%|██████████| 6.77M/6.77M [00:00<00:00, 15.1MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/song.mp3
+-rw------- 1 runner runner 6768893 Oct 24 12:23 /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ get_drive 1pgtuYZJ5fJWXNUspwkFVu-ODjKkc2xpY /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1pgtuYZJ5fJWXNUspwkFVu-ODjKkc2xpY -O /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
+  0%|          | 0.00/67.8k [00:00<?, ?B/s]100%|██████████| 67.8k/67.8k [00:00<00:00, 5.67MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
+-rw------- 1 runner runner 67802 Oct 24 12:26 /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ get_drive 1Qwj_PHUJIVfbFXU6SsWK6aBPsZ06EjAN /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1Qwj_PHUJIVfbFXU6SsWK6aBPsZ06EjAN -O /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
+  0%|          | 0.00/83.3k [00:00<?, ?B/s]100%|██████████| 83.3k/83.3k [00:00<00:00, 7.17MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
+-rw------- 1 runner runner 83266 Oct 24 12:25 /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ ls -la /home/runner/work/Vadim129/Vadim129/orda /home/runner/work/Vadim129/Vadim129/orda/refs
+/home/runner/work/Vadim129/Vadim129/orda:
+total 6656
+drwxr-xr-x  4 runner runner    4096 Oct 24 12:47 .
+drwxr-xr-x 12 runner runner    4096 Oct 24 12:47 ..
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:47 analysis
+-rw-r--r--  1 runner runner   22511 Oct 24 12:47 logs.txt
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:47 refs
+-rw-------  1 runner runner 6768893 Oct 24 12:23 song.mp3
+-rw-r--r--  1 runner runner     120 Oct 24 12:47 track-info.txt
+
+/home/runner/work/Vadim129/Vadim129/orda/refs:
+total 160
+drwxr-xr-x 2 runner runner  4096 Oct 24 12:47 .
+drwxr-xr-x 4 runner runner  4096 Oct 24 12:47 ..
+-rw------- 1 runner runner 67802 Oct 24 12:26 ref-01.jpg
+-rw------- 1 runner runner 83266 Oct 24 12:25 ref-02.jpg
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ grep -E 'Duration|Stream'
++ true
++ cat /home/runner/work/Vadim129/Vadim129/orda/track-info.txt
+  Duration: 00:02:49.20, start: 0.025057, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 44100 Hz, stereo, fltp, 320 kb/s
++ echo '=== зависимость whisper ==='
+=== зависимость whisper ===
++ python3 -m pip install --quiet --break-system-packages faster-whisper
++ tail -3
++ python3 -c 'import faster_whisper; print('\''faster-whisper'\'', faster_whisper.__version__)'
+faster-whisper 1.2.1
++ echo '=== разметка ==='
+=== разметка ===
++ export FFMPEG
++ python3 ci/orda_analyze.py /home/runner/work/Vadim129/Vadim129/orda
++ tail -120
+   123.96  [high]  Открывай чердок, наведу бардаку,
+   127.94  [high]  Придет ордок, доставай, жена, была твоя, стала моя.
+   134.20  [high]  О, придет ордок, береги пердак,
+   138.98  [high]  Открывай чердок, наведу бардаку,
+   143.14  [high]  Придет ордок, доставай, жена, была твоя, стала моя.
+   150.94  [low]  А, братан, на чем город далеко, да?
+   152.98  [medium]  500 тенге, меньше не поеду, братан.
+   154.74  [medium]  А, да не, не, 300, 500 на телеге, 300 просто на батарее.
+   158.24  [high]  По километрам имею в виду.
+   159.32  [high]  Ага, давай, садись, садись, садись, да?
+   161.16  [medium]  Не, не, не.
+   161.58  [medium]  Пердак береги, да?
+   162.42  [medium]  За 300, за 300 поеду.
+   164.58  [low]  Садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, садись, с
+=== модель medium ===
+medium: язык=ru p=0.88, строк 102, слов 232
+     3.86  [medium]  Эй, братан!
+     5.06  [low]  О, да!
+     5.70  [low]  А, да, знаешь, когда Тюн-Гуру доехать, знаешь, да?
+     7.70  [medium]  Да, Тюн-Гуру, конечно знаю, братан!
+     9.28  [high]  Ага!
+     9.56  [low]  Ну, пацаны, направо поворачиваешь, да?
+    11.32  [medium]  И там!
+    11.90  [medium]  Тюн-Гу-Рюк!
+    12.68  [medium]  Ваше Толло!
+    13.86  [high]  Тинга!
+    14.66  [medium]  Елонда!
+    15.68  [high]  Ебаган!
+    16.58  [medium]  Касунда!
+    17.76  [high]  Кырлык!
+    18.48  [medium]  Ардо!
+    19.70  [medium]  Карковы!
+    20.44  [high]  Абай!
+    21.30  [high]  Чирга!
+    22.36  [high]  Алтай!
+    23.12  [high]  Толло!
+    24.08  [high]  Ардо!
+    24.56  [medium]  С батыром едем, едем по стире, пи!
+    28.70  [high]  А подо мною так село скрипит в ритм.
+    34.60  [low]  Битбатка притон!
+    40.04  [high]  Ай, Гюль в органе тьютедустор!
+    42.40  [medium]  Хан, хан, хан!
+    43.74  [medium]  А мне пора, меня зовет Сабар!
+    46.16  [high]  Хан, хан, хан, хан, хан!
+    49.24  [high]  Великий Чингис, хан!
+    54.14  [high]  О, придет Ардо!
+    56.80  [high]  Бери Гиппердок!
+    58.94  [high]  Открывай чердок!
+    60.32  [medium]  На виду бардако!
+    62.84  [high]  Придет Ардо!
+    64.34  [high]  Доставай жену!
+    66.20  [high]  Была твоя столом моя!
+    77.16  [medium]  Тигурюк!
+    78.28  [medium]  Паштало!
+    79.42  [high]  Тинга!
+    80.24  [medium]  Елонда!
+    81.12  [high]  Ебаган!
+    82.06  [medium]  Касунда!
+    83.12  [high]  Кырлык!
+    84.10  [high]  Ардо!
+    84.90  [medium]  Карковы!
+    85.98  [high]  Абай!
+    86.82  [high]  Чирга!
+    87.94  [high]  Алтай!
+    88.50  [low]  Талло!
+    89.70  [low]  Ардо!
+    90.52  [high]  Пускай, пускай!
+    91.78  [high]  По реке туман!
+    93.34  [high]  Шаман!
+    94.36  [high]  У Чингис хана есть эротичный план!
+    98.16  [high]  Качуй!
+    98.98  [medium]  Осимиляй!
+   100.10  [high]  Качуй!
+   100.94  [high]  Осимиляй!
+   101.82  [high]  Качуй!
+   102.78  [high]  Осимиляй!
+   103.64  [high]  Качуй!
+   104.64  [high]  Осимиляй!
+   105.54  [medium]  Ардо не в поле!
+   106.98  [high]  Ардо не в степи!
+   109.30  [medium]  Ардо!
+   110.00  [high]  Хаосу!
+   110.72  [high]  Тебя в крови!
+   112.64  [high]  Сила!
+   112.88  [low]  Ты мучина!
+   120.30  [medium]  О!
+   121.04  [high]  Придет ардо!
+   122.50  [high]  Береги пердак!
+   124.74  [high]  Открывай чердак!
+   126.34  [high]  На виду бардак!
+   128.30  [high]  О!
+   128.50  [high]  Придет ардо!
+   130.00  [high]  Доставай жена!
+   132.02  [high]  Была твоя!
+   133.08  [medium]  Столом моя!
+   135.30  [medium]  О!
+   135.92  [high]  Придет ардо!
+   137.40  [high]  Береги пердак!
+   139.34  [high]  Открывай чердак!
+   141.30  [high]  На виду бардак!
+   143.40  [medium]  Придет ардо!
+   145.40  [high]  Доставай жена!
+   147.04  [medium]  Была твоя!
+   147.92  [medium]  Столом моя!
+   151.00  [low]  А, братан, а?
+   151.90  [medium]  О!
+   152.18  [medium]  На Темгура далеко, да?
+   153.14  [high]  500 тенге меньше не поеду, братан.
+   154.90  [medium]  А, да не, не.
+   155.64  [medium]  300.
+   156.04  [low]  500 на телеге, 300 просто на батарее.
+   158.28  [high]  По километрам имею ввиду.
+   159.36  [high]  А, давай, садись.
+   160.66  [high]  Садись, да?
+   161.30  [medium]  Не, не.
+   161.64  [medium]  Пердак, береги там.
+   163.08  [medium]  А, да, да.
+   164.10  [high]  Поехали.
+лучший проход: medium (232 слов, язык ru)
+готово
++ ls -la /home/runner/work/Vadim129/Vadim129/orda /home/runner/work/Vadim129/Vadim129/orda/analysis
+/home/runner/work/Vadim129/Vadim129/orda:
+total 6664
+drwxr-xr-x  4 runner runner    4096 Oct 24 12:47 .
+drwxr-xr-x 12 runner runner    4096 Oct 24 12:47 ..
+drwxr-xr-x  2 runner runner    4096 Oct 24 13:00 analysis
+-rw-r--r--  1 runner runner   30738 Oct 24 13:00 logs.txt
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:47 refs
+-rw-------  1 runner runner 6768893 Oct 24 12:23 song.mp3
+-rw-r--r--  1 runner runner     120 Oct 24 12:48 track-info.txt
+
+/home/runner/work/Vadim129/Vadim129/orda/analysis:
+total 124
+drwxr-xr-x 2 runner runner  4096 Oct 24 13:00 .
+drwxr-xr-x 4 runner runner  4096 Oct 24 12:47 ..
+-rw-r--r-- 1 runner runner 20177 Oct 24 12:48 audio.json
+-rw-r--r-- 1 runner runner 19767 Oct 24 12:55 pass-large-v3.json
+-rw-r--r-- 1 runner runner  3358 Oct 24 12:55 pass-large-v3.txt
+-rw-r--r-- 1 runner runner 29865 Oct 24 13:00 pass-medium.json
+-rw-r--r-- 1 runner runner  5205 Oct 24 13:00 pass-medium.txt
+-rw-r--r-- 1 runner runner  6420 Oct 24 13:00 phrases.csv
+-rw-r--r-- 1 runner runner 13178 Oct 24 13:00 words.json
+-rw-r--r-- 1 runner runner  5276 Oct 24 13:00 расшифровка.txt
++ head -c 4000 /home/runner/work/Vadim129/Vadim129/orda/analysis/расшифровка.txt
+дорожка 169.14 c, BPM≈82.8, модель medium, язык ru
+
+   3.86–   4.82  [medium]  Эй, братан!
+   5.06–   5.52  [low]  О, да!
+   5.70–   7.62  [low]  А, да, знаешь, когда Тюн-Гуру доехать, знаешь, да?
+   7.70–   9.18  [medium]  Да, Тюн-Гуру, конечно знаю, братан!
+   9.28–   9.52  [high]  Ага!
+   9.56–  11.12  [low]  Ну, пацаны, направо поворачиваешь, да?
+  11.32–  11.68  [medium]  И там!
+  11.90–  12.64  [medium]  Тюн-Гу-Рюк!
+  12.68–  13.46  [medium]  Ваше Толло!
+  13.86–  14.34  [high]  Тинга!
+  14.66–  15.14  [medium]  Елонда!
+  15.68–  16.16  [high]  Ебаган!
+  16.58–  17.06  [medium]  Касунда!
+  17.76–  18.24  [high]  Кырлык!
+  18.48–  18.96  [medium]  Ардо!
+  19.70–  20.18  [medium]  Карковы!
+  20.44–  20.92  [high]  Абай!
+  21.30–  21.78  [high]  Чирга!
+  22.36–  22.84  [high]  Алтай!
+  23.12–  23.60  [high]  Толло!
+  24.08–  24.56  [high]  Ардо!
+  24.56–  28.32  [medium]  С батыром едем, едем по стире, пи!
+  28.70–  32.40  [high]  А подо мною так село скрипит в ритм.
+  34.60–  36.18  [low]  Битбатка притон!
+  40.04–  41.40  [high]  Ай, Гюль в органе тьютедустор!
+  42.40–  43.58  [medium]  Хан, хан, хан!
+  43.74–  46.02  [medium]  А мне пора, меня зовет Сабар!
+  46.16–  49.04  [high]  Хан, хан, хан, хан, хан!
+  49.24–  51.02  [high]  Великий Чингис, хан!
+  54.14–  56.48  [high]  О, придет Ардо!
+  56.80–  58.44  [high]  Бери Гиппердок!
+  58.94–  60.32  [high]  Открывай чердок!
+  60.32–  62.32  [medium]  На виду бардако!
+  62.84–  64.08  [high]  Придет Ардо!
+  64.34–  66.04  [high]  Доставай жену!
+  66.20–  68.32  [high]  Была твоя столом моя!
+  77.16–  78.28  [medium]  Тигурюк!
+  78.28–  79.04  [medium]  Паштало!
+  79.42–  80.02  [high]  Тинга!
+  80.24–  80.74  [medium]  Елонда!
+  81.12–  81.78  [high]  Ебаган!
+  82.06–  82.66  [medium]  Касунда!
+  83.12–  83.76  [high]  Кырлык!
+  84.10–  84.66  [high]  Ардо!
+  84.90–  85.82  [medium]  Карковы!
+  85.98–  86.54  [high]  Абай!
+  86.82–  87.36  [high]  Чирга!
+  87.94–  88.50  [high]  Алтай!
+  88.50–  89.60  [low]  Талло!
+  89.70–  90.12  [low]  Ардо!
+  90.52–  91.72  [high]  Пускай, пускай!
+  91.78–  93.28  [high]  По реке туман!
+  93.34–  93.50  [high]  Шаман!
+  94.36–  97.96  [high]  У Чингис хана есть эротичный план!
+  98.16–  98.60  [high]  Качуй!
+  98.98–  99.82  [medium]  Осимиляй!
+ 100.10– 100.52  [high]  Качуй!
+ 100.94– 101.78  [high]  Осимиляй!
+ 101.82– 102.34  [high]  Качуй!
+ 102.78– 103.62  [high]  Осимиляй!
+ 103.64– 104.40  [high]  Качуй!
+ 104.64– 105.48  [high]  Осимиляй!
+ 105.54– 106.90  [medium]  Ардо не в поле!
+ 106.98– 108.82  [high]  Ардо не в степи!
+ 109.30– 110.00  [medium]  Ардо!
+ 110.00– 110.72  [high]  Хаосу!
+ 110.72– 111.50  [high]  Тебя в крови!
+ 112.64– 112.88  [high]  Сила!
+ 112.88– 117.22  [low]  Ты мучина!
+ 120.30– 120.74  [medium]  О!
+ 121.04– 122.30  [high]  Придет ардо!
+ 122.50– 124.14  [high]  Береги пердак!
+ 124.74– 126.16  [high]  Открывай чердак!
+ 126.34– 127.84  [high]  На виду бардак!
+ 128.30– 128.48  [high]  О!
+ 128.50– 129.70  [high]  Придет ардо!
+ 130.00– 131.54  [high]  Доставай жена!
+ 132.02– 133.08  [high]  Была твоя!
+ 133.0+ set +x
