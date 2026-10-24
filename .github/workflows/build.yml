@@ -1,10 +1,8 @@
 name: build
 on:
   push:
-    branches: [ 'arena/daaeaa56-vadim129' ]
+    branches: [ 'arena/daaeaa56-vadim129', 'arena/f29f4753-vadim129' ]
   workflow_dispatch:
-  repository_dispatch:
-    types: [ stage ]
 permissions:
   contents: write
 concurrency:
@@ -17,12 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: stage
-        run: bash ci/$(cat ci/stage.txt).sh || echo "stage script exit=$?"
+        run: |
+          # на ветке агента стадия запускается только явным коммитом «ci-run: …»,
+          # чтобы обычные пуши с кадрами не поднимали тяжёлые прогоны
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" = "arena/f29f4753-vadim129" ]; then
+            if ! git log -1 --pretty=%s | grep -q '^ci-run:'; then
+              echo "стадия не запрошена (нет ci-run: в сообщении коммита)"; exit 0
+            fi
+          fi
+          bash ci/$(cat ci/stage.txt).sh || echo "stage script exit=$?"
       - name: diagnostics (annotations)
         if: always()
         run: |
           if [ -f out8/ошибка-push.txt ]; then echo "::error title=push-diag::$(head -c 600 out8/ошибка-push.txt | tr '\n' ' ')"; fi
           if [ -f out6/ошибка-push.txt ]; then echo "::error title=push-diag-6::$(head -c 600 out6/ошибка-push.txt | tr '\n' ' ')"; fi
+          if [ -f orda/ошибка-push.txt ]; then echo "::error title=push-diag-orda::$(head -c 600 orda/ошибка-push.txt | tr '\n' ' ')"; fi
       - name: artifact с результатом
         if: always()
         uses: actions/upload-artifact@v4
@@ -34,6 +41,7 @@ jobs:
             out8/**
             out6/**
             out5/**
+            orda/**
       - name: commit payload
         if: always()
         run: |
