@@ -3,6 +3,8 @@ on:
   push:
     branches: [ 'arena/daaeaa56-vadim129' ]
   workflow_dispatch:
+  repository_dispatch:
+    types: [ stage ]
 permissions:
   contents: write
 concurrency:
