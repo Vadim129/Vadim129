@@ -219,3 +219,162 @@ drwxr-xr-x 4 runner runner  4096 Oct 24 12:42 ..
 -rw-r--r-- 1 runner runner 21795 Oct 24 12:42 audio.json
 + head -c 4000 /home/runner/work/Vadim129/Vadim129/orda/analysis/расшифровка.txt
 + set +x
++ git config user.email ci@local
++ git config user.name ci
++ get_drive 14OPoL0FOzTlowCUPGNMg-kaI1KNfBLOl /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 14OPoL0FOzTlowCUPGNMg-kaI1KNfBLOl -O /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/song.mp3
+  0%|          | 0.00/6.77M [00:00<?, ?B/s]  8%|▊         | 524k/6.77M [00:00<00:01, 4.73MB/s] 46%|████▋     | 3.15M/6.77M [00:00<00:00, 16.8MB/s]100%|██████████| 6.77M/6.77M [00:00<00:00, 25.4MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/song.mp3
+-rw------- 1 runner runner 6768893 Oct 24 12:23 /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ get_drive 1pgtuYZJ5fJWXNUspwkFVu-ODjKkc2xpY /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1pgtuYZJ5fJWXNUspwkFVu-ODjKkc2xpY -O /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
+  0%|          | 0.00/67.8k [00:00<?, ?B/s]100%|██████████| 67.8k/67.8k [00:00<00:00, 1.52MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
+-rw------- 1 runner runner 67802 Oct 24 12:26 /home/runner/work/Vadim129/Vadim129/orda/refs/ref-01.jpg
++ get_drive 1Qwj_PHUJIVfbFXU6SsWK6aBPsZ06EjAN /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ python3 -m pip install --quiet --break-system-packages gdown
++ gdown 1Qwj_PHUJIVfbFXU6SsWK6aBPsZ06EjAN -O /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ tail -2
+To: /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
+  0%|          | 0.00/83.3k [00:00<?, ?B/s]100%|██████████| 83.3k/83.3k [00:00<00:00, 1.74MB/s]
++ ls -la /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
+-rw------- 1 runner runner 83266 Oct 24 12:25 /home/runner/work/Vadim129/Vadim129/orda/refs/ref-02.jpg
++ ls -la /home/runner/work/Vadim129/Vadim129/orda /home/runner/work/Vadim129/Vadim129/orda/refs
+/home/runner/work/Vadim129/Vadim129/orda:
+total 6648
+drwxr-xr-x  4 runner runner    4096 Oct 24 12:45 .
+drwxr-xr-x 12 runner runner    4096 Oct 24 12:45 ..
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:45 analysis
+-rw-r--r--  1 runner runner   13994 Oct 24 12:45 logs.txt
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:45 refs
+-rw-------  1 runner runner 6768893 Oct 24 12:23 song.mp3
+-rw-r--r--  1 runner runner     120 Oct 24 12:45 track-info.txt
+
+/home/runner/work/Vadim129/Vadim129/orda/refs:
+total 160
+drwxr-xr-x 2 runner runner  4096 Oct 24 12:45 .
+drwxr-xr-x 4 runner runner  4096 Oct 24 12:45 ..
+-rw------- 1 runner runner 67802 Oct 24 12:26 ref-01.jpg
+-rw------- 1 runner runner 83266 Oct 24 12:25 ref-02.jpg
++ ensure_ffmpeg
++ command -v ffmpeg
++ command -v ffmpeg
++ export FFMPEG=ffmpeg
++ FFMPEG=ffmpeg
++ command -v ffprobe
++ export FFPROBE=ffprobe
++ FFPROBE=ffprobe
++ echo 'ffmpeg: ffmpeg'
+ffmpeg: ffmpeg
++ ffmpeg -hide_banner -version
++ head -1
+ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++ ffmpeg -hide_banner -i /home/runner/work/Vadim129/Vadim129/orda/song.mp3
++ grep -E 'Duration|Stream'
++ true
++ cat /home/runner/work/Vadim129/Vadim129/orda/track-info.txt
+  Duration: 00:02:49.20, start: 0.025057, bitrate: 320 kb/s
+  Stream #0:0: Audio: mp3, 44100 Hz, stereo, fltp, 320 kb/s
++ echo '=== зависимость whisper ==='
+=== зависимость whisper ===
++ python3 -m pip install --quiet --break-system-packages faster-whisper
++ tail -3
++ python3 -c 'import faster_whisper; print('\''faster-whisper'\'', faster_whisper.__version__)'
+faster-whisper 1.2.1
++ echo '=== разметка ==='
+=== разметка ===
++ export FFMPEG
++ python3 ci/orda_analyze.py /home/runner/work/Vadim129/Vadim129/orda
++ tail -120
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[0;93m2026-10-24 12:46:18.186906932 [W:onnxruntime:Default, device_discovery.cc:95 GetPciBusId] Skipping pci_bus_id for PCI path at "/sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0004:00/MSFT1000:00/5620e0c7-8062-4dce-aeb7-520c7ef76171" because filename "5620e0c7-8062-4dce-aeb7-520c7ef76171" did not match expected pattern of [0-9a-f]+:[0-9a-f]+:[0-9a-f]+[.][0-9a-f]+[m
+длительность: 169.14 c, сэмплов 2706303
+BPM≈160.0, лаг 15 кадров
+модель: medium (int8, cpu)
+язык: ru p=1.00, длительность сегментов 169.1
+[01]    3.41  medium  Эй, братан!
+[02]    5.17  medium  А, да!
+[03]    5.71  medium  А, да!
+[04]    6.15  high    Знаешь, когда Тенгуру доехать?
+[05]    7.37  high    Знаешь, да!
+[06]    7.77  medium  Когда Тенгуру?
+[07]    8.31  high    Конечно знаю, братан!
+[08]    9.35  high    Ага!
+[09]    9.65  medium  Пацаны, направо поворачиваешь, да?
+[10]   11.45  high    И там!
+[11]   12.19  medium  Тенгурук!
+[12]   13.03  medium  Баштало!
+[13]   13.83  high    Тинга!
+[14]   14.67  medium  Едонда!
+[15]   15.81  high    Ебаган!
+[16]   16.59  medium  Касунда!
+[17]   18.46  medium  Арда!
+[18]   19.60  medium  Каркавы!
+[19]   20.48  high    Абай!
+[20]   21.24  high    Чирга!
+[21]   76.52  high    Поворачиваешь, и там!
+[22]   77.56  high    Тенгурук!
+[23]  156.18  high    500 на телеге, 300 просто на батарее!
+[24]  158.28  high    По километрам имею ввиду!
+[25]  159.34  high    Ага, давай, садись!
+[26]  160.26  high    Садись, садись, да?
+[27]  161.24  low     Не-не!
+[28]  161.68  medium  Гердак, береги там!
+готово: 28 строк, 60 слов
++ ls -la /home/runner/work/Vadim129/Vadim129/orda /home/runner/work/Vadim129/Vadim129/orda/analysis
+/home/runner/work/Vadim129/Vadim129/orda:
+total 6652
+drwxr-xr-x  4 runner runner    4096 Oct 24 12:45 .
+drwxr-xr-x 12 runner runner    4096 Oct 24 12:45 ..
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:46 analysis
+-rw-r--r--  1 runner runner   17904 Oct 24 12:46 logs.txt
+drwxr-xr-x  2 runner runner    4096 Oct 24 12:45 refs
+-rw-------  1 runner runner 6768893 Oct 24 12:23 song.mp3
+-rw-r--r--  1 runner runner     120 Oct 24 12:45 track-info.txt
+
+/home/runner/work/Vadim129/Vadim129/orda/analysis:
+total 44
+drwxr-xr-x 2 runner runner  4096 Oct 24 12:46 .
+drwxr-xr-x 4 runner runner  4096 Oct 24 12:45 ..
+-rw-r--r-- 1 runner runner 21795 Oct 24 12:46 audio.json
+-rw-r--r-- 1 runner runner  1879 Oct 24 12:46 phrases.csv
+-rw-r--r-- 1 runner runner  3481 Oct 24 12:46 words.json
+-rw-r--r-- 1 runner runner  1519 Oct 24 12:46 расшифровка.txt
++ head -c 4000 /home/runner/work/Vadim129/Vadim129/orda/analysis/расшифровка.txt
+дорожка 169.14 c, BPM≈160.0, модель medium
+
+   3.41–   4.79  [medium]  Эй, братан!
+   5.17–   5.51  [medium]  А, да!
+   5.71–   6.03  [medium]  А, да!
+   6.15–   7.19  [high]  Знаешь, когда Тенгуру доехать?
+   7.37–   7.61  [high]  Знаешь, да!
+   7.77–   8.31  [medium]  Когда Тенгуру?
+   8.31–   9.19  [high]  Конечно знаю, братан!
+   9.35–   9.51  [high]  Ага!
+   9.65–  11.05  [medium]  Пацаны, направо поворачиваешь, да?
+  11.45–  11.71  [high]  И там!
+  12.19–  12.63  [medium]  Тенгурук!
+  13.03–  13.47  [medium]  Баштало!
+  13.83–  14.27  [high]  Тинга!
+  14.67–  15.11  [medium]  Едонда!
+  15.81–  16.25  [high]  Ебаган!
+  16.59–  17.03  [medium]  Касунда!
+  18.46–  18.90  [medium]  Арда!
+  19.60–  20.04  [medium]  Каркавы!
+  20.48–  20.92  [high]  Абай!
+  21.24–  21.68  [high]  Чирга!
+  76.52–  77.34  [high]  Поворачиваешь, и там!
+  77.56–  78.00  [high]  Тенгурук!
+ 156.18– 158.24  [high]  500 на телеге, 300 просто на батарее!
+ 158.28– 159.28  [high]  По километрам имею ввиду!
+ 159.34– 160.20  [high]  Ага, давай, садись!
+ 160.26– 161.24  [high]  Садись, садись, да?
+ 161.24– 161.60  [low]  Не-не!
+ 161.68– 162.48  [medium]  Гердак, береги там!
++ set +x
