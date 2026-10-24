@@ -15,7 +15,11 @@ bin/
 gen/
 out/
 #  Uncomment the following line in case you need and you don't have the release build type files in your app
-# release/
+#  release/
+
+# Drive-hosted video project assets and generated renders stay outside Git
+/projects/three-zero-zero-eight/
+/google_drive/
 
 # Gradle files
 .gradle/
