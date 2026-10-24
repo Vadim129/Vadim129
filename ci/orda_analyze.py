@@ -64,10 +64,8 @@ def main():
         json.dump(audio, f, ensure_ascii=False)
 
     # --- Whisper ---
-    # даём модели готовый wav: pyav в некоторых версиях не умеет открывать mp3 напрямую
+    # отдаём модели массив сэмплов: pyav 18 не открывает файлы старым вызовом
     from faster_whisper import WhisperModel
-    wav16 = os.path.join('/tmp', 'orda-16k.wav')
-    subprocess.run([FF, '-y', '-v', 'error', '-i', SONG, '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', wav16], check=True)
     model_name = os.environ.get('WHISPER_MODEL', 'medium')
     print(f'модель: {model_name} (int8, cpu)')
     try:
@@ -77,7 +75,7 @@ def main():
         model_name = 'small'
         model = WhisperModel(model_name, device='cpu', compute_type='int8')
     segments, info = model.transcribe(
-        wav16,
+        x,
         language='ru',
         initial_prompt=None,
         beam_size=5,
