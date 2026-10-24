@@ -18,7 +18,11 @@ HORSE_D = (146, 96, 46, 255)
 MAN_SHIRT = (78, 132, 196, 255)
 MAN_PANTS = (52, 60, 82, 255)
 SKIN = (238, 198, 164, 255)
-RABBIT = (250, 250, 248, 255)
+RABBIT = (246, 168, 190, 255)
+RABBIT_D = (214, 120, 148, 255)
+HOOD = (34, 30, 34, 255)
+HAIR = (208, 178, 132, 255)
+SHADES = (18, 16, 18, 255)
 PINK = (240, 150, 170, 255)
 RED = (206, 62, 58, 255)
 GREEN = (84, 152, 94, 255)
@@ -134,28 +138,33 @@ def horse_ride(phase):
     # седло
     p.poly([(40, 62 + bob), (74, 58 + bob), (78, 70 + bob), (42, 74 + bob)], fill=RED, width=3)
 
-    # ---- заяц: сидит в седле, уши торчком, лапы с поводьями ----
+    # ---- заяц в капюшоне (референс: розовый заяц-злодей) ----
     y = bob * 1.3
-    p.ellipse((44, 30 + y, 84, 66 + y), fill=RABBIT, outline=INK, width=3, flat=0.04)     # туловище
-    p.ellipse((64, 4 + y, 98, 38 + y), fill=RABBIT, outline=INK, width=3, flat=0.04)      # голова
-    # уши (мотаются назад от скорости)
+    p.ellipse((44, 28 + y, 86, 68 + y), fill=HOOD, outline=INK, width=3, flat=0.04)     # плащ
+    p.ellipse((62, 4 + y, 100, 42 + y), fill=HOOD, outline=INK, width=3, flat=0.04)     # капюшон
+    p.ellipse((66, 10 + y, 98, 40 + y), fill=RABBIT, outline=INK, width=3, flat=0.03)   # морда в капюшоне
+    # уши торчком, мотаются от скорости
     ear = math.sin(phase * 2 * math.pi) * 4
-    p.ellipse((66 - ear, -16 + y + 8, 76 - ear, 12 + y), fill=RABBIT, outline=INK, width=3)
-    p.ellipse((80 - ear, -14 + y + 8, 89 - ear, 12 + y), fill=RABBIT, outline=INK, width=3)
-    p.ellipse((68 - ear, -6 + y + 8, 74 - ear, 8 + y), fill=PINK, outline=None)
-    p.ellipse((82 - ear, -5 + y + 8, 87 - ear, 8 + y), fill=PINK, outline=None)
-    # злая морда
-    d.ellipse((82, 16 + y, 88, 22 + y), fill=INK)
-    d.ellipse((92, 22 + y, 97, 27 + y), fill=PINK)
-    p.line((78, 10 + y), (86, 13 + y), INK, 2, 0.4)          # бровь
-    p.line((84, 30 + y), (95, 28 + y), INK, 2, 0.5)          # ухмылка
-    # передние лапы с поводьями
-    p.line((80, 38 + y), (108, 52 + y), RABBIT, 6, 0.5)
-    p.line((90, 40 + y), (114, 58 + y), RABBIT, 5, 0.5)
+    p.ellipse((64 - ear, -22 + y + 8, 76 - ear, 12 + y), fill=RABBIT, outline=INK, width=3)
+    p.ellipse((80 - ear, -20 + y + 8, 92 - ear, 12 + y), fill=RABBIT, outline=INK, width=3)
+    p.ellipse((67 - ear, -14 + y + 8, 73 - ear, 8 + y), fill=RABBIT_D, outline=None)
+    p.ellipse((83 - ear, -12 + y + 8, 89 - ear, 8 + y), fill=RABBIT_D, outline=None)
+    # злая морда: брови, глаза, клыки
+    p.line((70, 17 + y), (80, 20 + y), INK, 3, 0.4)
+    p.line((86, 20 + y), (95, 17 + y), INK, 3, 0.4)
+    d.ellipse((73, 21 + y, 80, 28 + y), fill=WHITE)
+    d.ellipse((76, 23 + y, 80, 27 + y), fill=INK)
+    d.ellipse((86, 22 + y, 93, 29 + y), fill=WHITE)
+    d.ellipse((89, 24 + y, 93, 28 + y), fill=INK)
+    p.line((78, 34 + y), (90, 33 + y), INK, 2, 0.4)                  # пасть
+    p.poly([(81, 34 + y), (83, 39 + y), (86, 34 + y)], fill=WHITE, outline=INK, width=1)
+    d.ellipse((94, 27 + y, 99, 32 + y), fill=RABBIT_D)               # нос
+    # лапы с поводьями
+    p.line((82, 40 + y), (108, 52 + y), HOOD, 6, 0.5)
+    p.line((92, 44 + y), (112, 58 + y), HOOD, 5, 0.5)
     p.line((108, 50 + y), (126, 60 + bob), RED, 2, 0.5)
     p.line((112, 56 + y), (128, 62 + bob), RED, 2, 0.5)
-    # задняя лапа в стремя
-    p.line((54, 62 + y), (48, 76 + y), RABBIT, 6, 0.5)
+    p.line((54, 64 + y), (48, 78 + y), HOOD, 6, 0.5)
     return im
 
 
@@ -170,10 +179,10 @@ def man(pose, phase=0.0):
         hip = (54, 82)
         p.line((56, 58), hip, MAN_SHIRT, 16, 0.4)
         p.ellipse((46, 34, 78, 66), fill=MAN_SHIRT, outline=INK, width=3)
+        p.ellipse((50, 2, 82, 38), fill=HAIR, outline=INK, width=3)          # длинные волосы
         p.ellipse((52, 8, 78, 36), fill=SKIN, outline=INK, width=3)          # голова
-        p.ellipse((50, 4, 62, 12), fill=(60, 48, 40, 255), outline=INK, width=2)  # волосы
-        d.ellipse((64, 16, 71, 23), fill=WHITE)
-        d.ellipse((66, 18, 70, 22), fill=INK)
+        p.line((50, 18), (56, 44), HAIR, 7, 0.5)                             # прядь на плечо
+        p.poly([(58, 15), (76, 16), (74, 23), (60, 22)], fill=SHADES, outline=INK, width=2)
         d.ellipse((66, 26, 73, 33), fill=INK)                                # орущий рот
         p.line((54, 44), (36 - 10 * sw, 44 + 16 * sw), SKIN, 5)              # руки
         p.line((70, 44), (84 + 10 * sw, 36 - 12 * sw), SKIN, 5)
@@ -187,10 +196,9 @@ def man(pose, phase=0.0):
     elif pose == "trip":
         p.line((44, 62), (78, 70), MAN_SHIRT, 16, 0.4)
         p.ellipse((38, 36, 70, 68), fill=MAN_SHIRT, outline=INK, width=3)
+        p.ellipse((60, 20, 92, 54), fill=HAIR, outline=INK, width=3)
         p.ellipse((62, 26, 88, 52), fill=SKIN, outline=INK, width=3)
-        p.ellipse((62, 20, 76, 28), fill=(60, 48, 40, 255), outline=INK, width=2)
-        d.ellipse((76, 34, 83, 41), fill=WHITE)
-        d.ellipse((78, 36, 82, 40), fill=INK)
+        p.poly([(68, 32), (86, 32), (85, 39), (69, 38)], fill=SHADES, outline=INK, width=2)
         d.ellipse((78, 44, 86, 52), fill=INK)                                # рот открыт, паника
         p.line((46, 46), (24, 24), SKIN, 5)
         p.line((60, 48), (46, 18), SKIN, 5)
@@ -200,10 +208,9 @@ def man(pose, phase=0.0):
     elif pose == "fall":
         p.line((26, 58), (64, 48), MAN_SHIRT, 16, 0.4)
         p.ellipse((18, 40, 50, 72), fill=MAN_SHIRT, outline=INK, width=3)
+        p.ellipse((60, 36, 92, 70), fill=HAIR, outline=INK, width=3)
         p.ellipse((62, 42, 88, 68), fill=SKIN, outline=INK, width=3)
-        p.ellipse((62, 36, 76, 44), fill=(60, 48, 40, 255), outline=INK, width=2)
-        d.ellipse((76, 50, 83, 57), fill=WHITE)
-        d.ellipse((78, 52, 82, 56), fill=INK)
+        p.poly([(68, 48), (86, 48), (85, 55), (69, 54)], fill=SHADES, outline=INK, width=2)
         d.ellipse((78, 60, 86, 67), fill=INK)
         p.line((26, 62), (8, 84), SKIN, 5)
         p.line((34, 46), (18, 22), SKIN, 5)
@@ -212,19 +219,18 @@ def man(pose, phase=0.0):
     elif pose == "down":
         p.line((22, 88), (60, 84), MAN_SHIRT, 15, 0.4)
         p.ellipse((14, 74, 46, 102), fill=MAN_SHIRT, outline=INK, width=3)
+        p.ellipse((58, 72, 90, 106), fill=HAIR, outline=INK, width=3)
         p.ellipse((60, 78, 86, 104), fill=SKIN, outline=INK, width=3)
-        p.ellipse((60, 72, 74, 80), fill=(60, 48, 40, 255), outline=INK, width=2)
-        d.ellipse((72, 86, 78, 92), fill=INK)
+        p.poly([(66, 84), (84, 84), (83, 91), (67, 90)], fill=SHADES, outline=INK, width=2)
         p.line((78, 92), (86, 96), INK, 2, 0.4)     # язык
         p.line((56, 92), (92, 96), MAN_PANTS, 9, 0.4)
         p.line((54, 98), (90, 108), MAN_PANTS, 9, 0.4)
     elif pose == "up":
         p.line((52, 66), (60, 92), MAN_SHIRT, 15, 0.4)
         p.ellipse((42, 42, 72, 72), fill=MAN_SHIRT, outline=INK, width=3)
+        p.ellipse((52, 14, 84, 50), fill=HAIR, outline=INK, width=3)
         p.ellipse((54, 20, 78, 46), fill=SKIN, outline=INK, width=3)
-        p.ellipse((52, 15, 66, 23), fill=(60, 48, 40, 255), outline=INK, width=2)
-        d.ellipse((68, 28, 75, 35), fill=WHITE)
-        d.ellipse((70, 30, 74, 34), fill=INK)
+        p.poly([(58, 26), (76, 26), (75, 33), (59, 32)], fill=SHADES, outline=INK, width=2)
         d.ellipse((68, 38, 76, 45), fill=INK)
         p.line((44, 54), (26, 100), SKIN, 5)        # опора о землю
         p.line((66, 54), (80, 38), SKIN, 5)
@@ -384,12 +390,6 @@ class Ticker:
                 sy = my + 46 + math.sin(a) * 8 - fdy
                 p.line((sx - 4, sy), (sx + 4, sy), YELLOW, 2, 0.4, segs=2, taper=False)
                 p.line((sx, sy - 4), (sx, sy + 4), YELLOW, 2, 0.4, segs=2, taper=False)
-
-        # подпись над сценой — как в меме
-        cap = self.CAPTIONS[ep % len(self.CAPTIONS)]
-        if 0.05 < ph < 0.55:
-            d.text((392, 10), cap, font=FONT_BIG, fill=INK)
-            d.text((393, 11), cap, font=FONT_BIG, fill=(70, 60, 56, 255))
 
         strip.alpha_composite(scene, (0, 0))
 
