@@ -1098,37 +1098,52 @@ def _event_sig(kind, noise):
     return np.zeros(1)
 
 
-def _chiptune(mix, noise, total_s, bpm):
-    """Ретро-фон: квадратная арпеджио-мелодия + треугольный бас, тихо."""
+def _chiptune(mix, noise, total_s, bpm, sections=None):
+    """Ретро-фон: квадратная арпеджио-мелодия + треугольный бас, тихо.
+
+    sections: [{start, end, gain, hats, octave}] — музыка под структуру
+    (куплет тише, припев ярче/выше, бридж без хэтов). Без sections —
+    прежнее поведение."""
     eighth = 60 / bpm / 2
     melody = [523, 659, 784, 659, 440, 523, 659, 523,
               349, 440, 523, 440, 392, 494, 587, 494]
     basses = [131, 98, 110, 87]
+    def _sec(t0):
+        for sec in sections or []:
+            if float(sec.get("start", 0)) <= t0 < float(sec.get("end", total_s)):
+                return (float(sec.get("gain", 1.0)), bool(sec.get("hats", True)),
+                        int(sec.get("octave", 0)))
+        return 1.0, True, 0
     step = 0
     while step * eighth < total_s:
         t0 = step * eighth
+        g, hats_on, oct_up = _sec(t0)
         nn = int(SR * eighth * 0.92)
         tt = np.arange(nn) / SR
         f = melody[step % len(melody)]
         square = np.tanh(2.2 * np.sin(2 * np.pi * f * tt)) * np.exp(-tt * 5)
-        _add(mix, square * 0.055, t0)
+        _add(mix, square * 0.055 * g, t0)
+        if oct_up:
+            hi = np.tanh(2.2 * np.sin(2 * np.pi * f * 2 * tt)) * np.exp(-tt * 5)
+            _add(mix, hi * 0.028 * g, t0)
         if step % 2 == 0:
             nb = int(SR * eighth * 1.8)
             tb = np.arange(nb) / SR
             fb = basses[(step // 8) % len(basses)]
-            _add(mix, np.sin(2 * np.pi * fb * tb) * np.exp(-tb * 4) * 0.075, t0)
-        hat = noise[:int(SR * 0.03)] * np.exp(-np.arange(int(SR * 0.03)) / SR * 120)
-        _add(mix, hat * 0.02, t0)
+            _add(mix, np.sin(2 * np.pi * fb * tb) * np.exp(-tb * 4) * 0.075 * g, t0)
+        if hats_on:
+            hat = noise[:int(SR * 0.03)] * np.exp(-np.arange(int(SR * 0.03)) / SR * 120)
+            _add(mix, hat * 0.02 * g, t0)
         step += 1
 
 
 def make_soundtrack(path, total_s, boundaries, finale_at, bpm=120,
-                    style="beat", events=None):
+                    style="beat", events=None, music_sections=None):
     n = int(SR * total_s)
     mix = np.zeros(n)
     noise = np.random.default_rng(7).standard_normal(n + SR)
     if style == "chiptune":
-        _chiptune(mix, noise, total_s, bpm)
+        _chiptune(mix, noise, total_s, bpm, music_sections)
         for ev in events or []:
             _add(mix, _event_sig(ev.get("type", "pop"), noise) * float(ev.get("gain", 1.0)),
                  float(ev.get("at", 0)))
@@ -1289,7 +1304,8 @@ def main():
         make_soundtrack(wav, total_s, boundaries, finale_at,
                         bpm=int(audio_cfg.get("bpm", 120)),
                         style=audio_cfg.get("style", "beat"),
-                        events=audio_cfg.get("events"))
+                        events=audio_cfg.get("events"),
+                        music_sections=audio_cfg.get("music_sections"))
         voice = audio_cfg.get("voice") or []
         if voice:  # подмешать реплики поверх музыки/эффектов
             mixed = out / "_mixed.wav"
