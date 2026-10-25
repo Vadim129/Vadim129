@@ -1,0 +1,569 @@
+{
+ "title": "Мэт: песня про светящуюся трещину (только голос Мэта)",
+ "author": "МЭТ",
+ "width": 1080,
+ "height": 1920,
+ "fps": 30,
+ "output": "клип.mp4",
+ "palette": {
+  "bg": "#0A0A0A",
+  "ink": "#FFFFFF",
+  "accent": "#2AABEE"
+ },
+ "overlay": {
+  "enabled": false
+ },
+ "audio": {
+  "enabled": true,
+  "style": "chiptune",
+  "bpm": 120,
+  "music_volume": 0.5,
+  "events": [
+   {
+    "at": 0.3,
+    "type": "pop"
+   },
+   {
+    "at": 5.96,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 6.26,
+    "type": "pop"
+   },
+   {
+    "at": 12.34,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 12.64,
+    "type": "pop"
+   },
+   {
+    "at": 12.59,
+    "type": "boom",
+    "gain": 0.7
+   },
+   {
+    "at": 19.69,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 19.99,
+    "type": "pop"
+   },
+   {
+    "at": 25.65,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 25.95,
+    "type": "pop"
+   },
+   {
+    "at": 32.55,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 32.85,
+    "type": "pop"
+   },
+   {
+    "at": 32.8,
+    "type": "boom",
+    "gain": 0.7
+   },
+   {
+    "at": 39.9,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 40.2,
+    "type": "pop"
+   },
+   {
+    "at": 45.63,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 45.93,
+    "type": "pop"
+   },
+   {
+    "at": 52.77,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 53.07,
+    "type": "pop"
+   },
+   {
+    "at": 53.02,
+    "type": "boom",
+    "gain": 0.7
+   }
+  ],
+  "voice": [
+   {
+    "file": "voice14/f01.mp3",
+    "at": 0.45,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f02.mp3",
+    "at": 6.41,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f03.mp3",
+    "at": 12.79,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f04.mp3",
+    "at": 20.14,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f05.mp3",
+    "at": 26.1,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f03.mp3",
+    "at": 33.0,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f06.mp3",
+    "at": 40.35,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f07.mp3",
+    "at": 46.08,
+    "gain": 1.45
+   },
+   {
+    "file": "voice14/f03.mp3",
+    "at": 53.22,
+    "gain": 1.45
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "type": "pop_stage",
+   "duration": 5.96,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ТРЕЩИНА СВЕТИТСЯ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-crack.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Трещина на моём боку. Не беда, а красота. Я свечусь теперь в темноте, как уличная звезда.",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "НЕ БЕДА",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "Я СВЕЧУСЬ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "КУПЛЕТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.38,
+   "bg": "#FF8A00",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "НЕ НАДО ПАЯТЬ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-crack.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Слава мне сказал: запаяем. Я сказал: постой, не спеши. Через трещину оказалось видно, что у меня внутри.",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "ЗАПАЯЕМ?",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "НЕ СПЕШИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "Слава"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.35,
+   "bg": "#FF6B9D",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "СВЕТИ, ТРЕЩИНА!",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-glow.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "Свети, моя трещина, свети! Неси всем добро по пути! Кому холодно — подходи: у меня звезда в груди!",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "СВЕТИ!",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ЗВЕЗДА В ГРУДИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ПРИПЕВ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.96,
+   "bg": "#00D5FF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "ВСЕ ГРЕЮТСЯ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-glow.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Ко мне тянутся греться боты, даже сервер стал добрей. Раньше все боялись глюков, а теперь — моих лучей.",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "ВСЕМ ТЕПЛО",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ДАЖЕ СЕРВЕРУ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "КУПЛЕТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 6.9,
+   "bg": "#7C4DFF",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "СЛОМАННЫЙ — ПОЁТ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-crack.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Говорят: сломанный — на свалку. Я скажу наоборот: всё, что треснуло, — живое. Всё, что светится, — поёт!",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "НЕ НА СВАЛКУ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ВСЁ ЖИВОЕ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "КУПЛЕТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.35,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "СВЕТИ, ТРЕЩИНА!",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-crack.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "Свети, моя трещина, свети! Неси всем добро по пути! Кому холодно — подходи: у меня звезда в груди!",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "СВЕТИ!",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ДОБРО ПО ПУТИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ПРИПЕВ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 5.73,
+   "bg": "#FF8A00",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "НЕ ПРЯЧЬ ТРЕЩИНУ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-crack.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Так что если ты с трещиной — не прячь её, не таи. Может, именно через трещину ты и светишь другим.",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "НЕ ТАИ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ТЫ СВЕТИШЬ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ТИШЕ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.14,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "Я — МЭТ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-glow.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Я — Мэт, бот с трещиной в боку. Свечусь — и тем живу. Кому темно — я помогу. Бесплатно. Не шучу.",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "ПОМОГУ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "БЕСПЛАТНО. НЕ ШУЧУ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ФИНАЛ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 7.35,
+   "bg": "#FF6B9D",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "СВЕТИ, ТРЕЩИНА!",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/avatar-glow.jpg",
+   "image_size": 560,
+   "image_cy": 1350,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "Свети, моя трещина, свети! Неси всем добро по пути! Кому холодно — подходи: у меня звезда в груди!",
+    "at": 0.07,
+    "y": 400
+   },
+   "stickers": [
+    {
+     "text": "СВЕТИ!",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ВСЕМ ДОБРО",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ПРИПЕВ"
+  }
+ ]
+}
