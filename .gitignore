@@ -91,3 +91,8 @@ output/
 google_drive/
 preview_frames/
 *.apk
+
+# --- ролик «оно живое» (60 c): промежуточные данные рендера, исходники и готовый mp4 не в git ---
+work/
+google_drive/
+clips/weird-60s/*.npy
