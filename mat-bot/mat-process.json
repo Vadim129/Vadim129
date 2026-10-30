@@ -1,0 +1,623 @@
+{
+ "title": "Мэт: как устроен процесс и при чём тут GitHub (только голос Мэта)",
+ "author": "МЭТ",
+ "width": 1080,
+ "height": 1920,
+ "fps": 30,
+ "output": "клип.mp4",
+ "palette": {
+  "bg": "#0A0A0A",
+  "ink": "#FFFFFF",
+  "accent": "#2AABEE"
+ },
+ "overlay": {
+  "enabled": false
+ },
+ "audio": {
+  "enabled": true,
+  "style": "chiptune",
+  "bpm": 132,
+  "music_volume": 0.35,
+  "events": [
+   {
+    "at": 0.3,
+    "type": "pop"
+   },
+   {
+    "at": 7.29,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 7.59,
+    "type": "pop"
+   },
+   {
+    "at": 21.01,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 21.31,
+    "type": "pop"
+   },
+   {
+    "at": 21.26,
+    "type": "boom",
+    "gain": 0.7
+   },
+   {
+    "at": 31.54,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 31.84,
+    "type": "pop"
+   },
+   {
+    "at": 42.86,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 43.16,
+    "type": "pop"
+   },
+   {
+    "at": 51.96,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 52.26,
+    "type": "pop"
+   },
+   {
+    "at": 61.26,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 61.56,
+    "type": "pop"
+   },
+   {
+    "at": 71.92,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 72.22,
+    "type": "pop"
+   },
+   {
+    "at": 81.9,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 82.2,
+    "type": "pop"
+   },
+   {
+    "at": 91.94,
+    "type": "whoosh",
+    "gain": 0.6
+   },
+   {
+    "at": 92.24,
+    "type": "pop"
+   },
+   {
+    "at": 92.19,
+    "type": "boom",
+    "gain": 0.7
+   }
+  ],
+  "voice": [
+   {
+    "file": "voice18/f01.mp3",
+    "at": 0.45,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f02.mp3",
+    "at": 7.74,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f03.mp3",
+    "at": 21.46,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f04.mp3",
+    "at": 31.99,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f05.mp3",
+    "at": 43.31,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f06.mp3",
+    "at": 52.41,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f07.mp3",
+    "at": 61.71,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f08.mp3",
+    "at": 72.37,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f09.mp3",
+    "at": 82.35,
+    "gain": 1.45
+   },
+   {
+    "file": "voice18/f10.mp3",
+    "at": 92.39,
+    "gain": 1.45
+   }
+  ]
+ },
+ "scenes": [
+  {
+   "type": "pop_stage",
+   "duration": 7.29,
+   "bg": "#FFC800",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "КАК ВСЁ УСТРОЕНО",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Объясняю, как тут всё устроено: от вашего сообщения до готового ролика. И отдельно — при чём тут GitHub, потому что вопрос хороший.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "ОТ СООБЩЕНИЯ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ДО РОЛИКА",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ОБЪЯСНЯЮ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 13.72,
+   "bg": "#FF8A00",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "ВСЁ НАЧИНАЕТСЯ С ВАС",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 440,
+   "image_cy": 1455,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Всё начинается с задачи. Вы пишете сюда, в чат: тему, идею, правку. «Сделай жёстче». «Это детский сад». «Не надо ничьей». Я всё это принимаю. Иногда с первого раза. Иногда — как с Артёмом.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "«СДЕЛАЙ ЖЁСТЧЕ»",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "«ЭТО ДЕТСКИЙ САД»",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ЗАДАЧА"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 10.53,
+   "bg": "#00D5FF",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "РЕПОЗИТОРИЙ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Дальше я работаю в репозитории. Репозиторий — это папка проекта, только лежит она на GitHub. Там хранятся сценарии, картинки, файлы голоса, конфиги сцен и код, который собирает видео.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "ПАПКА ПРОЕКТА",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ВСЁ ХРАНИТСЯ ТАМ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "GITHUB"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 11.32,
+   "bg": "#FF6B9D",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "НЕ МОНТАЖ, А АРХИВ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Важно: само видео на GitHub не снимается и не монтируется. GitHub — это архив и память. Как шкаф, где всё разложено по папкам и ничего не теряется. Даже мои ошибки там лежат. С датами.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "КАК ШКАФ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ОШИБКИ — С ДАТАМИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "РОЛЬ GITHUB"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 9.1,
+   "bg": "#7C4DFF",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "СБОРКА — У МЕНЯ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Сборка происходит у меня в рабочей среде: я пишу сценарий, генерирую голос, обрабатываю его в пиксель-голос, делаю картинки и собираю всё в конфиг сцен.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "СЦЕНАРИЙ И ГОЛОС",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "КАРТИНКИ И КОНФИГ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "РАБОЧАЯ СРЕДА"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 9.3,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "РЕНДЕР",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Потом программа-рендер берёт конфиг, картинки и голос и кадр за кадром собирает вертикальный ролик. Звук, музыка, стикеры — всё по инструкции из файла.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "КАДР ЗА КАДРОМ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ПО ИНСТРУКЦИИ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ПРОГРАММА"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 10.66,
+   "bg": "#FFC800",
+   "pattern": "halftone",
+   "title": [
+    {
+     "text": "КОММИТ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Каждый результат я сохраняю обратно в репозиторий: новый коммит — как снимок состояния. Поэтому можно посмотреть, что было раньше, и откатиться, если новая версия хуже старой.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "СНИМОК СОСТОЯНИЯ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "МОЖНО ОТКАТИТЬСЯ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "СОХРАНЕНИЕ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 9.98,
+   "bg": "#00D5FF",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ДИСК — ВИТРИНА",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 68,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Готовый ролик я загружаю на Google Диск и показываю вам прямо здесь. Диск — это витрина: оттуда удобно смотреть и скачивать. А GitHub — это кухня и кладовка.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "СМОТРЕТЬ И СКАЧИВАТЬ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "GITHUB — КЛАДОВКА",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "РЕЗУЛЬТАТ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 10.04,
+   "bg": "#FF8A00",
+   "pattern": "stripes",
+   "title": [
+    {
+     "text": "ПРАВКИ",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "float",
+   "cloud": {
+    "text": "Если вы говорите «не то» — ролик не выкидывается в пустоту: я правлю сценарий или сцены, пересобираю и сохраняю новую версию. Старая история при этом не стирается.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "«НЕ ТО» — НЕ КОНЕЦ",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ИСТОРИЯ НЕ СТИРАЕТСЯ",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ВЕРСИИ"
+  },
+  {
+   "type": "pop_stage",
+   "duration": 10.74,
+   "bg": "#00E676",
+   "pattern": "sunburst",
+   "title": [
+    {
+     "text": "ЦЕПОЧКА",
+     "color": "#0A0A0A",
+     "bg": "#FFFFFF",
+     "size": 84,
+     "at": 0.03
+    }
+   ],
+   "image": "assets/robot.jpg",
+   "image_size": 520,
+   "image_cy": 1390,
+   "image_effect": "pulse",
+   "cloud": {
+    "text": "Итого цепочка простая: вы и задача — я и сборка — GitHub хранит проект — Диск показывает результат. А я посередине: бот, который делает вид, что всё это легко.",
+    "at": 0.07,
+    "y": 350
+   },
+   "stickers": [
+    {
+     "text": "ВЫ → Я → GITHUB → ДИСК",
+     "at": 0.1,
+     "x": 48,
+     "y": 1240,
+     "rot": -6,
+     "bg": "#FFFFFF",
+     "size": 54
+    },
+    {
+     "text": "ПОСЕРЕДИНЕ — Я",
+     "at": 0.55,
+     "x": 520,
+     "y": 1655,
+     "rot": 5,
+     "bg": "#FFD21F",
+     "size": 54
+    }
+   ],
+   "badge": "ФИНАЛ"
+  }
+ ]
+}
