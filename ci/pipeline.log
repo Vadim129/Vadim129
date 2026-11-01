@@ -1,33 +1,68 @@
-слотов: 25 | сумма: 249.48 с
-не хватает клипов: 25
-НЕ скачался: F05dTWcv-J38JotcdOFkb th the link', or have had many accesses.
-	Check FAQ in https://github.com/wkentaro/gdown?tab=readme-ov-file#faq.
-
-You may still be able to access the file from the browser:
-
-	https://drive.google.com/uc?id=1IG8uh6X8pFbll89OdLko4c8IsYx0WBNH
-
-but Gdown can't. Please check connections and permissions.
-
+нужно докачать клипов: 25
+НЕ скачался: F05dTWcv-J38JotcdOFkb
 клипов на месте: 24/25
-слот 01 (лист 01) нарезан
-Traceback (most recent call last):
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip_lipsync.py", line 266, in <module>
-    main()
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip_lipsync.py", line 257, in main
-    n = cut_slots(edl)
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip_lipsync.py", line 142, in cut_slots
-    assert rc == 0, msg[-800:]
-AssertionError: e-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
-  libavutil      58. 29.100 / 58. 29.100
-  libavcodec     60. 31.102 / 60. 31.102
-  libavformat    60. 16.100 / 60. 16.100
-  libavdevice    60.  3.100 / 60.  3.100
-  libavfilter     9. 12.100 /  9. 12.100
-  libswscale      7.  5.100 /  7.  5.100
-  libswresample   4. 12.100 /  4. 12.100
-  libpostproc    57.  3.100 / 57.  3.100
-[in#0 @ 0x559188937e00] Error opening input: No such file or directory
-Error opening input file /tmp/clipwork/src/F05dTWcv-J38JotcdOFkb_alligator.mp4.
-Error opening input files: No such file or directory
-
+манифест и кадры-образцы готовы
+лист 02: клип не скачался → беру видео листа 01
+лист 01: 4 плана нарезаны
+лист 02: 4 плана нарезаны
+лист 03: 4 плана нарезаны
+лист 04: 4 плана нарезаны
+лист 05: 4 плана нарезаны
+лист 06: 4 плана нарезаны
+лист 07: 4 плана нарезаны
+лист 08: 4 плана нарезаны
+лист 09: 4 плана нарезаны
+лист 10: 4 плана нарезаны
+лист 11: 4 плана нарезаны
+лист 12: 4 плана нарезаны
+лист 13: 4 плана нарезаны
+лист 14: 4 плана нарезаны
+лист 15: 4 плана нарезаны
+лист 16: 4 плана нарезаны
+лист 17: 4 плана нарезаны
+лист 18: 4 плана нарезаны
+лист 19: 4 плана нарезаны
+лист 20: 4 плана нарезаны
+лист 21: 4 плана нарезаны
+лист 22: 4 плана нарезаны
+лист 23: 4 плана нарезаны
+лист 24: 4 плана нарезаны
+лист 25: 4 плана нарезаны
+планов с пением: 10 → липсинк
+лист 01 план 2: липсинк ок за 577с
+лист 06 план 4: липсинк ок за 533с
+лист 07 план 1: НЕ УДАЛСЯ за 1226с
+лист 07 план 3: липсинк ок за 636с
+лист 13 план 3: НЕ УДАЛСЯ за 1104с
+лист 15 план 1: липсинк ок за 494с
+лист 19 план 4: НЕ УДАЛСЯ за 1249с
+лист 20 план 1: НЕ УДАЛСЯ за 1012с
+лист 21 план 4: НЕ УДАЛСЯ за 1202с
+лист 23 план 1: НЕ УДАЛСЯ за 933с
+слот 01 собран
+слот 02 собран
+слот 03 собран
+слот 04 собран
+слот 05 собран
+слот 06 собран
+слот 07 собран
+слот 08 собран
+слот 09 собран
+слот 10 собран
+слот 11 собран
+слот 12 собран
+слот 13 собран
+слот 14 собран
+слот 15 собран
+слот 16 собран
+слот 17 собран
+слот 18 собран
+слот 19 собран
+слот 20 собран
+слот 21 собран
+слот 22 собран
+слот 23 собран
+слот 24 собран
+слот 25 собран
+ГОТОВО: /home/runner/work/Vadim129/Vadim129/out/КЛИП_Грибы_1080p.mp4 443.3 МБ видео 249.5 песня 249.5
+время 3772 с
