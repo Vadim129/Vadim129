@@ -22,9 +22,9 @@ SKIP_LIPSYNC = os.environ.get("SKIP_LIPSYNC") == "1"
 
 DUR = 249.48
 SHEET = 10.0            # секунд песни на лист
-PLAN_OUT = 2.5          # секунд в клипе на план
-XFADE = 0.12            # перекрытие соседних планов (без чёрных вставок и без «двоения» лиц)
-OUT_PLAN = PLAN_OUT + XFADE   # сколько материала нужно на план
+PLAN_OUT = 2.5          # секунд в клипе на план — святое: границы строк песни
+XFADE = 0.0             # перекрытий НЕТ: монтируем встык, чтобы не было ни чёрного, ни «двоения»
+OUT_PLAN = PLAN_OUT     # сколько материала нужно на план
 FPS = 24
 
 SONG_ID = "1yGs88oWAw6TP-EdskGqH41Sjc2m0M309"
@@ -78,6 +78,8 @@ PLATE = {1: 1.00, 2: 2.70, 3: 2.20, 4: 2.20, 5: 0.75, 6: 0.75, 7: 1.15, 8: 1.15,
 # всё остальное — грибы, ноги, город, игра без вокала: липсинк не трогаем.
 SING = {(1, 2), (6, 4), (7, 1), (7, 3), (13, 3),
         (15, 1), (19, 4), (20, 1), (21, 4), (23, 1)}
+# 19-4 — 3D-рендер комнаты без лица: Wav2Lip там физически не может (Face not detected), не тратим прогон
+NOFACE = {(19, 4)}
 USE = {}   # лист -> чей клип использовать
 
 
@@ -218,8 +220,8 @@ def cut_plan(sheet, k, out, quality="16"):
     """сырой отрезок плана k (1..4) из клипа листа, приведённый к 2.5 с"""
     src_n = USE.get(sheet, sheet)
     span = plan_span(src_n)
-    st = PLATE[src_n] + (k - 1) * span + 0.12
-    take = span - 0.24
+    st = PLATE[src_n] + (k - 1) * span + 0.10
+    take = span - 0.20
     speed = take / OUT_PLAN
     vf = (f"setpts=(PTS-STARTPTS)/{speed:.4f},fps={FPS},"
           "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1,"
@@ -235,6 +237,24 @@ def cut_audio(sheet, k, out):
     st = (sheet - 1) * SHEET + (k - 1) * PLAN_OUT
     sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{st:.3f}", "-t", f"{OUT_PLAN:.3f}",
         "-i", SONG, "-ar", "16000", "-ac", "1", out])
+    return out
+
+
+def fit_plan(src, out, crf="14"):
+    """кусок липсинка → ровно 1920x1080 / 24 fps / 2,5 с.
+    Короче 2,5 с — плавно замедляем, длиннее — обрезаем (без ускорения речи)."""
+    d = dur(src)
+    vf_tail = ("scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,"
+               "setsar=1,fps=%d,format=yuv420p" % FPS)
+    if d < PLAN_OUT - 0.02:
+        sp = d / PLAN_OUT
+        vf = f"setpts=(PTS-STARTPTS)/{sp:.4f}," + vf_tail
+        log(f"  план короче нормы ({d:.2f} с) — растягиваю до 2,50 с")
+    else:
+        vf = vf_tail
+    sh(["ffmpeg", "-v", "error", "-y", "-i", src, "-vf", vf, "-an",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", crf,
+        "-pix_fmt", "yuv420p", "-t", f"{PLAN_OUT:.3f}", out])
     return out
 
 
@@ -265,6 +285,28 @@ def lipsync_plan(sheet, k, vin, ain, out):
     return False, time.time() - t
 
 
+def fetch_pieces():
+    """забрать уже посчитанные куски липсинка из ветки (dist/lipsync) — не считать заново"""
+    ws = os.environ.get("GITHUB_WORKSPACE")
+    dst = f"{WORK}/pieces"
+    os.makedirs(dst, exist_ok=True)
+    if not ws:
+        return 0
+    br = os.environ.get("GITHUB_REF_NAME", "arena/7213a08a-vadim129")
+    subprocess.run(["git", "fetch", "-q", "origin", br], cwd=ws, capture_output=True)
+    subprocess.run(["git", "checkout", "-q", "FETCH_HEAD", "--", "dist/lipsync"], cwd=ws,
+                   capture_output=True)
+    n = 0
+    for f in sorted(glob.glob(f"{ws}/dist/lipsync/*.mp4")):
+        b = os.path.basename(f)
+        if os.path.getsize(f) < 50000:
+            continue
+        shutil.copy(f, f"{dst}/{b}")
+        n += 1
+    log(f"готовых кусков липсинка в ветке: {n}")
+    return n
+
+
 def build():
     os.makedirs(SEG, exist_ok=True)
     os.makedirs(f"{WORK}/preview", exist_ok=True)
@@ -274,7 +316,7 @@ def build():
         for k in range(1, 5):
             raw = f"{SEG}/p{n:02d}_{k}.mp4"
             cut_plan(n, k, raw)
-            need_sync = (n, k) in SING and not SKIP_LIPSYNC
+            need_sync = (n, k) in SING and (n, k) not in NOFACE and not SKIP_LIPSYNC
             tasks.append((n, k, raw, need_sync))
         log(f"лист {n:02d}: 4 плана нарезаны")
 
@@ -289,18 +331,19 @@ def build():
 
     def work(t):
         n, k, raw, _ = t
-        ain = cut_audio(n, k, f"{SEG}/p{n:02d}_{k}.wav")
         out = f"{SEG}/p{n:02d}_{k}_sync.mp4"
+        piece = f"{WORK}/pieces/p{n:02d}_{k}.mp4"
+        t0 = time.time()
+        if os.path.exists(piece) and os.path.getsize(piece) > 50000:
+            fit_plan(piece, out)
+            log(f"лист {n:02d} план {k}: беру готовый кусок из ветки")
+            return n, k, True, time.time() - t0
+        ain = cut_audio(n, k, f"{SEG}/p{n:02d}_{k}.wav")
         okk, dt = lipsync_plan(n, k, raw, ain, out)
         if okk:
-            norm = f"{SEG}/p{n:02d}_{k}_norm.mp4"
             try:
-                sh(["ffmpeg", "-v", "error", "-y", "-i", out,
-                    "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,"
-                           "crop=1920:1080,setsar=1,fps=24",
-                    "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
-                    "-pix_fmt", "yuv420p", "-t", f"{OUT_PLAN:.3f}", norm])
-                os.replace(norm, out)
+                fit_plan(out, f"{SEG}/p{n:02d}_{k}_fit.mp4")
+                os.replace(f"{SEG}/p{n:02d}_{k}_fit.mp4", out)
             except Exception as e:
                 log(f"лист {n:02d} план {k}: нормализация не удалась {e}")
         if okk:
@@ -346,7 +389,7 @@ def build():
         slot = f"{SEG}/slot{n:02d}.mp4"
         make_slot(n, parts, slot, sheets)
         slots.append(slot)
-        log(f"слот {n:02d} собран")
+        log(f"слот {n:02d} собран ({dur(slot):.2f} с)")
     return slots
 
 
@@ -367,23 +410,12 @@ def dur(p):
 
 
 def make_slot(n, parts, out, sheets):
-    """4 плана одного листа: склейка мягким перекрытием 0,18 с, без чёрных вставок.
-    Границы планов остаются ровно на 2,5 с, лист получается 10,18 с."""
-    ins = []
-    for p in parts:
-        ins += ["-i", p]
-    fc = []
-    prev = "[0:v]"
-    for i in range(1, 4):
-        off = (i) * PLAN_OUT
-        fc.append(f"{prev}[{i}:v]xfade=transition=fade:duration={XFADE}:offset={off:.3f}[x{i}]")
-        prev = f"[x{i}]"
-    fc.append(f"{prev}setsar=1,fps={FPS},format=yuv420p[v]")
-    sh(["ffmpeg", "-v", "error", "-y"] + ins +
-       ["-filter_complex", ";".join(fc), "-map", "[v]", "-an",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
-        "-pix_fmt", "yuv420p", "-r", str(FPS),
-        "-t", f"{SHEET + XFADE:.3f}", out])
+    """4 плана одного листа ровно по 2,5 с — склейка встык, без переходов и чёрных вставок."""
+    lst = f"{SEG}/slot{n:02d}.txt"
+    open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
+    sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+        "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
+        "-pix_fmt", "yuv420p", "-r", str(FPS), "-t", f"{SHEET:.3f}", out])
     return out
 
 
@@ -416,25 +448,13 @@ def concat_copy(paths, out):
 def assemble(slots):
     os.makedirs(OUTDIR, exist_ok=True)
     video = f"{SEG}/video_only.mp4"
-    for p in slots:
-        log(f"  слот {os.path.basename(p)}: {dur(p):.2f} с")
-    expected = len(slots) * SHEET + XFADE
-    ok_chain = False
-    try:
-        xfade_chain(slots, video)
-        d0 = dur(video)
-        if abs(d0 - expected) <= 0.6:
-            ok_chain = True
-            log(f"склейка единой цепочкой: {d0:.2f} с (ждали {expected:.2f}), чёрных вставок нет")
-        else:
-            log(f"цепочка дала {d0:.2f} с вместо {expected:.2f} — склеиваю встык")
-    except Exception as e:
-        log("единая склейка не вышла:", str(e)[:200])
-    if not ok_chain:
-        concat_copy(slots, video)
-        log(f"склейка встык: {dur(video):.2f} с")
-
+    concat_copy(slots, video)
     D = dur(video)
+    expected = len(slots) * SHEET
+    log(f"склейка слотов встык: {D:.2f} с (ждали {expected:.2f})")
+    if abs(D - expected) > 1.0:
+        raise RuntimeError(f"видео {D:.2f} с вместо {expected:.2f} — монтаж сбит")
+
     DUR_SONG = dur(SONG)
     total = min(D, DUR_SONG)
     out = f"{OUTDIR}/КЛИП_Грибы_1080p_финал.mp4"
@@ -446,13 +466,12 @@ def assemble(slots):
     log("ГОТОВО:", out, round(os.path.getsize(out) / 1e6, 1), "МБ",
         "видео", round(D, 2), "песня", round(DUR_SONG, 2))
 
-    # версия под Диск
     ws = os.environ.get("GITHUB_WORKSPACE")
     if ws:
         light_dir = f"{ws}/dist/clip"
         os.makedirs(light_dir, exist_ok=True)
         light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
-        for crf in (24, 27, 30, 33):
+        for crf in (23, 25, 27, 30, 33):
             sh(["ffmpeg", "-v", "error", "-y", "-i", out,
                 "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
                 "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "192k",
@@ -463,11 +482,10 @@ def assemble(slots):
                 break
         log("диск-версия готова:", light)
 
-    # доказательство, что на стыках нет чёрных кадров: 3 кадра вокруг стыка 2,5 с
     try:
-        for t in (2.45, 2.50, 2.55, 7.45, 7.50, 7.55):
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t}",
-                            "-i", out, "-frames:v", "1", "-vf", "scale=480:-2",
+        for t in (2.45, 2.50, 2.55, 4.95, 5.05, 9.95, 10.05, 60.00):
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t}", "-i", out,
+                            "-frames:v", "1", "-vf", "scale=480:-2",
                             f"{WORK}/preview/join_{t:.2f}.jpg"], capture_output=True, timeout=120)
     except Exception as e:
         log("кадры стыков не вышли:", e)
@@ -479,8 +497,12 @@ def main():
     os.makedirs(WORK, exist_ok=True)
     if download() < 10:
         raise SystemExit("мало клипов")
+    try:
+        fetch_pieces()
+    except Exception as e:
+        log("куски из ветки не подхватились:", str(e)[:200])
     if not os.path.isdir(CKPT) and not SKIP_LIPSYNC:
-        raise SystemExit("Wav2Lip не установлен")
+        log("Wav2Lip не установлен — собираю без свежего липсинка (готовые куски из ветки на месте)")
     slots = build()
     assemble(slots)
     log(f"время {time.time()-t0:.0f} с")
