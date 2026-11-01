@@ -32,3 +32,4 @@
    (pads12 rf1)
 кусок лист 06 план 4 выложен в dist/lipsync
    (pads12 rf1)
+кусок лист 01 план 2 выложен в dist/lipsync
