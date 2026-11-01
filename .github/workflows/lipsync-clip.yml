@@ -13,6 +13,7 @@ on:
     paths:
       - 'griby/tools/build_clip_lipsync.py'
       - '.github/workflows/lipsync-clip.yml'
+      - 'ci/smoke'
 
 permissions:
   contents: write
@@ -63,10 +64,10 @@ jobs:
 
       - name: Пайплайн
         env:
-          SMOKE: ${{ github.event.inputs.smoke == '1' && '1' || '0' }}
           OUTDIR: ${{ github.workspace }}/out
         run: |
           set -o pipefail
+          if [ -f ci/smoke ]; then export SMOKE=1; echo "РЕЖИМ: быстрый тест"; else export SMOKE=0; echo "РЕЖИМ: полный"; fi
           mkdir -p "$OUTDIR"
           python3 griby/tools/build_clip_lipsync.py 2>&1 | tee /tmp/pipeline.log
           ls -lh "$OUTDIR"
