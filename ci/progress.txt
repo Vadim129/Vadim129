@@ -55,3 +55,4 @@
    (pads25 rf2 static)
 кусок лист 23 план 1 выложен в dist/lipsync
    (pads12 rf2)
+кусок лист 21 план 4 выложен в dist/lipsync
