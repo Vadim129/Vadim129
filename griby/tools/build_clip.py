@@ -221,13 +221,24 @@ def lipsync_plan(sheet, k, vin, ain, out):
     base = ["python3", "inference.py",
             "--checkpoint_path", f"{CKPT}/checkpoints/wav2lip_gan.pth",
             "--face", vin, "--audio", ain, "--outfile", out,
-            "--pads", "0", "12", "0", "0", "--resize_factor", "1",
             "--face_det_batch_size", "4", "--wav2lip_batch_size", "16"]
+    # перебор настроек: чем дальше, тем «грубее» поиск лица
+    variants = [(["--pads", "0", "12", "0", "0", "--resize_factor", "1"], "pads12 rf1"),
+                (["--pads", "0", "12", "0", "0", "--resize_factor", "2"], "pads12 rf2"),
+                (["--pads", "0", "20", "0", "0", "--resize_factor", "2", "--nosmooth"], "pads20 rf2 nosmooth"),
+                (["--pads", "10", "25", "10", "10", "--resize_factor", "2", "--static"], "pads25 rf2 static")]
     t = time.time()
-    for extra in ([], ["--nosmooth"]):
-        subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
+    err = ""
+    for extra, name in variants:
+        if os.path.exists(out):
+            os.remove(out)
+        r = subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
         if os.path.exists(out) and os.path.getsize(out) > 20000:
+            log(f"   ({name})")
             return True, time.time() - t
+        tail = (r.stderr or r.stdout or "").strip().splitlines()
+        err = " | ".join(tail[-3:])[:300]
+    log(f"   причины: {err}")
     return False, time.time() - t
 
 
@@ -343,6 +354,22 @@ def assemble(slots):
         "-t", f"{total:.3f}", "-movflags", "+faststart", out])
     log("ГОТОВО:", out, round(os.path.getsize(out) / 1e6, 1), "МБ",
         "видео", round(D, 2), "песня", round(DUR, 2))
+    # версия под Диск: 1080p, но вес < 95 МБ (ограничение загрузки)
+    ws = os.environ.get("GITHUB_WORKSPACE")
+    if ws:
+        light_dir = f"{ws}/dist/clip"
+        os.makedirs(light_dir, exist_ok=True)
+        light = f"{light_dir}/КЛИП_Грибы_1080p.mp4"
+        for crf in (24, 27, 30, 33):
+            sh(["ffmpeg", "-v", "error", "-y", "-i", out,
+                "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
+                "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart", light])
+            mb = os.path.getsize(light) / 1e6
+            log(f"диск-версия crf{crf}: {mb:.1f} МБ")
+            if mb < 95:
+                break
+        log("диск-версия готова:", light)
     return out
 
 
