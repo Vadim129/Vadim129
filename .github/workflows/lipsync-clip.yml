@@ -14,6 +14,9 @@ on:
       - 'griby/tools/build_clip_lipsync.py'
       - '.github/workflows/lipsync-clip.yml'
 
+permissions:
+  contents: write
+
 concurrency:
   group: lipsync-clip-${{ github.ref }}
   cancel-in-progress: false
@@ -63,6 +66,7 @@ jobs:
           SMOKE: ${{ github.event.inputs.smoke == '1' && '1' || '0' }}
           OUTDIR: ${{ github.workspace }}/out
         run: |
+          set -o pipefail
           mkdir -p "$OUTDIR"
           python3 griby/tools/build_clip_lipsync.py 2>&1 | tee /tmp/pipeline.log
           ls -lh "$OUTDIR"
@@ -73,6 +77,20 @@ jobs:
           echo "=== размер файлов ==="
           du -sh /tmp/clipwork/segs 2>/dev/null || true
           ls -lh "${{ github.workspace }}/out" 2>/dev/null || true
+
+      - name: Опубликовать лог в репозиторий
+        if: always()
+        run: |
+          mkdir -p ci
+          cp /tmp/pipeline.log ci/pipeline.log 2>/dev/null || echo "лога нет" > ci/pipeline.log
+          { echo "run: $GITHUB_RUN_ID"; echo "status: ${{ job.status }}";
+            echo "time: $(date -u +%FT%TZ)";
+            du -sh /tmp/clipwork/segs 2>/dev/null || true;
+            ls -lh "${{ github.workspace }}/out" 2>/dev/null || true; } > ci/status.txt
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          git add -f ci/pipeline.log ci/status.txt
+          git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID)" || echo "нечего коммитить"
+          git push -q origin HEAD:${GITHUB_REF_NAME} || echo "push не удался"
 
       - uses: actions/upload-artifact@v4
         if: always()
