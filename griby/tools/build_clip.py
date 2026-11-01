@@ -23,6 +23,8 @@ SKIP_LIPSYNC = os.environ.get("SKIP_LIPSYNC") == "1"
 DUR = 249.48
 SHEET = 10.0            # секунд песни на лист
 PLAN_OUT = 2.5          # секунд в клипе на план
+XFADE = 0.18            # перекрытие соседних планов (без чёрных вставок)
+OUT_PLAN = PLAN_OUT + XFADE   # сколько материала нужно на план
 FPS = 24
 
 SONG_ID = "1yGs88oWAw6TP-EdskGqH41Sjc2m0M309"
@@ -76,7 +78,6 @@ PLATE = {1: 1.00, 2: 2.70, 3: 2.20, 4: 2.20, 5: 0.75, 6: 0.75, 7: 1.15, 8: 1.15,
 # всё остальное — грибы, ноги, город, игра без вокала: липсинк не трогаем.
 SING = {(1, 2), (6, 4), (7, 1), (7, 3), (13, 3),
         (15, 1), (19, 4), (20, 1), (21, 4), (23, 1)}
-XFADE = 0.20
 USE = {}   # лист -> чей клип использовать
 
 
@@ -219,20 +220,20 @@ def cut_plan(sheet, k, out, quality="16"):
     span = plan_span(src_n)
     st = PLATE[src_n] + (k - 1) * span + 0.12
     take = span - 0.24
-    speed = take / PLAN_OUT
+    speed = take / OUT_PLAN
     vf = (f"setpts=(PTS-STARTPTS)/{speed:.4f},fps={FPS},"
           "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1,"
           "unsharp=5:5:0.35:5:5:0.0")
     sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{st:.3f}", "-t", f"{take:.3f}",
         "-i", f"{SRC}/{CLIPS[src_n]}_alligator.mp4", "-vf", vf, "-an",
         "-c:v", "libx264", "-crf", quality, "-preset", "veryfast",
-        "-t", f"{PLAN_OUT:.3f}", out])
+        "-t", f"{OUT_PLAN:.3f}", out])
     return out
 
 
 def cut_audio(sheet, k, out):
     st = (sheet - 1) * SHEET + (k - 1) * PLAN_OUT
-    sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{st:.3f}", "-t", f"{PLAN_OUT:.3f}",
+    sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{st:.3f}", "-t", f"{OUT_PLAN:.3f}",
         "-i", SONG, "-ar", "16000", "-ac", "1", out])
     return out
 
@@ -293,7 +294,7 @@ def build():
                     "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,"
                            "crop=1920:1080,setsar=1,fps=24",
                     "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
-                    "-pix_fmt", "yuv420p", "-t", f"{PLAN_OUT:.3f}", norm])
+                    "-pix_fmt", "yuv420p", "-t", f"{OUT_PLAN:.3f}", norm])
                 os.replace(norm, out)
             except Exception as e:
                 log(f"лист {n:02d} план {k}: нормализация не удалась {e}")
@@ -361,35 +362,71 @@ def dur(p):
 
 
 def make_slot(n, parts, out, sheets):
+    """4 плана одного листа: склейка мягким перекрытием 0,18 с, без чёрных вставок.
+    Границы планов остаются ровно на 2,5 с, лист получается 10,18 с."""
     ins = []
     for p in parts:
         ins += ["-i", p]
     fc = []
-    for i in range(4):
-        vf = "setsar=1,fps=24"
-        if not (n == 1 and i == 0):
-            vf += ",fade=t=in:st=0:d=0.10"
-        if not (n == max(sheets) and i == 3):
-            vf += f",fade=t=out:st={PLAN_OUT-0.10:.2f}:d=0.10"
-        fc.append(f"[{i}:v]{vf}[a{i}]")
-    fc.append("".join(f"[a{i}]" for i in range(4)) + "concat=n=4:v=1:a=0[v]")
+    prev = "[0:v]"
+    for i in range(1, 4):
+        off = (i) * PLAN_OUT
+        fc.append(f"{prev}[{i}:v]xfade=transition=fade:duration={XFADE}:offset={off:.3f}[x{i}]")
+        prev = f"[x{i}]"
+    fc.append(f"{prev}setsar=1,fps={FPS},format=yuv420p[v]")
     sh(["ffmpeg", "-v", "error", "-y"] + ins +
        ["-filter_complex", ";".join(fc), "-map", "[v]", "-an",
         "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
-        "-pix_fmt", "yuv420p", "-r", "24", out])
+        "-pix_fmt", "yuv420p", "-r", str(FPS),
+        "-t", f"{SHEET + XFADE:.3f}", out])
+    return out
+
+
+def xfade_chain(paths, out):
+    """склейка списка клипов перекрытиями: стык n-го клипа строго на n*SHEET секунд"""
+    ins = []
+    for p in paths:
+        ins += ["-i", p]
+    fc, prev = [], "[0:v]"
+    for i in range(1, len(paths)):
+        off = i * SHEET
+        fc.append(f"{prev}[{i}:v]xfade=transition=fade:duration={XFADE}:offset={off:.3f}[x{i}]")
+        prev = f"[x{i}]"
+    fc.append(f"{prev}format=yuv420p[v]")
+    sh(["ffmpeg", "-v", "error", "-y"] + ins +
+       ["-filter_complex", ";".join(fc), "-map", "[v]", "-an",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-pix_fmt", "yuv420p", "-r", str(FPS), out])
     return out
 
 
 def assemble(slots):
     os.makedirs(OUTDIR, exist_ok=True)
-    lst = f"{SEG}/all.txt"
-    open(lst, "w").write("".join(f"file '{p}'\n" for p in slots))
     video = f"{SEG}/video_only.mp4"
-    sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
-        "-c", "copy", video])
+    try:
+        xfade_chain(slots, video)
+        log("склейка единой цепочкой: без чёрных вставок")
+    except Exception as e:
+        # страховка от нехватки памяти: блоками, стыки блоков — прямая склейка
+        log("единая склейка не вышла:", str(e)[:200])
+        blocks, step = [], 6
+        for i in range(0, len(slots), step):
+            part = slots[i:i + step]
+            bp = f"{SEG}/blk{i//step}.mp4"
+            if len(part) == 1:
+                shutil.copy(part[0], bp)
+            else:
+                xfade_chain(part, bp)
+            blocks.append(bp)
+        lst = f"{SEG}/blocks.txt"
+        open(lst, "w").write("".join(f"file '{b}'\n" for b in blocks))
+        sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+            "-c", "copy", video])
+        log("склейка блоками:", len(blocks))
+
     D = dur(video)
-    DUR = dur(SONG)
-    total = min(D, DUR)
+    DUR_SONG = dur(SONG)
+    total = min(D, DUR_SONG)
     out = f"{OUTDIR}/КЛИП_Грибы_1080p.mp4"
     sh(["ffmpeg", "-v", "error", "-y", "-i", video, "-i", SONG,
         "-map", "0:v", "-map", "1:a", "-c:v", "copy",
@@ -397,8 +434,9 @@ def assemble(slots):
         "-c:a", "aac", "-b:a", "320k", "-ar", "48000",
         "-t", f"{total:.3f}", "-movflags", "+faststart", out])
     log("ГОТОВО:", out, round(os.path.getsize(out) / 1e6, 1), "МБ",
-        "видео", round(D, 2), "песня", round(DUR, 2))
-    # версия под Диск: 1080p, но вес < 95 МБ (ограничение загрузки)
+        "видео", round(D, 2), "песня", round(DUR_SONG, 2))
+
+    # версия под Диск
     ws = os.environ.get("GITHUB_WORKSPACE")
     if ws:
         light_dir = f"{ws}/dist/clip"
@@ -414,6 +452,15 @@ def assemble(slots):
             if mb < 95:
                 break
         log("диск-версия готова:", light)
+
+    # доказательство, что на стыках нет чёрных кадров: 3 кадра вокруг стыка 2,5 с
+    try:
+        for t in (2.45, 2.50, 2.55, 7.45, 7.50, 7.55):
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t}",
+                            "-i", out, "-frames:v", "1", "-vf", "scale=480:-2",
+                            f"{WORK}/preview/join_{t:.2f}.jpg"], capture_output=True, timeout=120)
+    except Exception as e:
+        log("кадры стыков не вышли:", e)
     return out
 
 
