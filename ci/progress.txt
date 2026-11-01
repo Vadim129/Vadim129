@@ -30,14 +30,29 @@
 лист 25: 4 плана нарезаны
 планов с пением: 10 → липсинк
    (pads12 rf1)
-кусок лист 06 план 4 выложен в dist/lipsync
-   (pads12 rf1)
 кусок лист 01 план 2 выложен в dist/lipsync
-лист 01 план 2: липсинк ок за 1750с
-лист 06 план 4: липсинк ок за 1053с
+лист 01 план 2: липсинк ок за 1243с
+   (pads12 rf1)
+кусок лист 06 план 4 выложен в dist/lipsync
+лист 06 план 4: липсинк ок за 1255с
    (pads12 rf2)
 кусок лист 07 план 1 выложен в dist/lipsync
-лист 07 план 1: липсинк ок за 2196с
+лист 07 план 1: липсинк ок за 1279с
    (pads12 rf1)
 кусок лист 07 план 3 выложен в dist/lipsync
-лист 07 план 3: липсинк ок за 1170с
+лист 07 план 3: липсинк ок за 1205с
+   (pads12 rf1)
+кусок лист 15 план 1 выложен в dist/lipsync
+   (pads25 rf2 static)
+кусок лист 13 план 3 выложен в dist/lipsync
+лист 13 план 3: липсинк ок за 1658с
+лист 15 план 1: липсинк ок за 1271с
+   причины:   File "/tmp/clipwork/wav2lip/inference.py", line 92, in face_detect |     raise ValueError('Face not detected! Ensure the video contains a face in all the frames.') | ValueError: Face not detected! Ensure the video contains a face in all the frames.
+лист 19 план 4: НЕ УДАЛСЯ за 1677с
+   (pads12 rf2)
+кусок лист 21 план 4 выложен в dist/lipsync
+   (pads25 rf2 static)
+кусок лист 20 план 1 выложен в dist/lipsync
+лист 20 план 1: липсинк ок за 1827с
+лист 21 план 4: липсинк ок за 1267с
+   (pads25 rf2 static)
