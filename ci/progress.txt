@@ -38,3 +38,4 @@
    (pads12 rf1)
 лист 07 план 3: липсинк ок за 1680с
    (pads12 rf1)
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
