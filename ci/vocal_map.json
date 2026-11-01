@@ -1,0 +1,195 @@
+{
+ "duration": 249.48,
+ "threshold_db": -45.0,
+ "instrumental_runs": [
+  [
+   70.75,
+   92.5
+  ],
+  [
+   148.5,
+   192.75
+  ],
+  [
+   228.0,
+   249.48
+  ]
+ ],
+ "grid": [
+  {
+   "sheet": 1,
+   "from": 0.0,
+   "to": 10.0,
+   "vocal_sec": 8.75,
+   "girl": false
+  },
+  {
+   "sheet": 2,
+   "from": 10.0,
+   "to": 20.0,
+   "vocal_sec": 6.0,
+   "girl": false
+  },
+  {
+   "sheet": 3,
+   "from": 20.0,
+   "to": 30.0,
+   "vocal_sec": 9.75,
+   "girl": false
+  },
+  {
+   "sheet": 4,
+   "from": 30.0,
+   "to": 40.0,
+   "vocal_sec": 6.75,
+   "girl": false
+  },
+  {
+   "sheet": 5,
+   "from": 40.0,
+   "to": 50.0,
+   "vocal_sec": 9.5,
+   "girl": false
+  },
+  {
+   "sheet": 6,
+   "from": 50.0,
+   "to": 60.0,
+   "vocal_sec": 7.5,
+   "girl": false
+  },
+  {
+   "sheet": 7,
+   "from": 60.0,
+   "to": 70.0,
+   "vocal_sec": 9.5,
+   "girl": false
+  },
+  {
+   "sheet": 8,
+   "from": 70.0,
+   "to": 80.0,
+   "vocal_sec": 0.75,
+   "girl": true
+  },
+  {
+   "sheet": 9,
+   "from": 80.0,
+   "to": 90.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 10,
+   "from": 90.0,
+   "to": 100.0,
+   "vocal_sec": 6.5,
+   "girl": false
+  },
+  {
+   "sheet": 11,
+   "from": 100.0,
+   "to": 110.0,
+   "vocal_sec": 6.5,
+   "girl": false
+  },
+  {
+   "sheet": 12,
+   "from": 110.0,
+   "to": 120.0,
+   "vocal_sec": 8.25,
+   "girl": false
+  },
+  {
+   "sheet": 13,
+   "from": 120.0,
+   "to": 130.0,
+   "vocal_sec": 8.5,
+   "girl": false
+  },
+  {
+   "sheet": 14,
+   "from": 130.0,
+   "to": 140.0,
+   "vocal_sec": 7.25,
+   "girl": false
+  },
+  {
+   "sheet": 15,
+   "from": 140.0,
+   "to": 150.0,
+   "vocal_sec": 7.75,
+   "girl": false
+  },
+  {
+   "sheet": 16,
+   "from": 150.0,
+   "to": 160.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 17,
+   "from": 160.0,
+   "to": 170.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 18,
+   "from": 170.0,
+   "to": 180.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 19,
+   "from": 180.0,
+   "to": 190.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 20,
+   "from": 190.0,
+   "to": 200.0,
+   "vocal_sec": 6.0,
+   "girl": false
+  },
+  {
+   "sheet": 21,
+   "from": 200.0,
+   "to": 210.0,
+   "vocal_sec": 6.0,
+   "girl": false
+  },
+  {
+   "sheet": 22,
+   "from": 210.0,
+   "to": 220.0,
+   "vocal_sec": 7.5,
+   "girl": false
+  },
+  {
+   "sheet": 23,
+   "from": 220.0,
+   "to": 230.0,
+   "vocal_sec": 7.5,
+   "girl": false
+  },
+  {
+   "sheet": 24,
+   "from": 230.0,
+   "to": 240.0,
+   "vocal_sec": 0,
+   "girl": true
+  },
+  {
+   "sheet": 25,
+   "from": 240.0,
+   "to": 249.48,
+   "vocal_sec": 0,
+   "girl": true
+  }
+ ]
+}
