@@ -95,7 +95,9 @@ def push_ci(msg="ci: прогресс"):
     for _ in range(8):
         subprocess.run(["git", "fetch", "-q", "origin", br], cwd=ws, capture_output=True)
         subprocess.run(["git", "reset", "-q", "--mixed", "FETCH_HEAD"], cwd=ws, capture_output=True)
-        subprocess.run(["git", "add", "-A", "ci", "dist"], cwd=ws, capture_output=True)
+        subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
+        if os.path.isdir(f"{ws}/dist"):
+            subprocess.run(["git", "add", "-A", "dist"], cwd=ws, capture_output=True)
         subprocess.run(["git", "-c", "user.name=ci-bot", "-c", "user.email=ci@bot.local",
                         "commit", "-q", "-m", msg], cwd=ws, capture_output=True)
         r = subprocess.run(["git", "push", "-q", "origin", f"HEAD:{br}"], cwd=ws, capture_output=True)
