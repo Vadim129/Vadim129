@@ -491,14 +491,15 @@ def assemble(slots):
     if ws:
         # сжимаем ВНЕ dist: любой log() делает checkout dist и иначе затрёт свежий файл
         light_tmp = f"{OUTDIR}/disk.mp4"
-        for crf in (23, 25, 27, 30, 33):
+        # первый проход — crf27: по замерам 97,3 МБ, это максимальное качество, влезающее в лимит 100 МБ
+        for crf in (27, 28, 30, 33):
             sh(["ffmpeg", "-v", "error", "-y", "-i", out,
                 "-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
                 "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "192k",
                 "-movflags", "+faststart", light_tmp])
             mb = os.path.getsize(light_tmp) / 1e6
             print(f"диск-версия crf{crf}: {mb:.1f} МБ", flush=True)
-            if mb < 95:
+            if mb < 99:
                 break
         light_dir = f"{ws}/dist/clip"
         os.makedirs(light_dir, exist_ok=True)
