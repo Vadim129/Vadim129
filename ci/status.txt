@@ -1,5 +1,6 @@
-run: 41274830629
-status: failure
-time: 2026-11-01T06:49:59Z
-459M	/tmp/clipwork/segs
-total 0
+run: 41312220542
+status: success
+time: 2026-11-01T15:48:47Z
+1.1G	/tmp/clipwork/segs
+total 350M
+-rw-r--r-- 1 runner runner 350M Nov  1 15:38 КЛИП_Грибы_1080p_финал.mp4
