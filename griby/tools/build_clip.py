@@ -107,6 +107,23 @@ def push_ci(msg="ci: прогресс [skip ci]"):
     return False
 
 
+import threading
+_PUSH_LOCK = threading.Lock()
+
+
+def publish_piece(n, k, path):
+    ws = os.environ.get("GITHUB_WORKSPACE")
+    if not ws or not os.path.exists(path):
+        return
+    d = f"{ws}/dist/lipsync"
+    os.makedirs(d, exist_ok=True)
+    dst = f"{d}/p{n:02d}_{k}.mp4"
+    shutil.copy(path, dst)
+    with _PUSH_LOCK:
+        push_ci(f"dist: кусок липсинка лист {n:02d} план {k} [skip ci]")
+    log(f"кусок лист {n:02d} план {k} выложен в dist/lipsync")
+
+
 def log(*a):
     print(*a, flush=True)
     if os.environ.get("CI_PUSH") != "1":
@@ -278,6 +295,11 @@ def build():
                 os.replace(norm, out)
             except Exception as e:
                 log(f"лист {n:02d} план {k}: нормализация не удалась {e}")
+        if okk:
+            try:
+                publish_piece(n, k, out)
+            except Exception as e:
+                log(f"лист {n:02d} план {k}: выложить не удалось {e}")
         return n, k, okk, dt
 
     if todo:

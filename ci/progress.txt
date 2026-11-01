@@ -31,19 +31,27 @@
 планов с пением: 10 → липсинк
    (pads12 rf1)
    (pads12 rf1)
-лист 01 план 2: липсинк ок за 1548с
-лист 06 план 4: липсинк ок за 1153с
+лист 01 план 2: липсинк ок за 1351с
+лист 06 план 4: липсинк ок за 1332с
    (pads12 rf2)
-лист 07 план 1: липсинк ок за 1823с
+лист 07 план 1: липсинк ок за 1957с
    (pads12 rf1)
-лист 07 план 3: липсинк ок за 1729с
+лист 07 план 3: липсинк ок за 1680с
    (pads12 rf1)
-   (pads25 rf2 static)
-лист 13 план 3: липсинк ок за 2035с
-лист 15 план 1: липсинк ок за 1265с
-   причины:   File "/tmp/clipwork/wav2lip/inference.py", line 92, in face_detect |     raise ValueError('Face not detected! Ensure the video contains a face in all the frames.') | ValueError: Face not detected! Ensure the video contains a face in all the frames.
-лист 19 план 4: НЕ УДАЛСЯ за 2051с
-   (pads25 rf2 static)
-лист 20 план 1: липсинк ок за 2085с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 13 план 3: НЕ УДАЛСЯ за 1964с
+лист 15 план 1: липсинк ок за 1143с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 19 план 4: НЕ УДАЛСЯ за 2037с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 20 план 1: НЕ УДАЛСЯ за 1982с
    (pads12 rf2)
-лист 21 план 4: липсинк ок за 1758с
+лист 21 план 4: липсинк ок за 1840с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 23 план 1: НЕ УДАЛСЯ за 1473с
+слот 01 собран
+слот 02 собран
+слот 03 собран
+слот 04 собран
+слот 05 собран
+слот 06 собран
