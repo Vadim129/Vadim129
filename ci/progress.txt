@@ -30,3 +30,4 @@
 лист 02: клипа нет, подставлен vsjhjHwbk2
 слот 02 (лист 02) нарезан
 01 попытка не удалась: TypeError: mel() takes 0 positional arguments but 2 positional arguments (and 3 keyword-only arguments) were given
+01 попытка не удалась: TypeError: mel() takes 0 positional arguments but 2 positional arguments (and 3 keyword-only arguments) were given
