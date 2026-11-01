@@ -11,7 +11,7 @@ on:
     branches:
       - 'arena/7213a08a-vadim129'
     paths:
-      - 'griby/tools/build_clip_lipsync.py'
+      - 'griby/tools/build_clip.py'
       - '.github/workflows/lipsync-clip.yml'
       - 'ci/smoke'
 
@@ -73,7 +73,7 @@ jobs:
           set -o pipefail
           if [ -f ci/smoke ]; then export SMOKE=1; echo "РЕЖИМ: быстрый тест"; else export SMOKE=0; echo "РЕЖИМ: полный"; fi
           mkdir -p "$OUTDIR"
-          python3 griby/tools/build_clip_lipsync.py 2>&1 | tee /tmp/pipeline.log
+          python3 griby/tools/build_clip.py 2>&1 | tee /tmp/pipeline.log
           ls -lh "$OUTDIR"
 
       - name: Итог
