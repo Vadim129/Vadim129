@@ -29,40 +29,47 @@
 лист 24: 4 плана нарезаны
 лист 25: 4 плана нарезаны
 планов с пением: 10 → липсинк
-лист 01 план 2: липсинк ок за 577с
-лист 06 план 4: липсинк ок за 533с
-лист 07 план 1: НЕ УДАЛСЯ за 1226с
-лист 07 план 3: липсинк ок за 636с
-лист 13 план 3: НЕ УДАЛСЯ за 1104с
-лист 15 план 1: липсинк ок за 494с
-лист 19 план 4: НЕ УДАЛСЯ за 1249с
-лист 20 план 1: НЕ УДАЛСЯ за 1012с
-лист 21 план 4: НЕ УДАЛСЯ за 1202с
-лист 23 план 1: НЕ УДАЛСЯ за 933с
+   (pads12 rf1)
+   (pads12 rf1)
+лист 01 план 2: липсинк ок за 1351с
+лист 06 план 4: липсинк ок за 1332с
+   (pads12 rf2)
+лист 07 план 1: липсинк ок за 1957с
+   (pads12 rf1)
+лист 07 план 3: липсинк ок за 1680с
+   (pads12 rf1)
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 13 план 3: НЕ УДАЛСЯ за 1964с
+лист 15 план 1: липсинк ок за 1143с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 19 план 4: НЕ УДАЛСЯ за 2037с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 20 план 1: НЕ УДАЛСЯ за 1982с
+   (pads12 rf2)
+лист 21 план 4: липсинк ок за 1840с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 23 план 1: НЕ УДАЛСЯ за 1473с
 слот 01 собран
 слот 02 собран
 слот 03 собран
 слот 04 собран
 слот 05 собран
 слот 06 собран
-слот 07 собран
-слот 08 собран
-слот 09 собран
-слот 10 собран
-слот 11 собран
-слот 12 собран
-слот 13 собран
-слот 14 собран
-слот 15 собран
-слот 16 собран
-слот 17 собран
-слот 18 собран
-слот 19 собран
-слот 20 собран
-слот 21 собран
-слот 22 собран
-слот 23 собран
-слот 24 собран
-слот 25 собран
-ГОТОВО: /home/runner/work/Vadim129/Vadim129/out/КЛИП_Грибы_1080p.mp4 443.3 МБ видео 249.5 песня 249.5
-время 3772 с
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 391, in <module>
+    main()
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 385, in main
+    slots = build()
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 299, in build
+    make_slot(n, parts, slot, sheets)
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 334, in make_slot
+    sh(["ffmpeg", "-v", "error", "-y"] + ins +
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 86, in sh
+    raise RuntimeError(f"{cmd[0]} fail: {(r.stderr or '')[-500:]}")
+RuntimeError: ffmpeg fail: nt
+[Parsed_concat_16 @ 0x55f071ac7840] Input link in0:v0 parameters (size 1920x1080, SAR 1:1) do not match the corresponding output link in0:v0 parameters (960x540, SAR 1:1)
+[Parsed_concat_16 @ 0x55f071ac7840] Failed to configure output pad on Parsed_concat_16
+[fc#0 @ 0x55f07197c540] Error reinitializing filters!
+Failed to inject frame into filter network: Invalid argument
+[out#0/mp4 @ 0x55f072f17a00] Nothing was written into output file, because at least one of its streams received no packets.
+
