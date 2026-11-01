@@ -90,16 +90,36 @@ def sh(cmd, **kw):
     return r
 
 
-def push_ci(msg="ci: прогресс [skip ci]"):
+KEEP = set()   # файлы dist, которые этот прогон создал сам: их нельзя затирать чужими
+
+
+def push_ci(msg="ci: прогресс [skip ci]", keep=None):
+    """Закоммитить ci/ и dist/ в ветку, переживая гонку параллельных прогонов.
+    Наши файлы (keep) переживают reset и уходят в коммит; чужие не удаляем."""
     ws = os.environ.get("GITHUB_WORKSPACE")
     if not ws:
         return
+    for k in (keep or []):
+        KEEP.add(k.replace(ws + "/", ""))
+    keep = sorted(KEEP)
     br = os.environ.get("GITHUB_REF_NAME", "arena/7213a08a-vadim129")
-    for _ in range(8):
+    tmp = "/tmp/distkeep"
+    for _ in range(10):
+        shutil.rmtree(tmp, ignore_errors=True)
+        for rel in keep:
+            src = f"{ws}/{rel}"
+            if os.path.exists(src):
+                os.makedirs(f"{tmp}/{os.path.dirname(rel) or '.'}", exist_ok=True)
+                shutil.copy(src, f"{tmp}/{rel}")
         subprocess.run(["git", "fetch", "-q", "origin", br], cwd=ws, capture_output=True)
         subprocess.run(["git", "reset", "-q", "--mixed", "FETCH_HEAD"], cwd=ws, capture_output=True)
         # вернуть куски, выложенные другими прогонами, чтобы не стереть их из индекса
         subprocess.run(["git", "checkout", "FETCH_HEAD", "--", "dist"], cwd=ws, capture_output=True)
+        # и вернуть наши собственные свежие файлы поверх чужих
+        for rel in keep:
+            if os.path.exists(f"{tmp}/{rel}"):
+                os.makedirs(os.path.dirname(f"{ws}/{rel}"), exist_ok=True)
+                shutil.copy(f"{tmp}/{rel}", f"{ws}/{rel}")
         subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
         if os.path.isdir(f"{ws}/dist"):
             subprocess.run(["git", "add", "-A", "dist"], cwd=ws, capture_output=True)
@@ -108,7 +128,7 @@ def push_ci(msg="ci: прогресс [skip ci]"):
         r = subprocess.run(["git", "push", "-q", "origin", f"HEAD:{br}"], cwd=ws, capture_output=True)
         if r.returncode == 0:
             return True
-        time.sleep(3)
+        time.sleep(2)
     return False
 
 
@@ -125,7 +145,8 @@ def publish_piece(n, k, path):
     dst = f"{d}/p{n:02d}_{k}.mp4"
     shutil.copy(path, dst)
     with _PUSH_LOCK:
-        push_ci(f"dist: кусок липсинка лист {n:02d} план {k} [skip ci]")
+        push_ci(f"dist: кусок липсинка лист {n:02d} план {k} [skip ci]",
+                keep=[f"dist/lipsync/p{n:02d}_{k}.mp4"])
     log(f"кусок лист {n:02d} план {k} выложен в dist/lipsync")
 
 
@@ -473,14 +494,18 @@ def assemble(slots):
         light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
         for crf in (23, 25, 27, 30, 33):
             sh(["ffmpeg", "-v", "error", "-y", "-i", out,
-                "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
+                "-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
                 "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "192k",
                 "-movflags", "+faststart", light])
             mb = os.path.getsize(light) / 1e6
             log(f"диск-версия crf{crf}: {mb:.1f} МБ")
             if mb < 95:
                 break
-        log("диск-версия готова:", light)
+        log("диск-версия готова:", light,
+            round(os.path.getsize(light) / 1e6, 1), "МБ", round(dur(light), 2), "с")
+        ok = push_ci("dist: финал клипа (без чёрных вставок, 250 с) [skip ci]",
+                     keep=["dist/clip/КЛИП_Грибы_1080p_финал.mp4"])
+        log("финал в ветке:" , "да" if ok else "НЕ выложился")
 
     try:
         for t in (2.45, 2.50, 2.55, 4.95, 5.05, 9.95, 10.05, 60.00):
