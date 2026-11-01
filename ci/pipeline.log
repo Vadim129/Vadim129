@@ -30,61 +30,46 @@
 лист 25: 4 плана нарезаны
 планов с пением: 10 → липсинк
    (pads12 rf1)
-кусок лист 01 план 2 выложен в dist/lipsync
-лист 01 план 2: липсинк ок за 571с
    (pads12 rf1)
-кусок лист 06 план 4 выложен в dist/lipsync
-лист 06 план 4: липсинк ок за 614с
+лист 01 план 2: липсинк ок за 1351с
+лист 06 план 4: липсинк ок за 1332с
    (pads12 rf2)
-кусок лист 07 план 1 выложен в dist/lipsync
-лист 07 план 1: липсинк ок за 734с
+лист 07 план 1: липсинк ок за 1957с
    (pads12 rf1)
-кусок лист 07 план 3 выложен в dist/lipsync
-лист 07 план 3: липсинк ок за 618с
+лист 07 план 3: липсинк ок за 1680с
    (pads12 rf1)
-кусок лист 15 план 1 выложен в dist/lipsync
-   (pads25 rf2 static)
-кусок лист 13 план 3 выложен в dist/lipsync
-лист 13 план 3: липсинк ок за 909с
-лист 15 план 1: липсинк ок за 546с
-   причины:   File "/tmp/clipwork/wav2lip/inference.py", line 92, in face_detect |     raise ValueError('Face not detected! Ensure the video contains a face in all the frames.') | ValueError: Face not detected! Ensure the video contains a face in all the frames.
-лист 19 план 4: НЕ УДАЛСЯ за 769с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 13 план 3: НЕ УДАЛСЯ за 1964с
+лист 15 план 1: липсинк ок за 1143с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 19 план 4: НЕ УДАЛСЯ за 2037с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 20 план 1: НЕ УДАЛСЯ за 1982с
    (pads12 rf2)
-кусок лист 21 план 4 выложен в dist/lipsync
-   (pads25 rf2 static)
-кусок лист 20 план 1 выложен в dist/lipsync
-лист 20 план 1: липсинк ок за 990с
-лист 21 план 4: липсинк ок за 709с
-   (pads25 rf2 static)
-кусок лист 23 план 1 выложен в dist/lipsync
-лист 23 план 1: липсинк ок за 684с
+лист 21 план 4: липсинк ок за 1840с
+   причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 23 план 1: НЕ УДАЛСЯ за 1473с
 слот 01 собран
 слот 02 собран
 слот 03 собран
 слот 04 собран
 слот 05 собран
 слот 06 собран
-слот 07 собран
-слот 08 собран
-слот 09 собран
-слот 10 собран
-слот 11 собран
-слот 12 собран
-слот 13 собран
-слот 14 собран
-слот 15 собран
-слот 16 собран
-слот 17 собран
-слот 18 собран
-слот 19 собран
-слот 20 собран
-слот 21 собран
-слот 22 собран
-слот 23 собран
-слот 24 собран
-слот 25 собран
-ГОТОВО: /home/runner/work/Vadim129/Vadim129/out/КЛИП_Грибы_1080p.mp4 429.9 МБ видео 248.88 песня 249.5
-диск-версия crf24: 131.9 МБ
-диск-версия crf27: 94.8 МБ
-диск-версия готова: /home/runner/work/Vadim129/Vadim129/dist/clip/КЛИП_Грибы_1080p.mp4
-время 3506 с
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 391, in <module>
+    main()
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 385, in main
+    slots = build()
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 299, in build
+    make_slot(n, parts, slot, sheets)
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 334, in make_slot
+    sh(["ffmpeg", "-v", "error", "-y"] + ins +
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_clip.py", line 86, in sh
+    raise RuntimeError(f"{cmd[0]} fail: {(r.stderr or '')[-500:]}")
+RuntimeError: ffmpeg fail: nt
+[Parsed_concat_16 @ 0x55f071ac7840] Input link in0:v0 parameters (size 1920x1080, SAR 1:1) do not match the corresponding output link in0:v0 parameters (960x540, SAR 1:1)
+[Parsed_concat_16 @ 0x55f071ac7840] Failed to configure output pad on Parsed_concat_16
+[fc#0 @ 0x55f07197c540] Error reinitializing filters!
+Failed to inject frame into filter network: Invalid argument
+[out#0/mp4 @ 0x55f072f17a00] Nothing was written into output file, because at least one of its streams received no packets.
+
