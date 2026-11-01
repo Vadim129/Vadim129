@@ -87,26 +87,41 @@ def sh(cmd, **kw):
     return r
 
 
+def push_ci(msg="ci: прогресс"):
+    ws = os.environ.get("GITHUB_WORKSPACE")
+    if not ws:
+        return
+    br = os.environ.get("GITHUB_REF_NAME", "arena/7213a08a-vadim129")
+    for _ in range(8):
+        subprocess.run(["git", "fetch", "-q", "origin", br], cwd=ws, capture_output=True)
+        subprocess.run(["git", "reset", "-q", "--mixed", "FETCH_HEAD"], cwd=ws, capture_output=True)
+        subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
+        subprocess.run(["git", "-c", "user.name=ci-bot", "-c", "user.email=ci@bot.local",
+                        "commit", "-q", "-m", msg], cwd=ws, capture_output=True)
+        r = subprocess.run(["git", "push", "-q", "origin", f"HEAD:{br}"], cwd=ws, capture_output=True)
+        if r.returncode == 0:
+            return True
+        time.sleep(3)
+    return False
+
+
 def log(*a):
     print(*a, flush=True)
-    if os.environ.get("CI_PUSH") == "1":
-        try:
-            with open("/tmp/ci_progress.txt", "a") as f:
-                f.write(" ".join(str(x) for x in a) + "\n")
-            ws = os.environ.get("GITHUB_WORKSPACE")
-            if ws:
-                os.makedirs(f"{ws}/ci", exist_ok=True)
-                shutil.copy("/tmp/ci_progress.txt", f"{ws}/ci/progress.txt")
-                pv = f"{WORK}/preview"
-                if os.path.isdir(pv):
-                    shutil.copytree(pv, f"{ws}/ci/preview", dirs_exist_ok=True)
-                subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
-                subprocess.run(["git", "-c", "user.name=ci-bot", "-c", "user.email=ci@bot.org",
-                                "commit", "-q", "-m", "ci: прогресс"], cwd=ws, capture_output=True)
-                subprocess.run(["git", "push", "-q", "origin", "HEAD:arena/7213a08a-vadim129"],
-                               cwd=ws, capture_output=True)
-        except Exception as e:
-            print("progress fail:", e, flush=True)
+    if os.environ.get("CI_PUSH") != "1":
+        return
+    try:
+        with open("/tmp/ci_progress.txt", "a") as f:
+            f.write(" ".join(str(x) for x in a) + "\n")
+        ws = os.environ.get("GITHUB_WORKSPACE")
+        if ws:
+            os.makedirs(f"{ws}/ci", exist_ok=True)
+            shutil.copy("/tmp/ci_progress.txt", f"{ws}/ci/progress.txt")
+            pv = f"{WORK}/preview"
+            if os.path.isdir(pv):
+                shutil.copytree(pv, f"{ws}/ci/preview", dirs_exist_ok=True)
+            push_ci("ci: прогресс")
+    except Exception as e:
+        print("progress fail:", e, flush=True)
 
 
 def plan_span(sheet):
@@ -148,6 +163,24 @@ def download():
             log("НЕ скачался:", k)
     got = sum(1 for k in want if ok(f"{SRC}/{k}_alligator.mp4"))
     log(f"клипов на месте: {got}/25")
+    lines = []
+    for n in CLIPS:
+        f = f"{SRC}/{CLIPS[n]}_alligator.mp4"
+        if ok(f):
+            lines.append(f"лист {n:02d}: {os.path.getsize(f)/1e6:.1f} МБ")
+    lines.append(f"песня: {dur(SONG):.2f} с, {os.path.getsize(SONG)/1e6:.1f} МБ")
+    ws = os.environ.get("GITHUB_WORKSPACE")
+    if ws:
+        os.makedirs(f"{ws}/ci", exist_ok=True)
+        open(f"{ws}/ci/manifest.txt", "w").write("\n".join(lines) + "\n")
+    os.makedirs(f"{WORK}/preview", exist_ok=True)
+    for n in (1, 7, 13, 25):
+        f = f"{SRC}/{CLIPS[n]}_alligator.mp4"
+        if ok(f):
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{PLATE[n]+6:.2f}",
+                            "-i", f, "-frames:v", "1", "-vf", "scale=640:-2",
+                            f"{WORK}/preview/src_{n:02d}.jpg"], capture_output=True)
+    log("манифест и кадры-образцы готовы")
     # подстановка: лист без своего клипа берёт ближайший скачанный (только его видео)
     have = [n for n in CLIPS if ok(f"{SRC}/{CLIPS[n]}_alligator.mp4")]
     for n in CLIPS:
