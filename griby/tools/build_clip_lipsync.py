@@ -237,58 +237,180 @@ def cut_slots(edl):
     return len(todo)
 
 
+def singing_ranges(i, slot):
+    """Отрезки, где есть её лицо И звучит голос — только их и синхронизируем."""
+    import cv2, numpy as np, wave, struct, math
+    src = f"{SEG}/s{i:02d}.mp4"
+    dur = slot["dur"] + 0.5
+    # --- лицо: каскад Хаара по кадрам 4/с
+    cap = cv2.VideoCapture(src)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 25
+    step = max(1, int(round(fps / 4)))
+    casc = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    face_t, idx = [], 0
+    while True:
+        ok = cap.grab()
+        if not ok:
+            break
+        if idx % step == 0:
+            ok, frame = cap.retrieve()
+            if ok:
+                h, w = frame.shape[:2]
+                small = cv2.resize(frame, (w // 2, h // 2))
+                gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+                faces = casc.detectMultiScale(gray, 1.15, 5, minSize=(28, 28))
+                big = [f for f in faces if f[2] >= 34]        # крупное лицо = человек, не гриб
+                if big:
+                    face_t.append(idx / fps)
+        idx += 1
+    cap.release()
+    # --- голос: узкополосная энергия 300–3400 Гц по аудио слота
+    wav = f"{SEG}/a{i:02d}.wav"
+    with wave.open(wav, "rb") as wf:
+        sr = wf.getframerate()
+        raw = wf.readframes(wf.getnframes())
+    x = np.array(struct.unpack("<%dh" % (len(raw) // 2), raw), dtype=np.float32) / 32768.0
+    win = int(0.05 * sr) or 1
+    n = len(x) // win
+    e = np.array([np.sqrt(np.mean(x[k * win:(k + 1) * win] ** 2)) for k in range(n)])
+    if len(e) == 0:
+        return []
+    thr = max(np.percentile(e, 40), 0.01)
+    voc = e > thr
+    # сглаживание 3 окна
+    k = np.ones(3) / 3
+    voc = np.convolve(voc.astype(float), k, mode="same") > 0.5
+    def voc_at(t):
+        j = min(len(voc) - 1, max(0, int(t / 0.05)))
+        return bool(voc[j])
+    if not face_t:
+        return []
+    # --- объединяем: лицо есть и голос есть
+    good = [t for t in face_t if voc_at(t)]
+    if not good:
+        return []
+    good.sort()
+    ranges, a = [], good[0]
+    for t in good[1:]:
+        if t - a > 1.2:
+            ranges.append((max(0.0, a - 0.25), min(dur, t + 0.25)))
+            a = t
+    ranges.append((max(0.0, a - 0.25), min(dur, good[-1] + 0.25)))
+    # минимум 0.8 с, склейка близких
+    out = []
+    for r in ranges:
+        if r[1] - r[0] < 0.8:
+            continue
+        if out and r[0] - out[-1][1] < 0.4:
+            out[-1] = (out[-1][0], r[1])
+        else:
+            out.append(r)
+    return out
+
+
 def lipsync(edl, n_slots):
     import concurrent.futures as cf
-    ok_cnt, fail = 0, []
-    for i in range(n_slots):
-        if SKIP_LIPSYNC or edl[i]["sheet"] not in FACE:
-            shutil.copy(f"{SEG}/full{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
-    jobs = [i for i in range(n_slots) if not SKIP_LIPSYNC and edl[i]["sheet"] in FACE]
-    log(f"липсинк: {len(jobs)} слотов, 3 процесса параллельно")
-
+    ok_cnt, fail, total_sync = 0, [], 0.0
     os.makedirs(f"{WORK}/preview", exist_ok=True)
 
     def snap(i, src, out):
-        """кадр до/после рядом — для визуальной проверки"""
         try:
-            dur = 10.0
-            t = 4.0
             jpg = f"{WORK}/preview/slot{i+1:02d}.jpg"
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(t), "-i", src,
-                            "-ss", str(t), "-i", out, "-filter_complex",
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "3", "-i", src,
+                            "-ss", "3", "-i", out, "-filter_complex",
                             "[0:v]scale=420:-2,setsar=1[a];[1:v]scale=420:-2,setsar=1[b];[a][b]hstack",
                             "-frames:v", "1", "-q:v", "4", jpg], capture_output=True, timeout=120)
             return os.path.exists(jpg)
         except Exception:
             return False
 
-    def work(i):
-        sheet = edl[i]["sheet"]
-        src, aud, out = f"{SEG}/s{i:02d}.mp4", f"{SEG}/a{i:02d}.wav", f"{SEG}/sync{i:02d}.mp4"
+    # 1) какие слоты вообще нужны — только где лицо и голос
+    plan = {}
+    for i in range(n_slots):
+        if SKIP_LIPSYNC:
+            break
+        if edl[i]["sheet"] not in FACE:
+            continue
+        r = singing_ranges(i, edl[i])
+        if r:
+            plan[i] = r
+            total_sync += sum(b - a for a, b in r)
+    log(f"поющих отрезков: {sum(len(v) for v in plan.values())} в {len(plan)} слотах, "
+        f"всего {total_sync:.1f} с видео")
+
+    # 2) слоты без пения — как есть
+    for i in range(n_slots):
+        if i not in plan:
+            shutil.copy(f"{SEG}/full{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
+
+    # 3) задачи: (слот, отрезок)
+    tasks = [(i, k, a, b) for i, rs in plan.items() for k, (a, b) in enumerate(rs)]
+
+    def work(task):
+        i, k, a, b = task
+        seg_in = f"{SEG}/cut{i:02d}_{k}.mp4"
+        seg_wav = f"{SEG}/cut{i:02d}_{k}.wav"
+        seg_out = f"{SEG}/cut{i:02d}_{k}_sync.mp4"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a:.3f}", "-t", f"{b-a:.3f}",
+                        "-i", f"{SEG}/s{i:02d}.mp4", "-an", "-c:v", "libx264", "-crf", "16",
+                        "-preset", "veryfast", seg_in], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a:.3f}", "-t", f"{b-a:.3f}",
+                        "-i", f"{SEG}/a{i:02d}.wav", seg_wav], check=True)
         env = dict(os.environ, OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
         base = ["python3", "inference.py", "--checkpoint_path", f"{CKPT}/checkpoints/wav2lip_gan.pth",
-                "--face", src, "--audio", aud, "--outfile", out,
+                "--face", seg_in, "--audio", seg_wav, "--outfile", seg_out,
                 "--pads", "0", "12", "0", "0", "--resize_factor", "1",
                 "--face_det_batch_size", "4", "--wav2lip_batch_size", "16"]
         t = time.time()
         for extra in ([], ["--nosmooth"]):
-            r = subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
-            if os.path.exists(out) and os.path.getsize(out) > 20000:
-                snap(i, src, out)
-                return i, sheet, time.time() - t, True, ""
-        tail = (r.stderr or "").strip().splitlines()[-1][:160] if (r.stderr or "").strip() else "?"
-        return i, sheet, time.time() - t, False, tail
+            subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
+            if os.path.exists(seg_out) and os.path.getsize(seg_out) > 20000:
+                return task, time.time() - t, True
+        return task, time.time() - t, False
 
+    made = {}
     with cf.ThreadPoolExecutor(max_workers=3) as ex:
-        for i, sheet, dt, made, tail in ex.map(work, jobs):
-            if made:
-                ok_cnt += 1
-                log(f"{i+1:02d} лист {sheet:02d}: липсинк ок за {dt:.0f}с")
+        for task, dt, okk in ex.map(work, tasks):
+            i, k, a, b = task
+            made[(i, k)] = okk
+            log(f"слот {i+1:02d} отрезок {k+1} ({a:.1f}–{b:.1f} с): "
+                f"{'липсинк ок' if okk else 'НЕ УДАЛСЯ'} за {dt:.0f}с")
+
+    # 4) сборка слота обратно: синхронизированные отрезки + оригинал между ними
+    for i, rs in plan.items():
+        parts, cur = [], 0.0
+        for k, (a, b) in enumerate(rs):
+            if a - cur > 0.05:
+                p = f"{SEG}/keep{i:02d}_{k}.mp4"
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{cur:.3f}", "-t", f"{a-cur:.3f}",
+                                "-i", f"{SEG}/full{i:02d}.mp4", "-an", "-c:v", "libx264", "-crf", "16",
+                                "-preset", "veryfast", p], check=True)
+                parts.append(p)
+            src_seg = f"{SEG}/cut{i:02d}_{k}_sync.mp4" if made.get((i, k)) else None
+            if src_seg is None:
+                p = f"{SEG}/orig{i:02d}_{k}.mp4"
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{a:.3f}", "-t", f"{b-a:.3f}",
+                                "-i", f"{SEG}/full{i:02d}.mp4", "-an", "-c:v", "libx264", "-crf", "16",
+                                "-preset", "veryfast", p], check=True)
+                parts.append(p)
+                if made.get((i, k)) is False:
+                    fail.append(i + 1)
             else:
-                shutil.copy(f"{SEG}/s{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
-                fail.append(i + 1)
-                log(f"{i+1:02d} лист {sheet:02d}: НЕ УДАЛСЯ ({tail}) — оригинал")
-    log(f"липсинк: успешно {ok_cnt}, без него {len(fail)} {fail}")
+                parts.append(src_seg)
+                if (i, k) in made:
+                    ok_cnt += 1
+            cur = b
+        if cur < edl[i]["dur"] + 0.4:
+            p = f"{SEG}/keep{i:02d}_end.mp4"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{cur:.3f}", "-i", f"{SEG}/full{i:02d}.mp4",
+                            "-an", "-c:v", "libx264", "-crf", "16", "-preset", "veryfast", p], check=True)
+            parts.append(p)
+        lst = f"{SEG}/cat{i:02d}.txt"
+        open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+                        "-c", "copy", f"{SEG}/sync{i:02d}.mp4"], check=True)
+        snap(i, f"{SEG}/full{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
+    log(f"липсинк: отрезков синхронизировано {ok_cnt}, не удалось {len(fail)} {fail}")
     return ok_cnt
 
 
