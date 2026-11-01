@@ -114,14 +114,37 @@ def download():
         assert os.path.exists(SONG), "песня не скачалась\n" + out[-800:]
     missing = [k for k in CLIPS.values() if not os.path.exists(f"{SRC}/{k}_alligator.mp4")]
     log(f"не хватает клипов: {len(missing)}")
+
+    def fetch(k):
+        dst = f"{SRC}/{k}_alligator.mp4"
+        fid = DRIVE_IDS[k]
+        tries = [
+            ["gdown", fid, "-O", dst],
+            ["curl", "-sL", "--retry", "2", "-o", dst,
+             f"https://drive.usercontent.google.com/download?id={fid}&export=download&confirm=t"],
+            ["curl", "-sL", "--retry", "2", "-o", dst, f"https://drive.google.com/uc?export=download&id={fid}"],
+            ["gdown", "--fuzzy", f"https://drive.google.com/uc?id={fid}", "-O", dst],
+        ]
+        for cmd in tries:
+            sh(cmd)
+            if os.path.exists(dst) and os.path.getsize(dst) > 200000:
+                with open(dst, "rb") as f:
+                    head = f.read(12)
+                if head[4:8] == b"ftyp":     # это mp4, а не html-страница
+                    return True
+                os.remove(dst)
+        return False
+
     for k in missing:
-        for attempt in range(3):
-            rc, out = sh(["gdown", DRIVE_IDS[k], "-O", f"{SRC}/{k}_alligator.mp4"], )
-            if os.path.exists(f"{SRC}/{k}_alligator.mp4") and os.path.getsize(f"{SRC}/{k}_alligator.mp4") > 100000:
+        okk = False
+        for attempt in range(2):
+            if fetch(k):
+                okk = True
+                log("докачан:", k)
                 break
-            time.sleep(5)
-        else:
-            log("НЕ скачался:", k, out[-300:])
+            time.sleep(4)
+        if not okk:
+            log("НЕ скачался:", k, "— возьму соседний клип")
     got = len(glob.glob(f"{SRC}/*_alligator.mp4"))
     log(f"клипов на месте: {got}/25")
     return got
@@ -130,13 +153,38 @@ def download():
 def cut_slots(edl):
     os.makedirs(SEG, exist_ok=True)
     todo = edl[:2] if SMOKE else edl
+    def have(clip):
+        p = f"{SRC}/{clip}_alligator.mp4"
+        return os.path.exists(p) and os.path.getsize(p) > 200000
+
+    def sub_clip(sheet):
+        for d in (1, -1, 2, -2, 3, -3):
+            n2 = sheet + d
+            if 1 <= n2 <= 25 and have(CLIPS[n2]):
+                return CLIPS[n2], CLEAN[n2]
+        return s["clip"], s["pieces"]
+
     for i, s in enumerate(todo):
         t0 = round(10.0 * i, 3)
+        clip, ranges = (s["clip"], s["pieces"]) if have(s["clip"]) else sub_clip(s["sheet"])
+        if not have(s["clip"]):
+            log(f"лист {s['sheet']:02d}: клипа нет, подставлен {clip[:10]}")
+            ranges, acc = [], 0.0
+            row = max(1.0, 15.0 / max(len(ranges) or 1, 1))
+            need = s["dur"] + 1.0
+            st = 0.5
+            while need > 0.5:
+                take = min(need, 15.0 - st - 0.1)
+                if take <= 0.5:
+                    break
+                ranges.append((st, take))
+                st += take + 0.05
+                need -= take
         parts = []
-        for k, (st, take) in enumerate(s["pieces"]):
+        for k, (st, take) in enumerate(ranges):
             out = f"{SEG}/s{i:02d}_p{k}.mp4"
             rc, msg = sh(["ffmpeg", "-y", "-ss", str(st), "-t", str(take),
-                          "-i", f"{SRC}/{s['clip']}_alligator.mp4", "-an",
+                          "-i", f"{SRC}/{clip}_alligator.mp4", "-an",
                           "-vf", f"fps={FPS},scale=-2:1080:flags=lanczos", "-c:v", "libx264",
                           "-crf", "16", "-preset", "veryfast", out])
             assert rc == 0, msg[-800:]
