@@ -91,3 +91,6 @@ output/
 google_drive/
 preview_frames/
 *.apk
+
+# локальные скачанные куски (не в git)
+griby/05_Клип/липсинк-куски/

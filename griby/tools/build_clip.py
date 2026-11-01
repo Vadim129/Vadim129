@@ -95,6 +95,8 @@ def push_ci(msg="ci: прогресс [skip ci]"):
     for _ in range(8):
         subprocess.run(["git", "fetch", "-q", "origin", br], cwd=ws, capture_output=True)
         subprocess.run(["git", "reset", "-q", "--mixed", "FETCH_HEAD"], cwd=ws, capture_output=True)
+        # вернуть куски, выложенные другими прогонами, чтобы не стереть их из индекса
+        subprocess.run(["git", "checkout", "FETCH_HEAD", "--", "dist"], cwd=ws, capture_output=True)
         subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
         if os.path.isdir(f"{ws}/dist"):
             subprocess.run(["git", "add", "-A", "dist"], cwd=ws, capture_output=True)
