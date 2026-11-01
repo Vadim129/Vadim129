@@ -92,7 +92,10 @@ def log(*a):
             ws = os.environ.get("GITHUB_WORKSPACE")
             if ws:
                 shutil.copy("/tmp/ci_progress.txt", f"{ws}/ci/progress.txt")
-                subprocess.run(["git", "add", "-f", "ci/progress.txt"], cwd=ws, capture_output=True)
+                pv = os.path.join(WORK, "preview")
+                if os.path.isdir(pv):
+                    shutil.copytree(pv, f"{ws}/ci/preview", dirs_exist_ok=True)
+                subprocess.run(["git", "add", "-A", "ci"], cwd=ws, capture_output=True)
                 subprocess.run(["git", "-c", "user.name=ci-bot", "-c", "user.email=ci@bot.local",
                                 "commit", "-q", "-m", "ci: прогресс"], cwd=ws, capture_output=True)
                 subprocess.run(["git", "push", "-q", "origin", "HEAD:arena/7213a08a-vadim129"],
@@ -243,6 +246,22 @@ def lipsync(edl, n_slots):
     jobs = [i for i in range(n_slots) if not SKIP_LIPSYNC and edl[i]["sheet"] in FACE]
     log(f"липсинк: {len(jobs)} слотов, 3 процесса параллельно")
 
+    os.makedirs(f"{WORK}/preview", exist_ok=True)
+
+    def snap(i, src, out):
+        """кадр до/после рядом — для визуальной проверки"""
+        try:
+            dur = 10.0
+            t = 4.0
+            jpg = f"{WORK}/preview/slot{i+1:02d}.jpg"
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(t), "-i", src,
+                            "-ss", str(t), "-i", out, "-filter_complex",
+                            "[0:v]scale=420:-2,setsar=1[a];[1:v]scale=420:-2,setsar=1[b];[a][b]hstack",
+                            "-frames:v", "1", "-q:v", "4", jpg], capture_output=True, timeout=120)
+            return os.path.exists(jpg)
+        except Exception:
+            return False
+
     def work(i):
         sheet = edl[i]["sheet"]
         src, aud, out = f"{SEG}/s{i:02d}.mp4", f"{SEG}/a{i:02d}.wav", f"{SEG}/sync{i:02d}.mp4"
@@ -255,6 +274,7 @@ def lipsync(edl, n_slots):
         for extra in ([], ["--nosmooth"]):
             r = subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
             if os.path.exists(out) and os.path.getsize(out) > 20000:
+                snap(i, src, out)
                 return i, sheet, time.time() - t, True, ""
         tail = (r.stderr or "").strip().splitlines()[-1][:160] if (r.stderr or "").strip() else "?"
         return i, sheet, time.time() - t, False, tail

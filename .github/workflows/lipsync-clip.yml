@@ -93,7 +93,7 @@ jobs:
             du -sh /tmp/clipwork/segs 2>/dev/null || true;
             ls -lh "${{ github.workspace }}/out" 2>/dev/null || true; } > ci/status.txt
           git config user.name "ci-bot"; git config user.email "ci@bot.local"
-          git add -f ci/pipeline.log ci/status.txt
+          git add -A ci/
           git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID)" || echo "нечего коммитить"
           git push -q origin HEAD:${GITHUB_REF_NAME} || echo "push не удался"
 
