@@ -23,7 +23,7 @@ SKIP_LIPSYNC = os.environ.get("SKIP_LIPSYNC") == "1"
 DUR = 249.48
 SHEET = 10.0            # секунд песни на лист
 PLAN_OUT = 2.5          # секунд в клипе на план
-XFADE = 0.18            # перекрытие соседних планов (без чёрных вставок)
+XFADE = 0.12            # перекрытие соседних планов (без чёрных вставок и без «двоения» лиц)
 OUT_PLAN = PLAN_OUT + XFADE   # сколько материала нужно на план
 FPS = 24
 
@@ -281,6 +281,11 @@ def build():
     import concurrent.futures as cf
     todo = [t for t in tasks if t[3]]
     log(f"планов с пением: {len(todo)} → липсинк")
+    for n in sheets:
+        for k in range(1, 5):
+            if (n, k) in SING:
+                a = (n - 1) * SHEET + (k - 1) * PLAN_OUT
+                log(f"синхрон: лист {n:02d} план {k} = {int(a)//60}:{a%60:05.2f}–{int(a+PLAN_OUT)//60}:{(a+PLAN_OUT)%60:05.2f}")
 
     def work(t):
         n, k, raw, _ = t
@@ -427,7 +432,7 @@ def assemble(slots):
     D = dur(video)
     DUR_SONG = dur(SONG)
     total = min(D, DUR_SONG)
-    out = f"{OUTDIR}/КЛИП_Грибы_1080p.mp4"
+    out = f"{OUTDIR}/КЛИП_Грибы_1080p_финал.mp4"
     sh(["ffmpeg", "-v", "error", "-y", "-i", video, "-i", SONG,
         "-map", "0:v", "-map", "1:a", "-c:v", "copy",
         "-af", f"afade=t=out:st={total-2.0:.2f}:d=2.0",
@@ -441,7 +446,7 @@ def assemble(slots):
     if ws:
         light_dir = f"{ws}/dist/clip"
         os.makedirs(light_dir, exist_ok=True)
-        light = f"{light_dir}/КЛИП_Грибы_1080p.mp4"
+        light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
         for crf in (24, 27, 30, 33):
             sh(["ffmpeg", "-v", "error", "-y", "-i", out,
                 "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
