@@ -33,3 +33,4 @@
 01 попытка не удалась: TypeError: mel() takes 0 positional arguments but 2 positional arguments (and 3 keyword-only arguments) were given
 01 лист 01: ЛИПСИНК НЕ УДАЛСЯ — оставлен оригинал
 02 лист 02: без лица — без липсинка
+липсинк: успешно 0, без него 1 [1]
