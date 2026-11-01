@@ -489,23 +489,29 @@ def assemble(slots):
 
     ws = os.environ.get("GITHUB_WORKSPACE")
     if ws:
-        light_dir = f"{ws}/dist/clip"
-        os.makedirs(light_dir, exist_ok=True)
-        light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
+        # сжимаем ВНЕ dist: любой log() делает checkout dist и иначе затрёт свежий файл
+        light_tmp = f"{OUTDIR}/disk.mp4"
         for crf in (23, 25, 27, 30, 33):
             sh(["ffmpeg", "-v", "error", "-y", "-i", out,
                 "-c:v", "libx264", "-preset", "medium", "-crf", str(crf),
                 "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "192k",
-                "-movflags", "+faststart", light])
-            mb = os.path.getsize(light) / 1e6
-            log(f"диск-версия crf{crf}: {mb:.1f} МБ")
+                "-movflags", "+faststart", light_tmp])
+            mb = os.path.getsize(light_tmp) / 1e6
+            print(f"диск-версия crf{crf}: {mb:.1f} МБ", flush=True)
             if mb < 95:
                 break
-        log("диск-версия готова:", light,
-            round(os.path.getsize(light) / 1e6, 1), "МБ", round(dur(light), 2), "с")
+        light_dir = f"{ws}/dist/clip"
+        os.makedirs(light_dir, exist_ok=True)
+        light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
+        shutil.copy(light_tmp, light)
+        log("диск-версия готова:", round(os.path.getsize(light) / 1e6, 1), "МБ",
+            round(dur(light), 2), "с")
+        # держим файл в KEEP до пуша, чтобы чужие прогоны его не затёрли
+        KEEP.add("dist/clip/КЛИП_Грибы_1080p_финал.mp4")
         ok = push_ci("dist: финал клипа (без чёрных вставок, 250 с) [skip ci]",
                      keep=["dist/clip/КЛИП_Грибы_1080p_финал.mp4"])
-        log("финал в ветке:" , "да" if ok else "НЕ выложился")
+        log("финал в ветке:", "да" if ok else "НЕ выложился",
+            "размер", round(os.path.getsize(light) / 1e6, 1), "МБ")
 
     try:
         for t in (2.45, 2.50, 2.55, 4.95, 5.05, 9.95, 10.05, 60.00):
