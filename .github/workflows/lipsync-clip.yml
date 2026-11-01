@@ -1,0 +1,85 @@
+name: Клип — липсинк + сборка 1080p
+
+on:
+  workflow_dispatch:
+    inputs:
+      smoke:
+        description: "Быстрый тест (2 слота)"
+        required: false
+        default: "0"
+  push:
+    branches:
+      - 'arena/7213a08a-vadim129'
+    paths:
+      - 'griby/tools/build_clip_lipsync.py'
+      - '.github/workflows/lipsync-clip.yml'
+
+concurrency:
+  group: lipsync-clip-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libgl1 libglib2.0-0
+          ffmpeg -version | head -1
+
+      - name: Python-зависимости (CPU)
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q torch==2.2.2 torchvision==0.17.2 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q "numpy<2" opencv-python-headless==4.9.0.80 librosa==0.10.1 \
+                         scipy tqdm gdown imageio-ffmpeg numba
+          python -c "import torch, cv2, librosa; print('torch', torch.__version__, '| cuda', torch.cuda.is_available())"
+
+      - name: Wav2Lip + веса
+        run: |
+          mkdir -p /tmp/clipwork
+          cd /tmp/clipwork
+          git clone --depth 1 https://github.com/Rudrabha/Wav2Lip.git wav2lip
+          cd wav2lip
+          mkdir -p checkpoints face_detection/detection/sfd
+          curl -L --retry 3 -o checkpoints/wav2lip_gan.pth \
+            https://huggingface.co/Nekochu/Wav2Lip/resolve/main/wav2lip_gan.pth
+          curl -L --retry 3 -o checkpoints/wav2lip.pth \
+            https://huggingface.co/Nekochu/Wav2Lip/resolve/main/wav2lip.pth
+          curl -L --retry 3 -o face_detection/detection/sfd/s3fd.pth \
+            https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth
+          ls -lh checkpoints face_detection/detection/sfd
+
+      - name: Пайплайн
+        env:
+          SMOKE: ${{ github.event.inputs.smoke == '1' && '1' || '0' }}
+          OUTDIR: ${{ github.workspace }}/out
+        run: |
+          mkdir -p "$OUTDIR"
+          python3 griby/tools/build_clip_lipsync.py 2>&1 | tee /tmp/pipeline.log
+          ls -lh "$OUTDIR"
+
+      - name: Итог
+        if: always()
+        run: |
+          echo "=== размер файлов ==="
+          du -sh /tmp/clipwork/segs 2>/dev/null || true
+          ls -lh "${{ github.workspace }}/out" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clip-lipsync
+          path: |
+            ${{ github.workspace }}/out/*.mp4
+            /tmp/pipeline.log
+          retention-days: 14
+          if-no-files-found: warn
