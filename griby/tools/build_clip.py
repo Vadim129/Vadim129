@@ -74,6 +74,7 @@ SING = {(1, 1), (1, 2), (4, 1), (4, 2), (6, 4), (7, 1), (7, 3), (13, 3),
         (14, 3), (15, 1), (16, 3), (17, 4), (18, 1), (19, 4), (20, 1),
         (21, 4), (22, 2), (23, 1)}
 XFADE = 0.20
+USE = {}   # лист -> чей клип использовать
 
 
 def sh(cmd, **kw):
@@ -129,7 +130,11 @@ def download():
         fid = DRIVE[k]
         for cmd in (["gdown", fid, "-O", dst],
                     ["curl", "-sL", "--retry", "2", "-o", dst,
-                     f"https://drive.usercontent.google.com/download?id={fid}&export=download&confirm=t"]):
+                     f"https://drive.usercontent.google.com/download?id={fid}&export=download&confirm=t"],
+                    ["curl", "-sL", "--retry", "2", "-o", dst,
+                     f"https://drive.google.com/uc?id={fid}&export=download"],
+                    ["curl", "-sLk", "--retry", "2", "-o", dst,
+                     f"https://docs.google.com/uc?export=download&id={fid}"]):
             try:
                 sh(cmd)
             except Exception:
@@ -140,20 +145,29 @@ def download():
             log("НЕ скачался:", k)
     got = sum(1 for k in want if ok(f"{SRC}/{k}_alligator.mp4"))
     log(f"клипов на месте: {got}/25")
+    # подстановка: лист без своего клипа берёт ближайший скачанный (только его видео)
+    have = [n for n in CLIPS if ok(f"{SRC}/{CLIPS[n]}_alligator.mp4")]
+    for n in CLIPS:
+        if n in have:
+            continue
+        near = min(have, key=lambda m: abs(m - n))
+        USE[n] = near
+        log(f"лист {n:02d}: клип не скачался → беру видео листа {near:02d}")
     return got
 
 
 def cut_plan(sheet, k, out, quality="16"):
     """сырой отрезок плана k (1..4) из клипа листа, приведённый к 2.5 с"""
-    span = plan_span(sheet)
-    st = PLATE[sheet] + (k - 1) * span + 0.12
+    src_n = USE.get(sheet, sheet)
+    span = plan_span(src_n)
+    st = PLATE[src_n] + (k - 1) * span + 0.12
     take = span - 0.24
     speed = take / PLAN_OUT
     vf = (f"setpts=(PTS-STARTPTS)/{speed:.4f},fps={FPS},"
           "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1,"
           "unsharp=5:5:0.35:5:5:0.0")
     sh(["ffmpeg", "-v", "error", "-y", "-ss", f"{st:.3f}", "-t", f"{take:.3f}",
-        "-i", f"{SRC}/{CLIPS[sheet]}_alligator.mp4", "-vf", vf, "-an",
+        "-i", f"{SRC}/{CLIPS[src_n]}_alligator.mp4", "-vf", vf, "-an",
         "-c:v", "libx264", "-crf", quality, "-preset", "veryfast",
         "-t", f"{PLAN_OUT:.3f}", out])
     return out
