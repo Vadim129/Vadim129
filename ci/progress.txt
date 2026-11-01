@@ -50,3 +50,4 @@
    причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
 лист 23 план 1: НЕ УДАЛСЯ за 1473с
 слот 01 собран
+слот 02 собран
