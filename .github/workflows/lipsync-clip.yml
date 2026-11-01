@@ -19,8 +19,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: lipsync-clip-${{ github.ref }}-${{ github.run_id }}
-  cancel-in-progress: false
+  group: lipsync-clip-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

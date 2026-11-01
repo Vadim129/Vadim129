@@ -23,7 +23,7 @@ SKIP_LIPSYNC = os.environ.get("SKIP_LIPSYNC") == "1"
 DUR = 249.48
 SHEET = 10.0            # секунд песни на лист
 PLAN_OUT = 2.5          # секунд в клипе на план
-FPS = 25
+FPS = 24
 
 SONG_ID = "1yGs88oWAw6TP-EdskGqH41Sjc2m0M309"
 CLIPS = {
@@ -222,7 +222,7 @@ def build():
         except Exception:
             pass
 
-    # слоты
+    # слоты: 4 плана + мягкие переходы «через чёрное» — таймлайн не сдвигается
     slots = []
     for n in sheets:
         parts = []
@@ -232,49 +232,67 @@ def build():
                 parts.append(synced)
             else:
                 parts.append(f"{SEG}/p{n:02d}_{k}.mp4")
-        lst = f"{SEG}/slot{n:02d}.txt"
-        open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
         slot = f"{SEG}/slot{n:02d}.mp4"
-        sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
-            "-c", "copy", slot])
+        make_slot(n, parts, slot, sheets)
         slots.append(slot)
         log(f"слот {n:02d} собран")
     return slots
 
 
+def dur(p):
+    import re
+    r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                        "-of", "csv=p=0", p], capture_output=True, text=True)
+    try:
+        return float(r.stdout.strip())
+    except Exception:
+        pass
+    r = subprocess.run(["ffmpeg", "-i", p], capture_output=True, text=True)
+    m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", r.stderr)
+    if not m:
+        return 0.0
+    h, mi, sec = m.groups()
+    return int(h) * 3600 + int(mi) * 60 + float(sec)
+
+
+def make_slot(n, parts, out, sheets):
+    ins = []
+    for p in parts:
+        ins += ["-i", p]
+    fc = []
+    for i in range(4):
+        vf = "setsar=1,fps=24"
+        if not (n == 1 and i == 0):
+            vf += ",fade=t=in:st=0:d=0.10"
+        if not (n == max(sheets) and i == 3):
+            vf += f",fade=t=out:st={PLAN_OUT-0.10:.2f}:d=0.10"
+        fc.append(f"[{i}:v]{vf}[a{i}]")
+    fc.append("".join(f"[a{i}]" for i in range(4)) + "concat=n=4:v=1:a=0[v]")
+    sh(["ffmpeg", "-v", "error", "-y"] + ins +
+       ["-filter_complex", ";".join(fc), "-map", "[v]", "-an",
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
+        "-pix_fmt", "yuv420p", "-r", "24", out])
+    return out
+
+
 def assemble(slots):
     os.makedirs(OUTDIR, exist_ok=True)
-    n = len(slots)
-    # длительности слотов
-    def dur(p):
-        r = sh(["ffmpeg", "-i", p])
-        import re
-        m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", r.stderr)
-        h, mi, s = m.groups()
-        return int(h) * 3600 + int(mi) * 60 + float(s)
-
-    D = [dur(p) for p in slots]
-    ins = []
-    for p in slots:
-        ins += ["-i", p]
-    fc, prev, acc = [], "[0:v]", D[0]
-    for i in range(1, n):
-        off = max(0.0, acc - XFADE)
-        fc.append(f"{prev}[{i}:v]xfade=transition=fade:duration={XFADE}:offset={off:.3f}[v{i}]")
-        prev = f"[v{i}]"
-        acc = off + D[i]
-    total = acc
-    fc.append(f"{prev}fade=t=out:st={total-2.0:.3f}:d=2.0,format=yuv420p[v]")
+    lst = f"{SEG}/all.txt"
+    open(lst, "w").write("".join(f"file '{p}'\n" for p in slots))
+    video = f"{SEG}/video_only.mp4"
+    sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+        "-c", "copy", video])
+    D = dur(video)
+    DUR = dur(SONG)
+    total = min(D, DUR)
     out = f"{OUTDIR}/КЛИП_Грибы_1080p.mp4"
-    ins2 = ins + ["-i", SONG]
-    cmd = (["ffmpeg", "-v", "error", "-y"] + ins2 +
-           ["-filter_complex", ";".join(fc), "-map", "[v]", "-map", f"{n}:a",
-            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p",
-            "-r", "24", "-c:a", "aac", "-b:a", "320k", "-ar", "48000",
-            "-af", "afade=t=out:st=247.2:d=2.2", "-movflags", "+faststart",
-            "-t", f"{min(total, DUR):.3f}", out])
-    sh(cmd)
-    log("ГОТОВО:", out, round(os.path.getsize(out) / 1e6, 1), "МБ", "длина", round(total, 2))
+    sh(["ffmpeg", "-v", "error", "-y", "-i", video, "-i", SONG,
+        "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+        "-af", f"afade=t=out:st={total-2.0:.2f}:d=2.0",
+        "-c:a", "aac", "-b:a", "320k", "-ar", "48000",
+        "-t", f"{total:.3f}", "-movflags", "+faststart", out])
+    log("ГОТОВО:", out, round(os.path.getsize(out) / 1e6, 1), "МБ",
+        "видео", round(D, 2), "песня", round(DUR, 2))
     return out
 
 
