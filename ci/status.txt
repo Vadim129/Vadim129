@@ -1,7 +1,7 @@
-run: 41317029246
+run: 41319530754
 status: success
-time: 2026-11-01T15:03:07Z
+time: 2026-11-01T15:24:19Z
 1.2G	/tmp/clipwork/segs
 total 474M
--rw-r--r-- 1 runner runner  68M Nov  1 15:02 disk.mp4
--rw-r--r-- 1 runner runner 407M Nov  1 14:47 КЛИП_Грибы_1080p_финал.mp4
+-rw-r--r-- 1 runner runner  68M Nov  1 15:24 disk.mp4
+-rw-r--r-- 1 runner runner 407M Nov  1 15:15 КЛИП_Грибы_1080p_финал.mp4
