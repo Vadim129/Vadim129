@@ -1,0 +1,53 @@
+name: Карта вокала (Demucs)
+
+on:
+  push:
+    branches:
+      - 'arena/7213a08a-vadim129'
+    paths:
+      - 'griby/tools/vocal_map.py'
+      - '.github/workflows/vocal-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - name: зависимости
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q "numpy<2" torch==2.2.2 torchaudio==2.2.2 \
+            --index-url https://download.pytorch.org/whl/cpu
+          pip install -q demucs==4.0.1 soundfile scipy gdown
+
+      - name: Demucs
+        run: python griby/tools/vocal_map.py
+
+      - name: опубликовать карту
+        run: |
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --mixed FETCH_HEAD
+            git checkout FETCH_HEAD -- ci/vocal_map.txt ci/vocal_map.json ci/instrumental.mp3 2>/dev/null || true
+            git add ci/vocal_map.txt ci/vocal_map.json ci/instrumental.mp3
+            git commit -q -m "ci: карта вокала — проигрыши для девушки ($GITHUB_RUN_ID) [skip ci]" || true
+            git push -q origin HEAD:${GITHUB_REF_NAME} && break
+            sleep 3
+          done
