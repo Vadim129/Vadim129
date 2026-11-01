@@ -106,6 +106,26 @@ jobs:
             sleep 4
           done
 
+      - name: Публикация в GitHub Release (прямые ссылки на скачивание)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          TAG="clip-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" --title "Клип «Грибы» $TAG" --notes "Сборка $GITHUB_RUN_ID: куски с липсинком + финальный клип 1080p." || true
+          # куски с липсинком
+          ls -1 /tmp/clipwork/segs/*_sync.mp4 2>/dev/null | while read -r f; do
+            b=$(basename "$f" _sync.mp4); cp "$f" "/tmp/lipsync_$b.mp4"
+            gh release upload "$TAG" "/tmp/lipsync_$b.mp4" --clobber || true
+          done
+          # финальный клип и облегчённая версия
+          for f in out/*.mp4 dist/clip/*.mp4; do
+            [ -f "$f" ] || continue
+            gh release upload "$TAG" "$f" --clobber || true
+          done
+          gh release view "$TAG" --json assets --jq '.assets[]|"\(.name) \(.size) \(.url)"' || true
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
