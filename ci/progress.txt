@@ -48,3 +48,4 @@
    (pads12 rf2)
 лист 21 план 4: липсинк ок за 1840с
    причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 23 план 1: НЕ УДАЛСЯ за 1473с
