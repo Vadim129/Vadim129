@@ -503,15 +503,18 @@ def assemble(slots):
         light_dir = f"{ws}/dist/clip"
         os.makedirs(light_dir, exist_ok=True)
         light = f"{light_dir}/КЛИП_Грибы_1080p_финал.mp4"
-        shutil.copy(light_tmp, light)
-        log("диск-версия готова:", round(os.path.getsize(light) / 1e6, 1), "МБ",
-            round(dur(light), 2), "с")
-        # держим файл в KEEP до пуша, чтобы чужие прогоны его не затёрли
+        # KEEP — ДО копирования: дальше любой log() сохранит файл и вернёт его после reset
         KEEP.add("dist/clip/КЛИП_Грибы_1080p_финал.mp4")
+        shutil.copy(light_tmp, light)
+        print("диск-версия готова:", round(os.path.getsize(light) / 1e6, 1), "МБ",
+              round(dur(light), 2), "с", flush=True)
         ok = push_ci("dist: финал клипа (без чёрных вставок, 250 с) [skip ci]",
                      keep=["dist/clip/КЛИП_Грибы_1080p_финал.mp4"])
-        log("финал в ветке:", "да" if ok else "НЕ выложился",
-            "размер", round(os.path.getsize(light) / 1e6, 1), "МБ")
+        # проверить, что в ветке лежит именно свежий файл
+        sz = subprocess.run(["git", "cat-file", "-s",
+                             "FETCH_HEAD:dist/clip/КЛИП_Грибы_1080p_финал.mp4"],
+                            cwd=ws, capture_output=True, text=True).stdout.strip()
+        log("финал в ветке:", "да" if ok else "НЕ выложился", "в git", sz, "байт")
 
     try:
         for t in (2.45, 2.50, 2.55, 4.95, 5.05, 9.95, 10.05, 60.00):
