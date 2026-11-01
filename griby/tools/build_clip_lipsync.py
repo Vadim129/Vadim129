@@ -159,7 +159,13 @@ def download():
             time.sleep(4)
         if not okk:
             log("НЕ скачался:", k, "— возьму соседний клип")
-    got = len(glob.glob(f"{SRC}/*_alligator.mp4"))
+    valid = 0
+    for f in glob.glob(f"{SRC}/*_alligator.mp4"):
+        if os.path.getsize(f) > 200000:
+            with open(f, "rb") as fh:
+                if fh.read(12)[4:8] == b"ftyp":
+                    valid += 1
+    got = valid
     log(f"клипов на месте: {got}/25")
     return got
 
@@ -209,10 +215,16 @@ def cut_slots(edl):
             open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
             raw = f"{SEG}/s{i:02d}_raw.mp4"
             sh(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", raw])
+        full = f"{SEG}/full{i:02d}.mp4"
         rc, msg = sh(["ffmpeg", "-y", "-i", raw, "-vf",
                       f"setpts=(PTS-STARTPTS)/{s['speed']:.4f},fps={FPS},"
                       "tpad=stop_mode=clone:stop_duration=1.0",
                       "-t", f"{s['dur'] + 0.6:.2f}", "-an", "-c:v", "libx264",
+                      "-crf", "16", "-preset", "veryfast", full])
+        assert rc == 0, msg[-800:]
+        # вход для липсинка: нативная высота источника (клипы и так ~720p) — быстро и без потери качества
+        rc, msg = sh(["ffmpeg", "-y", "-i", full, "-vf",
+                      "scale=-2:'min(720,ih)':flags=lanczos", "-an", "-c:v", "libx264",
                       "-crf", "16", "-preset", "veryfast", f"{SEG}/s{i:02d}.mp4"])
         assert rc == 0, msg[-800:]
         rc, msg = sh(["ffmpeg", "-y", "-ss", f"{t0:.3f}", "-t", f"{s['dur']:.3f}", "-i", SONG,
@@ -223,34 +235,39 @@ def cut_slots(edl):
 
 
 def lipsync(edl, n_slots):
+    import concurrent.futures as cf
     ok_cnt, fail = 0, []
     for i in range(n_slots):
+        if SKIP_LIPSYNC or edl[i]["sheet"] not in FACE:
+            shutil.copy(f"{SEG}/full{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
+    jobs = [i for i in range(n_slots) if not SKIP_LIPSYNC and edl[i]["sheet"] in FACE]
+    log(f"липсинк: {len(jobs)} слотов, 3 процесса параллельно")
+
+    def work(i):
         sheet = edl[i]["sheet"]
         src, aud, out = f"{SEG}/s{i:02d}.mp4", f"{SEG}/a{i:02d}.wav", f"{SEG}/sync{i:02d}.mp4"
-        if SKIP_LIPSYNC or sheet not in FACE:
-            shutil.copy(src, out)
-            log(f"{i+1:02d} лист {sheet:02d}: без лица — без липсинка")
-            continue
+        env = dict(os.environ, OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
         base = ["python3", "inference.py", "--checkpoint_path", f"{CKPT}/checkpoints/wav2lip_gan.pth",
                 "--face", src, "--audio", aud, "--outfile", out,
                 "--pads", "0", "12", "0", "0", "--resize_factor", "1",
-                "--face_det_batch_size", "8", "--wav2lip_batch_size", "16"]
-        made = False
+                "--face_det_batch_size", "4", "--wav2lip_batch_size", "16"]
+        t = time.time()
         for extra in ([], ["--nosmooth"]):
-            t = time.time()
-            rc, msg = sh(base + extra, cwd=CKPT)
+            r = subprocess.run(base + extra, cwd=CKPT, capture_output=True, text=True, env=env)
             if os.path.exists(out) and os.path.getsize(out) > 20000:
-                made = True
-                log(f"{i+1:02d} лист {sheet:02d}: липсинк ок за {time.time()-t:.0f}с"
-                    f"{' (nosmooth)' if extra else ''}")
-                break
-            log(f"{i+1:02d} попытка не удалась: {msg.strip().splitlines()[-1][:200] if msg.strip() else '?'}")
-        if made:
-            ok_cnt += 1
-        else:
-            shutil.copy(src, out)
-            fail.append(i + 1)
-            log(f"{i+1:02d} лист {sheet:02d}: ЛИПСИНК НЕ УДАЛСЯ — оставлен оригинал")
+                return i, sheet, time.time() - t, True, ""
+        tail = (r.stderr or "").strip().splitlines()[-1][:160] if (r.stderr or "").strip() else "?"
+        return i, sheet, time.time() - t, False, tail
+
+    with cf.ThreadPoolExecutor(max_workers=3) as ex:
+        for i, sheet, dt, made, tail in ex.map(work, jobs):
+            if made:
+                ok_cnt += 1
+                log(f"{i+1:02d} лист {sheet:02d}: липсинк ок за {dt:.0f}с")
+            else:
+                shutil.copy(f"{SEG}/s{i:02d}.mp4", f"{SEG}/sync{i:02d}.mp4")
+                fail.append(i + 1)
+                log(f"{i+1:02d} лист {sheet:02d}: НЕ УДАЛСЯ ({tail}) — оригинал")
     log(f"липсинк: успешно {ok_cnt}, без него {len(fail)} {fail}")
     return ok_cnt
 
