@@ -85,6 +85,20 @@ def sh(cmd, **kw):
 
 def log(*a):
     print(*a, flush=True)
+    if os.environ.get("CI_PUSH") == "1":
+        try:
+            with open("/tmp/ci_progress.txt", "a") as f:
+                f.write(" ".join(str(x) for x in a) + "\n")
+            ws = os.environ.get("GITHUB_WORKSPACE")
+            if ws:
+                shutil.copy("/tmp/ci_progress.txt", f"{ws}/ci/progress.txt")
+                subprocess.run(["git", "add", "-f", "ci/progress.txt"], cwd=ws, capture_output=True)
+                subprocess.run(["git", "-c", "user.name=ci-bot", "-c", "user.email=ci@bot.local",
+                                "commit", "-q", "-m", "ci: прогресс"], cwd=ws, capture_output=True)
+                subprocess.run(["git", "push", "-q", "origin", "HEAD:arena/7213a08a-vadim129"],
+                               cwd=ws, capture_output=True)
+        except Exception as e:
+            print("progress push fail:", e, flush=True)
 
 
 def build_edl():

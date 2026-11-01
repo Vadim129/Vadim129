@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: lipsync-clip-${{ github.ref }}
+  group: lipsync-clip-${{ github.ref }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -64,6 +64,7 @@ jobs:
 
       - name: Пайплайн
         env:
+          CI_PUSH: '1'
           OUTDIR: ${{ github.workspace }}/out
         run: |
           set -o pipefail
