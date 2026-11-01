@@ -95,13 +95,13 @@ jobs:
           git config user.name "ci-bot"; git config user.email "ci@bot.local"
           git add -A ci/ || true
           [ -d dist ] && git add -A dist/ || true
-          git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID)" || echo "нечего коммитить"
+          git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID) [skip ci]" || echo "нечего коммитить"
           for i in 1 2 3 4 5; do
             git fetch -q origin "$GITHUB_REF_NAME"
             git reset -q --mixed FETCH_HEAD
             git add -A ci/ || true
             [ -d dist ] && git add -A dist/ || true
-            git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID)" || true
+            git commit -q -m "ci: лог сборки клипа ($GITHUB_RUN_ID) [skip ci]" || true
             git push -q origin HEAD:${GITHUB_REF_NAME} && break
             sleep 4
           done

@@ -87,7 +87,7 @@ def sh(cmd, **kw):
     return r
 
 
-def push_ci(msg="ci: прогресс"):
+def push_ci(msg="ci: прогресс [skip ci]"):
     ws = os.environ.get("GITHUB_WORKSPACE")
     if not ws:
         return
@@ -121,7 +121,7 @@ def log(*a):
             pv = f"{WORK}/preview"
             if os.path.isdir(pv):
                 shutil.copytree(pv, f"{ws}/ci/preview", dirs_exist_ok=True)
-            push_ci("ci: прогресс")
+            push_ci("ci: прогресс [skip ci]")
     except Exception as e:
         print("progress fail:", e, flush=True)
 
@@ -228,7 +228,7 @@ def lipsync_plan(sheet, k, vin, ain, out):
     variants = [(["--pads", "0", "12", "0", "0", "--resize_factor", "1"], "pads12 rf1"),
                 (["--pads", "0", "12", "0", "0", "--resize_factor", "2"], "pads12 rf2"),
                 (["--pads", "0", "20", "0", "0", "--resize_factor", "2", "--nosmooth"], "pads20 rf2 nosmooth"),
-                (["--pads", "10", "25", "10", "10", "--resize_factor", "2", "--static"], "pads25 rf2 static")]
+                (["--pads", "10", "25", "10", "10", "--resize_factor", "2", "--static", "True"], "pads25 rf2 static")]
     t = time.time()
     err = ""
     for extra, name in variants:
@@ -239,7 +239,8 @@ def lipsync_plan(sheet, k, vin, ain, out):
             log(f"   ({name})")
             return True, time.time() - t
         tail = (r.stderr or r.stdout or "").strip().splitlines()
-        err = " | ".join(tail[-3:])[:300]
+        if not err:
+            err = " | ".join(tail[-3:])[:300]
     log(f"   причины: {err}")
     return False, time.time() - t
 
@@ -266,12 +267,29 @@ def build():
         ain = cut_audio(n, k, f"{SEG}/p{n:02d}_{k}.wav")
         out = f"{SEG}/p{n:02d}_{k}_sync.mp4"
         okk, dt = lipsync_plan(n, k, raw, ain, out)
+        if okk:
+            norm = f"{SEG}/p{n:02d}_{k}_norm.mp4"
+            try:
+                sh(["ffmpeg", "-v", "error", "-y", "-i", out,
+                    "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,"
+                           "crop=1920:1080,setsar=1,fps=24",
+                    "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14",
+                    "-pix_fmt", "yuv420p", "-t", f"{PLAN_OUT:.3f}", norm])
+                os.replace(norm, out)
+            except Exception as e:
+                log(f"лист {n:02d} план {k}: нормализация не удалась {e}")
         return n, k, okk, dt
 
     if todo:
         with cf.ThreadPoolExecutor(max_workers=3) as ex:
             for n, k, okk, dt in ex.map(work, todo):
                 log(f"лист {n:02d} план {k}: {'липсинк ок' if okk else 'НЕ УДАЛСЯ'} за {dt:.0f}с")
+
+    for n, k, _raw, _ in tasks:
+        if (n, k) in SING:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "0.5",
+                            "-i", _raw, "-frames:v", "1", "-vf", "scale=640:-2",
+                            f"{WORK}/preview/plan_{n:02d}_{k}.jpg"], capture_output=True)
 
     # превью: кадр с лицом до/после
     for n, k, okk in [(t[0], t[1], True) for t in todo]:
