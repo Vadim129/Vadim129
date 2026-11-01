@@ -42,3 +42,4 @@
 лист 13 план 3: НЕ УДАЛСЯ за 1964с
 лист 15 план 1: липсинк ок за 1143с
    причины:                     [--resize_factor RESIZE_FACTOR] [--crop CROP [CROP ...]] |                     [--box BOX [BOX ...]] [--rotate] [--nosmooth] | inference.py: error: argument --static: expected one argument
+лист 19 план 4: НЕ УДАЛСЯ за 2037с
