@@ -1,0 +1,53 @@
+name: Карта песни (где проигрыши)
+
+on:
+  push:
+    branches:
+      - 'arena/7213a08a-vadim129'
+    paths:
+      - 'griby/tools/audio_map.py'
+      - '.github/workflows/audio-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - name: зависимости
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q "numpy<2" librosa==0.9.2 soundfile scipy gdown
+
+      - name: анализ
+        run: python griby/tools/audio_map.py
+
+      - name: опубликовать карту
+        run: |
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          git add ci/audio_map.txt ci/audio_map.json
+          git commit -q -m "ci: карта песни — где проигрыши ($GITHUB_RUN_ID) [skip ci]" || echo "нечего коммитить"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --mixed FETCH_HEAD
+            git checkout FETCH_HEAD -- ci/audio_map.txt ci/audio_map.json 2>/dev/null || true
+            git add ci/audio_map.txt ci/audio_map.json
+            git commit -q -m "ci: карта песни — где проигрыши ($GITHUB_RUN_ID) [skip ci]" || true
+            git push -q origin HEAD:${GITHUB_REF_NAME} && break
+            sleep 3
+          done
