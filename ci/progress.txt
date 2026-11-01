@@ -41,3 +41,4 @@
    (pads25 rf2 static)
 лист 13 план 3: липсинк ок за 2035с
 лист 15 план 1: липсинк ок за 1265с
+   причины:   File "/tmp/clipwork/wav2lip/inference.py", line 92, in face_detect |     raise ValueError('Face not detected! Ensure the video contains a face in all the frames.') | ValueError: Face not detected! Ensure the video contains a face in all the frames.
