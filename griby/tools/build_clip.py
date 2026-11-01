@@ -405,29 +405,34 @@ def xfade_chain(paths, out):
     return out
 
 
+def concat_copy(paths, out):
+    lst = f"{SEG}/concat_list.txt"
+    open(lst, "w").write("".join(f"file '{p}'\n" for p in paths))
+    sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
+        "-c", "copy", out])
+    return out
+
+
 def assemble(slots):
     os.makedirs(OUTDIR, exist_ok=True)
     video = f"{SEG}/video_only.mp4"
+    for p in slots:
+        log(f"  слот {os.path.basename(p)}: {dur(p):.2f} с")
+    expected = len(slots) * SHEET + XFADE
+    ok_chain = False
     try:
         xfade_chain(slots, video)
-        log("склейка единой цепочкой: без чёрных вставок")
+        d0 = dur(video)
+        if abs(d0 - expected) <= 0.6:
+            ok_chain = True
+            log(f"склейка единой цепочкой: {d0:.2f} с (ждали {expected:.2f}), чёрных вставок нет")
+        else:
+            log(f"цепочка дала {d0:.2f} с вместо {expected:.2f} — склеиваю встык")
     except Exception as e:
-        # страховка от нехватки памяти: блоками, стыки блоков — прямая склейка
         log("единая склейка не вышла:", str(e)[:200])
-        blocks, step = [], 6
-        for i in range(0, len(slots), step):
-            part = slots[i:i + step]
-            bp = f"{SEG}/blk{i//step}.mp4"
-            if len(part) == 1:
-                shutil.copy(part[0], bp)
-            else:
-                xfade_chain(part, bp)
-            blocks.append(bp)
-        lst = f"{SEG}/blocks.txt"
-        open(lst, "w").write("".join(f"file '{b}'\n" for b in blocks))
-        sh(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst,
-            "-c", "copy", video])
-        log("склейка блоками:", len(blocks))
+    if not ok_chain:
+        concat_copy(slots, video)
+        log(f"склейка встык: {dur(video):.2f} с")
 
     D = dur(video)
     DUR_SONG = dur(SONG)
