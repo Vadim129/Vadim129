@@ -210,13 +210,13 @@ def main():
 
     # лёгкая версия под Drive: до 99 МБ
     light = f"{OUTDIR}/КЛИП_Грибы_1080p_новый_диск.mp4"
-    for crf in (26, 28, 30, 33):
+    for crf in (28, 30, 32, 34):
         sh(["ffmpeg", "-v", "error", "-y", "-i", out, "-c:v", "libx264",
             "-preset", "medium", "-crf", str(crf), "-pix_fmt", "yuv420p", "-r", str(FPS),
             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", light])
         mb = os.path.getsize(light) / 1e6
         print(f"диск crf{crf}: {mb:.1f} МБ", flush=True)
-        if mb < 95:
+        if mb < 70:
             break
     shutil.copy(light, f"{WORK}/disk.mp4")
 

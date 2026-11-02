@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: montage-${{ github.ref }}
@@ -61,12 +61,21 @@ jobs:
           fi
           ls -l ci/mont | head -30
 
-      - uses: actions/upload-artifact@v4
+      - name: опубликовать клип и кадры
         if: always()
-        with:
-          name: mont
-          if-no-files-found: warn
-          retention-days: 7
-          path: |
-            out/*.mp4
-            ci/mont/*
+        run: |
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          mkdir -p dist/clip
+          cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
+          ls -lh dist/clip || true
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --mixed FETCH_HEAD
+            git checkout FETCH_HEAD -- ci 2>/dev/null || true
+            cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
+            cp build.log ci/mont/build.log 2>/dev/null || true
+            git add -f ci/mont dist/clip
+            git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
+            git push -q origin HEAD:${GITHUB_REF_NAME} && break
+            sleep 5
+          done
