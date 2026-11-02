@@ -39,17 +39,21 @@ jobs:
           pip install -q gdown
 
       - name: сборка
+        continue-on-error: true
         env:
           OUTDIR: ${{ github.workspace }}/out
         run: |
           mkdir -p "$OUTDIR"
-          python3 griby/tools/build_montage.py
+          set -o pipefail
+          python3 -u griby/tools/build_montage.py 2>&1 | tee build.log
           ls -lh "$OUTDIR"
 
       - name: контрольные кадры
+        if: always()
         run: |
           mkdir -p ci/mont
           rm -f ci/mont/*.jpg
+          test -f "out/КЛИП_Грибы_1080p_новый.mp4" || echo "клипа нет"
           for t in 2 12 32 62 92 112 142 172 202 232 246; do
             ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_новый.mp4" \
               -frames:v 1 -vf scale=360:-2 -q:v 4 "ci/mont/t${t}.jpg"
@@ -57,6 +61,7 @@ jobs:
           ls ci/mont
 
       - name: выложить клип и кадры
+        if: always()
         run: |
           git config user.name "ci-bot"; git config user.email "ci@bot.local"
           mkdir -p dist/clip
@@ -68,7 +73,8 @@ jobs:
             git checkout FETCH_HEAD -- ci 2>/dev/null || true
             cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4"
             cp -r ci/mont/. ci/mont/ 2>/dev/null || true
-            git add -f ci/mont dist/clip
+            cp build.log ci/mont/build.log 2>/dev/null || true
+          git add -f ci/mont dist/clip
             git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
             git push -q origin HEAD:${GITHUB_REF_NAME} && break
             sleep 4
