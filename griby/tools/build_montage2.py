@@ -81,7 +81,7 @@ OLD = {
 }
 
 # ---- рабочие куски новых видео (между внутренними склейками, чтобы кадр не прыгал) ----
-SEG = {
+SEGCUT = {
  1:  [(0.55, 2.95), (3.05, 7.10), (7.15, 11.10), (11.15, 15.00)],
  6:  [(0.85, 4.10), (4.15, 8.40), (8.45, 13.25), (13.30, 15.00)],
  7:  [(0.50, 3.40), (3.45, 6.40), (6.45, 9.90), (9.95, 15.00)],
@@ -141,7 +141,7 @@ SECTIONS = [
 
 def room_of(kind, sheet, start):
     if kind == "n":
-        seg = next((s for s in SEG[sheet] if s[0] <= start + 0.05 <= s[1]), None)
+        seg = next((s for s in SEGCUT[sheet] if s[0] <= start + 0.05 <= s[1]), None)
         return (seg[1] - start) if seg else 3.0
     return 14.9 - start
 
