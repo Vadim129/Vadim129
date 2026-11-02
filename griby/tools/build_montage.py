@@ -31,7 +31,7 @@ NEW = {
  7:  ("NufkuE7vFAeAC021gNTpL", "1sgwLUHPEz7pIi2yskRSCNetmlce0iDab",
       [(0.60, 2.50), (3.50, 2.50), (6.50, 2.50), (10.00, 2.50)]),
  8:  ("mKxIEpfacxh0sND8Es1sl", "1OiAV92A8sxCKSOPYN1d5EL6lwTaL7dnZ",
-      [(2.20, 2.50), (2.20, 2.50), (6.85, 2.50), (10.55, 2.50)]),
+      [(0.90, 2.50), (2.60, 2.50), (8.10, 2.50), (12.40, 2.50)]),
  11: ("8BLLEMQyKBkcPlVAFRaF8", "1P07mVelnwDaiT1wHeMvdqG9L015f7opF",
       [(0.70, 2.50), (3.60, 2.50), (7.00, 2.50), (12.20, 2.50)]),
  13: ("8DYwVTdzvn6wSFa6S_glq", "1yvHhY5i2KoB7ku3EJf-qt05kyZ8eIegk",

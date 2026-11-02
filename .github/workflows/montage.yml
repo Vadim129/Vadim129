@@ -84,3 +84,17 @@ jobs:
             sleep 5
           done
           git log --oneline -1 || true
+
+      - name: статус через API
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "run $GITHUB_RUN_ID"
+            echo "== out"; ls -lh out 2>&1 | head
+            echo "== build.log"; tail -20 build.log 2>&1
+            echo "== git"; git log --oneline -3 2>&1
+            echo "== push"; git push origin "HEAD:$GITHUB_REF_NAME" 2>&1 | tail -6
+          } > status.txt 2>&1
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci/mont/status.txt"             -f message="ci: статус монтажа $GITHUB_RUN_ID"             -f content="$(base64 -w0 status.txt)" >/dev/null && echo API_OK || echo API_FAIL
