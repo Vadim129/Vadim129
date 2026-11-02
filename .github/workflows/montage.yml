@@ -5,7 +5,7 @@ on:
     branches:
       - 'arena/7213a08a-vadim129'
     paths:
-      - 'griby/tools/build_montage.py'
+      - 'griby/tools/build_montage2.py'
       - '.github/workflows/montage.yml'
   workflow_dispatch:
 
@@ -43,71 +43,52 @@ jobs:
           OUTDIR: ${{ github.workspace }}/out
         run: |
           mkdir -p "$OUTDIR"
-          python3 -u griby/tools/build_montage.py > build.log 2>&1 || { tail -30 build.log; exit 1; }
+          rm -f dist/clip/*
+          python3 -u griby/tools/build_montage2.py > build.log 2>&1 || { tail -30 build.log; exit 1; }
           tail -8 build.log
           ls -lh "$OUTDIR"
 
       - name: кадры
         if: always()
         run: |
-          mkdir -p ci/mont
-          cp build.log ci/mont/build.log 2>/dev/null || true
-          if [ -f "out/КЛИП_Грибы_1080p_новый.mp4" ]; then
-            ffprobe -v error -show_entries format=duration -of csv=p=0 "out/КЛИП_Грибы_1080p_новый.mp4" > ci/mont/duration.txt || true
-            for t in 3 15 35 65 75 95 115 135 155 175 195 205 225 240 247; do
-              ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_новый.mp4" \
-                -frames:v 1 -vf scale=320:-2 -q:v 5 "ci/mont/t${t}.jpg" || true
+          mkdir -p ci/mont2
+          rm -f ci/mont2/*.jpg
+          cp build.log ci/mont2/build.log 2>/dev/null || true
+          if [ -f "out/КЛИП_Грибы_1080p_сюжет.mp4" ]; then
+            ffprobe -v error -show_entries format=duration,size -of default=nw=1 "out/КЛИП_Грибы_1080p_сюжет.mp4" > ci/mont2/info.txt || true
+            for t in 2 12 22 32 45 55 65 75 85 95 105 115 125 135 143 150 160 170 180 190 200 210 220 232 242 247; do
+              ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_сюжет.mp4" \
+                -frames:v 1 -vf scale=320:-2 -q:v 5 "ci/mont2/t${t}.jpg" || true
             done
           fi
-          ls -l ci/mont | head -30
+          ls -l ci/mont2 | head -40
 
       - name: нарезать полную версию
         if: always()
         run: |
-          mkdir -p ci/mont/master
-          rm -f ci/mont/master/part_*
-          if [ -f "out/КЛИП_Грибы_1080p_новый.mp4" ]; then
-            split -b 60M -d -a 2 "out/КЛИП_Грибы_1080p_новый.mp4" ci/mont/master/part_
-            ls -l ci/mont/master
-            sha256sum "out/КЛИП_Грибы_1080p_новый.mp4" | cut -d' ' -f1 > ci/mont/master/sha256.txt
-            ffprobe -v error -show_entries format=duration,size,bit_rate -of default=nw=1 "out/КЛИП_Грибы_1080p_новый.mp4" > ci/mont/master/info.txt || true
-            cat ci/mont/master/info.txt
+          mkdir -p ci/mont2/master
+          rm -f ci/mont2/master/part_*
+          if [ -f "out/КЛИП_Грибы_1080p_сюжет.mp4" ]; then
+            split -b 60M -d -a 2 "out/КЛИП_Грибы_1080p_сюжет.mp4" ci/mont2/master/part_
+            sha256sum "out/КЛИП_Грибы_1080p_сюжет.mp4" | cut -d' ' -f1 > ci/mont2/master/sha256.txt
+            cat ci/mont2/master/sha256.txt
           fi
 
-      - name: опубликовать клип и кадры
+      - name: опубликовать
         if: always()
         run: |
-          set -x
           git config user.name "ci-bot"; git config user.email "ci@bot.local"
-          date -u > ci/mont/run.txt
-          ls -lh out || true
-          ls -lh "out/КЛИП_Грибы_1080p_новый.mp4" || true
           mkdir -p dist/clip
-          cp "out/КЛИП_Грибы_1080p_новый_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
+          cp "out/КЛИП_Грибы_1080p_сюжет_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_сюжет.mp4" 2>/dev/null || true
           ls -lh dist/clip || true
           for i in 1 2 3 4 5; do
             git fetch -q origin "$GITHUB_REF_NAME"
             git reset -q --mixed FETCH_HEAD
             git checkout FETCH_HEAD -- ci 2>/dev/null || true
-            cp "out/КЛИП_Грибы_1080p_новый_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
-            cp -v build.log ci/mont/build.log 2>/dev/null || true
-            git add -f ci/mont dist/clip
-            git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" --allow-empty || true
-            if git push -q origin HEAD:${GITHUB_REF_NAME}; then echo PUSHED; break; fi
+            cp "out/КЛИП_Грибы_1080p_сюжет_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_сюжет.mp4" 2>/dev/null || true
+            cp build.log ci/mont2/build.log 2>/dev/null || true
+            git add -f ci/mont2 dist/clip
+            git commit -q -m "dist: клип по сюжету песни ($GITHUB_RUN_ID) [skip ci]" --allow-empty || true
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then echo PUSHED; break; fi
             sleep 5
           done
-          git log --oneline -1 || true
-
-      - name: статус через API
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          {
-            echo "run $GITHUB_RUN_ID"
-            echo "== out"; ls -lh out 2>&1 | head
-            echo "== build.log"; tail -20 build.log 2>&1
-            echo "== git"; git log --oneline -3 2>&1
-            echo "== push"; git push origin "HEAD:$GITHUB_REF_NAME" 2>&1 | tail -6
-          } > status.txt 2>&1
-          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/ci/mont/status.txt"             -f message="ci: статус монтажа $GITHUB_RUN_ID"             -f content="$(base64 -w0 status.txt)" >/dev/null && echo API_OK || echo API_FAIL
