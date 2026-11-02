@@ -61,6 +61,19 @@ jobs:
           fi
           ls -l ci/mont | head -30
 
+      - name: нарезать полную версию
+        if: always()
+        run: |
+          mkdir -p ci/mont/master
+          rm -f ci/mont/master/part_*
+          if [ -f "out/КЛИП_Грибы_1080p_новый.mp4" ]; then
+            split -b 60M -d -a 2 "out/КЛИП_Грибы_1080p_новый.mp4" ci/mont/master/part_
+            ls -l ci/mont/master
+            sha256sum "out/КЛИП_Грибы_1080p_новый.mp4" | cut -d' ' -f1 > ci/mont/master/sha256.txt
+            ffprobe -v error -show_entries format=duration,size,bit_rate -of default=nw=1 "out/КЛИП_Грибы_1080p_новый.mp4" > ci/mont/master/info.txt || true
+            cat ci/mont/master/info.txt
+          fi
+
       - name: опубликовать клип и кадры
         if: always()
         run: |
