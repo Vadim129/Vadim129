@@ -1,0 +1,75 @@
+name: Монтаж нового клипа
+
+on:
+  push:
+    branches:
+      - 'arena/7213a08a-vadim129'
+    paths:
+      - 'griby/tools/build_montage.py'
+      - '.github/workflows/montage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: montage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - name: gdown
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q gdown
+
+      - name: сборка
+        env:
+          OUTDIR: ${{ github.workspace }}/out
+        run: |
+          mkdir -p "$OUTDIR"
+          python3 griby/tools/build_montage.py
+          ls -lh "$OUTDIR"
+
+      - name: контрольные кадры
+        run: |
+          mkdir -p ci/mont
+          rm -f ci/mont/*.jpg
+          for t in 2 12 32 62 92 112 142 172 202 232 246; do
+            ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_новый.mp4" \
+              -frames:v 1 -vf scale=360:-2 -q:v 4 "ci/mont/t${t}.jpg"
+          done
+          ls ci/mont
+
+      - name: выложить клип и кадры
+        run: |
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          mkdir -p dist/clip
+          cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4"
+          ls -lh dist/clip
+          for i in 1 2 3 4; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --mixed FETCH_HEAD
+            git checkout FETCH_HEAD -- ci 2>/dev/null || true
+            cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4"
+            cp -r ci/mont/. ci/mont/ 2>/dev/null || true
+            git add -f ci/mont dist/clip
+            git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
+            git push -q origin HEAD:${GITHUB_REF_NAME} && break
+            sleep 4
+          done
