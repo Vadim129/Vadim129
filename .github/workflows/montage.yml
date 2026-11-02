@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -39,43 +39,43 @@ jobs:
           pip install -q gdown
 
       - name: сборка
-        continue-on-error: true
         env:
           OUTDIR: ${{ github.workspace }}/out
         run: |
           mkdir -p "$OUTDIR"
-          set -o pipefail
-          python3 -u griby/tools/build_montage.py 2>&1 | tee build.log
+          python3 -u griby/tools/build_montage.py > build.log 2>&1 || { tail -25 build.log; exit 1; }
+          tail -12 build.log
           ls -lh "$OUTDIR"
 
-      - name: контрольные кадры
+      - name: кадры и лог
         if: always()
         run: |
           mkdir -p ci/mont
           rm -f ci/mont/*.jpg
-          test -f "out/КЛИП_Грибы_1080p_новый.mp4" || echo "клипа нет"
-          for t in 2 12 32 62 92 112 142 172 202 232 246; do
-            ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_новый.mp4" \
-              -frames:v 1 -vf scale=360:-2 -q:v 4 "ci/mont/t${t}.jpg"
-          done
-          ls ci/mont
+          cp build.log ci/mont/build.log 2>/dev/null || true
+          if [ -f "out/КЛИП_Грибы_1080p_новый.mp4" ]; then
+            ffprobe -v error -show_entries format=duration -of csv=p=0 "out/КЛИП_Грибы_1080p_новый.mp4" > ci/mont/duration.txt || true
+            for t in 3 15 35 65 75 95 115 135 155 175 195 205 225 240 247; do
+              ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_новый.mp4" \
+                -frames:v 1 -vf scale=320:-2 -q:v 5 "ci/mont/t${t}.jpg" || true
+            done
+          fi
+          ls -l ci/mont | head -30
 
-      - name: выложить клип и кадры
+      - name: выложить
         if: always()
         run: |
-          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          git config user.name "ci-bot"
+          git config user.email "ci@bot.local"
           mkdir -p dist/clip
-          cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4"
-          ls -lh dist/clip
-          for i in 1 2 3 4; do
-            git fetch -q origin "$GITHUB_REF_NAME"
-            git reset -q --mixed FETCH_HEAD
-            git checkout FETCH_HEAD -- ci 2>/dev/null || true
-            cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4"
-            cp -r ci/mont/. ci/mont/ 2>/dev/null || true
-            cp build.log ci/mont/build.log 2>/dev/null || true
+          cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
+          rm -f ci/mont/*.mp4
           git add -f ci/mont dist/clip
-            git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
-            git push -q origin HEAD:${GITHUB_REF_NAME} && break
-            sleep 4
+          git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git rebase -q -X theirs FETCH_HEAD || git rebase --abort
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            sleep 6
           done
+          echo "push не прошёл"; exit 1
