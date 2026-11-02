@@ -1,0 +1,32 @@
+run 41434743833
+== out
+total 268M
+-rw-r--r-- 1 runner runner 202M Nov  2 11:20 КЛИП_Грибы_1080p_новый.mp4
+-rw-r--r-- 1 runner runner  67M Nov  2 11:27 КЛИП_Грибы_1080p_новый_диск.mp4
+== build.log
+песня...
+план 000 · n1-1
+план 010 · o3-3
+план 020 · n6-1
+план 030 · n8-3
+план 040 · n11-1
+план 050 · n13-3
+план 060 · o4-1
+план 070 · o24-1
+план 080 · n20-4
+план 090 · o25-4
+видео 250.0 песня 249.5
+готово: /home/runner/work/Vadim129/Vadim129/out/КЛИП_Грибы_1080p_новый.mp4 211.1 МБ
+диск crf28: 84.7 МБ
+диск crf30: 69.3 МБ
+в dist/clip: 69.3 МБ
+== git
+bf930ae dist: новый клип из листов + кадры (41434743833) [skip ci]
+877fa41 ci: статус монтажа через API + правка планов девушки
+== push
+remote: error: See https://gh.io/lfs for more information.        
+remote: error: File dist/clip/КЛИП_Грибы_1080p_новый.mp4 is 201.35 MB; this exceeds GitHub's file size limit of 100.00 MB        
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.        
+To https://github.com/Vadim129/Vadim129
+ ! [remote rejected] HEAD -> arena/7213a08a-vadim129 (pre-receive hook declined)
+error: failed to push some refs to 'https://github.com/Vadim129/Vadim129'
