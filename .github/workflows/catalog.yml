@@ -1,0 +1,51 @@
+name: Каталог планов прежних листов
+
+on:
+  push:
+    branches:
+      - 'arena/7213a08a-vadim129'
+    paths:
+      - 'griby/tools/catalog_plans.py'
+      - '.github/workflows/catalog.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: gdown
+        run: pip install -q gdown
+
+      - name: каталог
+        run: python3 -u griby/tools/catalog_plans.py > build.log 2>&1 || { tail -20 build.log; exit 1; }
+
+      - name: опубликовать
+        if: always()
+        run: |
+          git config user.name "ci-bot"; git config user.email "ci@bot.local"
+          cp build.log ci/mont/catalog.log 2>/dev/null || true
+          for i in 1 2 3 4 5; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --mixed FETCH_HEAD
+            git checkout FETCH_HEAD -- ci 2>/dev/null || true
+            cp build.log ci/mont/catalog.log 2>/dev/null || true
+            git add -f ci/mont/cat ci/mont/catalog.log
+            git commit -q -m "ci: каталог планов прежних листов ($GITHUB_RUN_ID) [skip ci]" --allow-empty || true
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then break; fi
+            sleep 5
+          done
