@@ -1,9 +1,16 @@
 песня...
-Traceback (most recent call last):
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 232, in <module>
-    main()
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 166, in main
-    files[("o", k)] = dl(fid, f"{WORK}/old_{k:02d}.mp4")
-  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 136, in dl
-    raise RuntimeError(f"не скачался {fid}")
-RuntimeError: не скачался 1IG8uh6X8pFbll89OdLko4c8IsYx0WBNH
+план 000 · n1-1
+план 010 · o3-3
+план 020 · n6-1
+план 030 · n8-3
+план 040 · n11-1
+план 050 · n13-3
+план 060 · o4-1
+план 070 · o24-1
+план 080 · n20-4
+план 090 · o25-4
+видео 250.0 песня 249.5
+готово: /home/runner/work/Vadim129/Vadim129/out/КЛИП_Грибы_1080p_новый.mp4 211.1 МБ
+диск crf28: 84.7 МБ
+диск crf30: 69.2 МБ
+в dist/clip: 69.2 МБ
