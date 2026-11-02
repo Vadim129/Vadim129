@@ -81,10 +81,12 @@ jobs:
           mkdir -p dist/clip
           cp "out/КЛИП_Грибы_1080p_сюжет_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_сюжет.mp4" 2>/dev/null || true
           ls -lh dist/clip || true
+          rm -rf /tmp/fresh && mkdir -p /tmp/fresh
+          cp -r ci/mont3 /tmp/fresh/ 2>/dev/null || true
           for i in 1 2 3 4 5; do
             git fetch -q origin "$GITHUB_REF_NAME"
             git reset -q --mixed FETCH_HEAD
-            git checkout FETCH_HEAD -- ci 2>/dev/null || true
+            mkdir -p ci && rm -rf ci/mont3 && cp -r /tmp/fresh/mont3 ci/mont3 2>/dev/null || true
             cp "out/КЛИП_Грибы_1080p_сюжет_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_сюжет.mp4" 2>/dev/null || true
             cp build.log ci/mont3/build.log 2>/dev/null || true
             git add -f ci/mont3 dist/clip
