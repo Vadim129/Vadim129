@@ -5,7 +5,7 @@ on:
     branches:
       - 'arena/7213a08a-vadim129'
     paths:
-      - 'griby/tools/build_montage2.py'
+      - 'griby/tools/build_montage3.py'
       - '.github/workflows/montage.yml'
   workflow_dispatch:
 
@@ -44,34 +44,34 @@ jobs:
         run: |
           mkdir -p "$OUTDIR"
           rm -f dist/clip/*
-          python3 -u griby/tools/build_montage2.py > build.log 2>&1 || { tail -30 build.log; exit 1; }
+          python3 -u griby/tools/build_montage3.py > build.log 2>&1 || { tail -30 build.log; exit 1; }
           tail -8 build.log
           ls -lh "$OUTDIR"
 
       - name: кадры
         if: always()
         run: |
-          mkdir -p ci/mont2
-          rm -f ci/mont2/*.jpg
-          cp build.log ci/mont2/build.log 2>/dev/null || true
+          mkdir -p ci/mont3
+          rm -f ci/mont3/*.jpg
+          cp build.log ci/mont3/build.log 2>/dev/null || true
           if [ -f "out/КЛИП_Грибы_1080p_сюжет.mp4" ]; then
-            ffprobe -v error -show_entries format=duration,size -of default=nw=1 "out/КЛИП_Грибы_1080p_сюжет.mp4" > ci/mont2/info.txt || true
+            ffprobe -v error -show_entries format=duration,size -of default=nw=1 "out/КЛИП_Грибы_1080p_сюжет.mp4" > ci/mont3/info.txt || true
             for t in 2 12 22 32 45 55 65 75 85 95 105 115 125 135 143 150 160 170 180 190 200 210 220 232 242 247; do
               ffmpeg -v error -y -ss $t -i "out/КЛИП_Грибы_1080p_сюжет.mp4" \
-                -frames:v 1 -vf scale=320:-2 -q:v 5 "ci/mont2/t${t}.jpg" || true
+                -frames:v 1 -vf scale=320:-2 -q:v 5 "ci/mont3/t${t}.jpg" || true
             done
           fi
-          ls -l ci/mont2 | head -40
+          ls -l ci/mont3 | head -40
 
       - name: нарезать полную версию
         if: always()
         run: |
-          mkdir -p ci/mont2/master
-          rm -f ci/mont2/master/part_*
+          mkdir -p ci/mont3/master
+          rm -f ci/mont3/master/part_*
           if [ -f "out/КЛИП_Грибы_1080p_сюжет.mp4" ]; then
-            split -b 60M -d -a 2 "out/КЛИП_Грибы_1080p_сюжет.mp4" ci/mont2/master/part_
-            sha256sum "out/КЛИП_Грибы_1080p_сюжет.mp4" | cut -d' ' -f1 > ci/mont2/master/sha256.txt
-            cat ci/mont2/master/sha256.txt
+            split -b 60M -d -a 2 "out/КЛИП_Грибы_1080p_сюжет.mp4" ci/mont3/master/part_
+            sha256sum "out/КЛИП_Грибы_1080p_сюжет.mp4" | cut -d' ' -f1 > ci/mont3/master/sha256.txt
+            cat ci/mont3/master/sha256.txt
           fi
 
       - name: опубликовать
@@ -86,8 +86,8 @@ jobs:
             git reset -q --mixed FETCH_HEAD
             git checkout FETCH_HEAD -- ci 2>/dev/null || true
             cp "out/КЛИП_Грибы_1080p_сюжет_диск.mp4" "dist/clip/КЛИП_Грибы_1080p_сюжет.mp4" 2>/dev/null || true
-            cp build.log ci/mont2/build.log 2>/dev/null || true
-            git add -f ci/mont2 dist/clip
+            cp build.log ci/mont3/build.log 2>/dev/null || true
+            git add -f ci/mont3 dist/clip
             git commit -q -m "dist: клип по сюжету песни ($GITHUB_RUN_ID) [skip ci]" --allow-empty || true
             if git push -q origin "HEAD:$GITHUB_REF_NAME"; then echo PUSHED; break; fi
             sleep 5
