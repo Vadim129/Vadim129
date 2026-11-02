@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: montage-${{ github.ref }}
@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          ffmpeg -version | head -1
+          df -h / | tail -1
 
       - name: gdown
         run: |
@@ -43,15 +43,14 @@ jobs:
           OUTDIR: ${{ github.workspace }}/out
         run: |
           mkdir -p "$OUTDIR"
-          python3 -u griby/tools/build_montage.py > build.log 2>&1 || { tail -25 build.log; exit 1; }
-          tail -12 build.log
+          python3 -u griby/tools/build_montage.py > build.log 2>&1 || { tail -30 build.log; exit 1; }
+          tail -8 build.log
           ls -lh "$OUTDIR"
 
-      - name: кадры и лог
+      - name: кадры
         if: always()
         run: |
           mkdir -p ci/mont
-          rm -f ci/mont/*.jpg
           cp build.log ci/mont/build.log 2>/dev/null || true
           if [ -f "out/КЛИП_Грибы_1080p_новый.mp4" ]; then
             ffprobe -v error -show_entries format=duration -of csv=p=0 "out/КЛИП_Грибы_1080p_новый.mp4" > ci/mont/duration.txt || true
@@ -62,20 +61,12 @@ jobs:
           fi
           ls -l ci/mont | head -30
 
-      - name: выложить
+      - uses: actions/upload-artifact@v4
         if: always()
-        run: |
-          git config user.name "ci-bot"
-          git config user.email "ci@bot.local"
-          mkdir -p dist/clip
-          cp "out/КЛИП_Грибы_1080p_новый.mp4" "dist/clip/КЛИП_Грибы_1080p_новый.mp4" 2>/dev/null || true
-          rm -f ci/mont/*.mp4
-          git add -f ci/mont dist/clip
-          git commit -q -m "dist: новый клип из листов + кадры ($GITHUB_RUN_ID) [skip ci]" || true
-          for i in 1 2 3 4 5; do
-            git fetch -q origin "$GITHUB_REF_NAME"
-            git rebase -q -X theirs FETCH_HEAD || git rebase --abort
-            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
-            sleep 6
-          done
-          echo "push не прошёл"; exit 1
+        with:
+          name: mont
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            out/*.mp4
+            ci/mont/*
