@@ -45,7 +45,7 @@ NEW = {
 # прежние листы: номер -> (id, конец плашки)
 OLD = {
  1:  ("1xQg1Zs9JmK_SXWJJ6N81QS2TN6L6En7I", 1.00),
- 2:  ("1IG8uh6X8pFbll89OdLko4c8IsYx0WBNH", 2.70),
+ 2:  ("1IG8uh6X8pFbll89OdLko4c8IsYxW0BNH", 2.70),
  3:  ("1sFxgfV-gxxwDpBGttTss_0lCXA_bWkmU", 2.20),
  4:  ("1xKSQHngEV8AXlIYbw8REYMrEtE5Hl7KM", 2.20),
  5:  ("1RahvyOH7XCzfOrgSD6xCqA8V0KVRy7gY", 0.75),
