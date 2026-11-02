@@ -1,0 +1,9 @@
+песня...
+Traceback (most recent call last):
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 232, in <module>
+    main()
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 166, in main
+    files[("o", k)] = dl(fid, f"{WORK}/old_{k:02d}.mp4")
+  File "/home/runner/work/Vadim129/Vadim129/griby/tools/build_montage.py", line 136, in dl
+    raise RuntimeError(f"не скачался {fid}")
+RuntimeError: не скачался 1IG8uh6X8pFbll89OdLko4c8IsYx0WBNH
