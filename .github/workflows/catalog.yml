@@ -44,7 +44,7 @@ jobs:
             git reset -q --mixed FETCH_HEAD
             git checkout FETCH_HEAD -- ci 2>/dev/null || true
             cp build.log ci/mont/catalog.log 2>/dev/null || true
-            git add -f ci/mont/cat ci/mont/catalog.log
+            git add -f ci/mont
             git commit -q -m "ci: каталог планов прежних листов ($GITHUB_RUN_ID) [skip ci]" --allow-empty || true
             if git push -q origin "HEAD:$GITHUB_REF_NAME"; then break; fi
             sleep 5
