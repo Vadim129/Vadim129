@@ -1,111 +1,242 @@
 #!/usr/bin/env python3
 """Рендер клипа Мэта по конфигу mat-*.json.
-Использование: python3 render.py mat-bot/mat-побитый.json --out outNN
+
+Использование: python3 render.py mat-bot/mat-<тема>.json --out outNN
+
+Соблюдает правила проекта:
+  * аватар — всегда из поля "robot" конфига (mat-bot/assets/robot.jpg);
+  * одна реплика = одна сцена, облако с полным текстом реплики;
+  * голос ставится на свою сцену (start + voice_at) с усилением gain;
+  * музыка — chiptune из конфига (bpm/volume), а не случайный синус.
 """
-import json, math, os, subprocess, sys
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import json
+import math
+import os
+import struct
+import subprocess
+import sys
+import wave
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1080, 1920
 FPS = 24
-FFMPEG = None
 
 FFMPEG = "/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v9.0.2"
+if not os.path.exists(FFMPEG):
+    try:
+        import imageio_ffmpeg
+        FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        FFMPEG = "ffmpeg"
 
-def load_font(sz):
-    for p in [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
-    ]:
+BG_TOP = (26, 12, 36)
+BG_BOTTOM = (58, 10, 18)
+ACCENT = (255, 92, 64)
+
+
+def load_font(sz, bold=True):
+    names = (
+        ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+         "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"] if bold else
+        ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"]
+    )
+    for p in names:
         if os.path.exists(p):
             return ImageFont.truetype(p, sz)
     return ImageFont.load_default()
 
-def rays(img, color, speed=0.0):
-    draw = ImageDraw.Draw(img, "RGBA")
-    cx, cy = W // 2, H // 2
-    for i in range(30):
-        ang = (i / 30) * 2 * math.pi + speed
-        for r in range(0, int(math.hypot(W, H)), 10):
+
+def gradient():
+    img = Image.new("RGB", (W, H))
+    d = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / (H - 1)
+        c = tuple(int(BG_TOP[i] + (BG_BOTTOM[i] - BG_TOP[i]) * t) for i in range(3))
+        d.line([(0, y), (W, y)], fill=c)
+    return img
+
+
+def rays(img, speed=0.0, alpha_max=18):
+    overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    cx, cy = W // 2, int(H * 0.38)
+    maxr = int(math.hypot(W, H))
+    for i in range(24):
+        ang = (i / 24) * 2 * math.pi + speed
+        for r in range(0, maxr, 14):
             x = int(cx + math.cos(ang) * r)
             y = int(cy + math.sin(ang) * r)
             if 0 <= x < W and 0 <= y < H:
-                alpha = int(20 * (1 - r / math.hypot(W, H)))
-                if alpha > 0:
-                    draw.point((x, y), fill=(*color, alpha))
-    return img.filter(ImageFilter.GaussianBlur(1))
+                a = int(alpha_max * (1 - r / maxr))
+                if a > 0:
+                    draw.point((x, y), fill=(255, 180, 140, a))
+    return Image.alpha_composite(img.convert("RGBA"), overlay.filter(ImageFilter.GaussianBlur(2)))
 
-def make_scene_frame(scene, idx, t_local):
-    """Один кадр сцены в момент t_local (от начала сцены)."""
-    bg = scene.get("bg", "#ff6b6b")
-    img = Image.new("RGB", (W, H), bg)
-    col = tuple(int(bg.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-    img = rays(img, col, speed=idx * 0.3 + t_local * 0.2)
+
+def wrap(draw, text, font, max_w):
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        probe = (cur + " " + w).strip()
+        if draw.textlength(probe, font=font) <= max_w or not cur:
+            cur = probe
+        else:
+            lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def rounded(img, radius):
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], radius=radius, fill=255)
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    out.paste(img, (0, 0), mask)
+    return out
+
+
+def make_scene_frame(scene, idx, t_local, cfg):
+    img = gradient()
+    img = rays(img, speed=idx * 0.35 + t_local * 0.15)
+
+    # лёгкое «дыхание» камеры — наезд внутри сцены
+    if scene.get("dur"):
+        zoom = 1.0 + 0.04 * min(1.0, t_local / max(scene["dur"], 0.001))
+        if zoom > 1.001:
+            cw, ch = int(W / zoom), int(H / zoom)
+            img = img.crop(((W - cw) // 2, (H - ch) // 2, (W + cw) // 2, (H + ch) // 2)).resize((W, H), Image.LANCZOS)
 
     draw = ImageDraw.Draw(img)
-    f_big = load_font(70)
-    f_mid = load_font(40)
 
-    # "СЦЕНА N" вверху
-    scene_txt = f"СЦЕНА {idx}"
-    tw = draw.textlength(scene_txt, font=f_big)
-    draw.text(((W - tw) / 2, 80), scene_txt, font=f_big, fill="white")
+    # шапка
+    title = cfg.get("title", "Мэт")
+    f_title = load_font(96)
+    tw = draw.textlength(title, font=f_title)
+    draw.text(((W - tw) / 2, 96), title, font=f_title, fill=(255, 255, 255))
+    subtitle = scene.get("subtitle") or cfg.get("subtitle", "")
+    if subtitle:
+        f_sub = load_font(38, bold=False)
+        tw = draw.textlength(subtitle, font=f_sub)
+        draw.text(((W - tw) / 2, 212), subtitle, font=f_sub, fill=(255, 190, 170))
 
-    # Белая карточка-заголовка
-    card_w, card_h = 860, 220
-    card_x = (W - card_w) // 2
-    card_y = 220
-    card = Image.new("RGBA", (card_w, card_h), (255, 255, 255, 230))
-    card = card.filter(ImageFilter.GaussianBlur(3))
-    img.paste(card, (card_x, card_y), card)
-    draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=24, outline=(200, 200, 200), width=3)
-
-    title = "Мэт побитый"
-    tw = draw.textlength(title, font=f_big)
-    draw.text((card_x + (card_w - tw) // 2, card_y + 40), title, font=f_big, fill=(60, 60, 60))
-    sub = scene.get("subtitle", "")
-    tw = draw.textlength(sub, font=f_mid)
-    draw.text((card_x + (card_w - tw) // 2, card_y + 110), sub, font=f_mid, fill=(100, 100, 100))
-
-    # Облако с репликой
-    text = scene["text"]
-    tw = draw.textlength(text, font=f_mid)
-    bubble_w = min(int(tw + 120), W - 120)
-    bubble_h = 140
-    bubble_x = (W - bubble_w) // 2
-    bubble_y = H - 420
-    bubble = Image.new("RGBA", (bubble_w, bubble_h), (255, 255, 255, 240))
-    bubble = bubble.filter(ImageFilter.GaussianBlur(4))
-    img.paste(bubble, (bubble_x, bubble_y), bubble)
-    draw.rounded_rectangle([bubble_x, bubble_y, bubble_x + bubble_w, bubble_y + bubble_h], radius=30, outline=(180, 180, 180), width=3)
-    tw = draw.textlength(text, font=f_mid)
-    draw.text((bubble_x + (bubble_w - tw) // 2, bubble_y + 45), text, font=f_mid, fill=(40, 40, 40))
-
-    # Робот снизу
-    robot_path = scene.get("robot", "mat-bot/assets/robot.jpg")
+    # аватар Мэта — настоящая фотография из конфига
+    robot_path = scene.get("robot") or cfg.get("robot") or "mat-bot/assets/robot.jpg"
     if os.path.exists(robot_path):
         robot = Image.open(robot_path).convert("RGB")
+        side = 640
         rw, rh = robot.size
-        scale = min(500 / rw, 500 / rh)
-        robot = robot.resize((int(rw * scale), int(rh * scale)), Image.LANCZOS)
+        scale = side / min(rw, rh)
+        robot = robot.resize((max(1, int(rw * scale)), max(1, int(rh * scale))), Image.LANCZOS)
         rw, rh = robot.size
-        robot_x = (W - rw) // 2
-        robot_y = H - rh - 60
-        img.paste(robot, (robot_x, robot_y))
+        if rw > side or rh > side:
+            left = (rw - side) // 2
+            top = (rh - side) // 2
+            robot = robot.crop((left, top, left + side, top + side))
+        rw, rh = robot.size
 
-    # Стикеры
-    sticker_colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#ff9ff3", "#54a0ff"]
-    for i, scolor in enumerate(sticker_colors):
-        sx = 40 + i * 150
-        sy = 300 + (i % 2) * 60
-        st = Image.new("RGBA", (90, 90), tuple(int(scolor.lstrip('#')[i2:i2+2], 16) for i2 in (0, 2, 4)) + (200,))
-        st = st.filter(ImageFilter.GaussianBlur(2))
-        img.paste(st, (sx, sy), st)
+        card = rounded(robot, 44)
+        shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(shadow)
+        rx, ry = (W - rw) // 2, 470
+        sd.rounded_rectangle([rx - 12, ry - 12, rx + rw + 12, ry + rh + 12], radius=52, fill=(0, 0, 0, 150))
+        img = Image.alpha_composite(img, shadow.filter(ImageFilter.GaussianBlur(18)))
+        img.paste(card, (rx, ry), card)
+        draw = ImageDraw.Draw(img)
 
-    return img
+    # стикеры tag-стиля под портретом
+    tags = scene.get("tags") or []
+    if tags:
+        f_tag = load_font(34)
+        x = 90
+        y = 1180
+        for tag in tags[:3]:
+            label = f"#{tag}"
+            tw_ = draw.textlength(label, font=f_tag)
+            bw = int(tw_ + 44)
+            draw.rounded_rectangle([x, y, x + bw, y + 62], radius=31, fill=(255, 255, 255, 235))
+            draw.text((x + 22, y + 12), label, font=f_tag, fill=(120, 20, 30))
+            x += bw + 18
+
+    # облако с полным текстом реплики
+    text = (scene.get("text") or "").replace("\u0301", "")
+    f_body = load_font(48)
+    max_text_w = 880
+    lines = wrap(draw, text, f_body, max_text_w) if text else []
+    line_h = 64
+    pad_x, pad_y = 44, 40
+    bw = max_text_w + pad_x * 2 if lines else 0
+    bh = len(lines) * line_h + pad_y * 2
+    max_w = max((draw.textlength(l, font=f_body) for l in lines), default=0)
+    bw = int(min(bw, max_w + pad_x * 2))
+    bx = (W - bw) // 2
+    by = H - bh - 120
+
+    cloud = Image.new("RGBA", (bw, bh), (255, 255, 255, 246))
+    cloud = rounded(cloud, 40)
+    img.paste(cloud, (bx, by), cloud)
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle([bx, by, bx + bw, by + bh], radius=40, outline=(255, 120, 90), width=4)
+    y = by + pad_y
+    for line in lines:
+        lw = draw.textlength(line, font=f_body)
+        draw.text((bx + (bw - lw) / 2, y), line, font=f_body, fill=(28, 20, 24))
+        y += line_h
+
+    return img.convert("RGB")
+
+
+def chiptune(path, duration, bpm=132, volume=0.35):
+    """Простой chiptune-луп: квадратные волны, бас + арпеджио, 132 BPM."""
+    rate = 48000
+    frames = int(duration * rate)
+    step = 60.0 / bpm / 4.0  # шестнадцатая
+    # ля-минор: тоника, терция, квинта, октава
+    notes = [220.00, 261.63, 329.63, 440.00, 329.63, 261.63]
+    bass = [110.00, 110.00, 87.31, 98.00]
+    buf = [0.0] * frames
+    i = 0
+    t = 0.0
+    while i < frames:
+        n = int(step * rate)
+        f = notes[(int(t / step)) % len(notes)]
+        fb = bass[int(t / (step * 4)) % len(bass)]
+        for k in range(n):
+            if i + k >= frames:
+                break
+            tt = k / rate
+            env = min(1.0, (n - k) / (rate * 0.012)) if n - k < rate * 0.012 else 1.0
+            sq = 1.0 if math.sin(2 * math.pi * f * tt) >= 0 else -1.0
+            sb = 1.0 if math.sin(2 * math.pi * fb * tt) >= 0 else -1.0
+            buf[i + k] = (0.55 * sq * env + 0.45 * sb * env)
+        i += n
+        t += step
+    # музыка — фон: держим её заметно тише голоса Мэта
+    amp = 0.115 * volume / 0.35
+    with wave.open(path, "wb") as wf:
+        wf.setnchannels(2)
+        wf.setsampwidth(2)
+        wf.setframerate(rate)
+        data = bytearray()
+        for s in buf:
+            v = int(max(-1.0, min(1.0, s * amp)) * 32767)
+            data += struct.pack("<hh", v, v)
+        wf.writeframes(bytes(data))
+
+
+def audio_duration(path):
+    r = subprocess.run([FFMPEG, "-hide_banner", "-i", path], capture_output=True, text=True)
+    for line in r.stderr.splitlines():
+        if "Duration:" in line:
+            hms = line.split("Duration:")[1].split(",")[0].strip()
+            h, m, s = hms.split(":")
+            return int(h) * 3600 + int(m) * 60 + float(s)
+    return 0.0
+
 
 def main():
-    global FFMPEG
     if len(sys.argv) < 2:
         print("Использование: python3 render.py <конфиг.json> --out <папка>")
         sys.exit(1)
@@ -120,94 +251,96 @@ def main():
 
     cfg = json.load(open(cfg_path, encoding="utf-8"))
     scenes = cfg["scenes"]
-    voice_dir = os.path.join(os.path.dirname(cfg_path), cfg.get("voice_dir", "voice01"))
+    base = os.path.dirname(os.path.abspath(cfg_path))
+    voice_dir = cfg.get("voice_dir", "voice01")
+    if not os.path.isabs(voice_dir):
+        voice_dir = os.path.join(base, voice_dir)
+
+    robot_path = cfg.get("robot", "assets/robot.jpg")
+    if not os.path.isabs(robot_path):
+        cfg["robot"] = os.path.join(base, robot_path)
 
     print(f"Конфиг: {cfg_path}")
     print(f"Сцен: {len(scenes)}")
+    print(f"Аватар: {cfg['robot']}")
     print(f"Выход: {out_dir}")
-    print(f"FFmpeg: {FFMPEG}")
 
-    # Генерируем по одному кадру на сцену
-    frame_list = []
+    # тайминги: сцена = 0.45 + голос + 0.6 (правило 4)
+    t = 0.0
+    timeline = []
     for si, scene in enumerate(scenes, 1):
-        img = make_scene_frame(scene, si, 0)
+        voice = scene.get("voice")
+        vpath = os.path.join(voice_dir, voice) if voice else None
+        vdur = audio_duration(vpath) if vpath and os.path.exists(vpath) else 0.0
+        if not scene.get("dur") or vdur:
+            scene["dur"] = round(0.45 + vdur + 0.6, 2) if vdur else float(scene.get("dur", 1.5))
+        scene["start"] = round(t, 2)
+        scene["voice_at"] = 0.45 if vdur else None
+        timeline.append((scene, vpath, vdur))
+        t += scene["dur"]
+    total = round(t, 2)
+    print(f"Длительность: {total} сек")
+
+    frame_list = []
+    for si, (scene, _, _) in enumerate(timeline, 1):
+        img = make_scene_frame(scene, si, 0, cfg)
         fn = f"frames/scene_{si:02d}.png"
         img.save(fn)
-        frame_list.append((fn, scene["dur"], scene.get("voice")))
+        frame_list.append((fn, scene["dur"]))
         print(f"  Сцена {si}: {fn} ({scene['dur']} сек)")
 
-    # Список для concat
     with open("frames/list.txt", "w") as f:
-        for fn, dur, voice in frame_list:
-            abspath = os.path.abspath(fn)
-            f.write(f"file '{abspath}'\n")
+        for fn, dur in frame_list:
+            f.write(f"file '{os.path.abspath(fn)}'\n")
             f.write(f"duration {dur}\n")
-        # Последний кадр повторяем
-        abspath = os.path.abspath(frame_list[-1][0])
-        f.write(f"file '{abspath}'\n")
+        f.write(f"file '{os.path.abspath(frame_list[-1][0])}'\n")
 
-    # Собираем видео
     tmp_video = os.path.join(out_dir, "tmp_video.mp4")
-    cmd = [
+    subprocess.run([
         FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", "frames/list.txt",
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
-        "-r", str(FPS), tmp_video
-    ]
-    print("Собираю видео...")
-    subprocess.run(cmd, check=True)
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", str(FPS), tmp_video
+    ], check=True)
 
-    # Аудио: голоса + музыка chiptune (bpm 132, volume 0.35)
-    audio_inputs = []
-    filter_parts = []
-    for i, (fn, dur, voice) in enumerate(frame_list):
-        if voice:
-            voice_path = os.path.join(voice_dir, voice)
-            if os.path.exists(voice_path):
-                audio_inputs.extend(["-i", os.path.abspath(voice_path)])
-                filter_parts.append(f"[{i+1}:a]")
+    music_cfg = cfg.get("music") or {}
+    music_path = os.path.join(out_dir, "music.wav")
+    chiptune(music_path,
+             total,
+             bpm=music_cfg.get("bpm", 132),
+             volume=music_cfg.get("volume", 0.35))
 
-    if not filter_parts:
-        print("Нет аудио файлов!")
-        sys.exit(1)
+    inputs = ["-i", os.path.abspath(tmp_video), "-i", os.path.abspath(music_path)]
+    filters = []
+    labels = []
+    idx = 2
+    for scene, vpath, vdur in timeline:
+        if vpath and os.path.exists(vpath):
+            inputs.extend(["-i", os.path.abspath(vpath)])
+            start_ms = int(round((scene["start"] + (scene.get("voice_at") or 0)) * 1000))
+            gain = scene.get("gain", 1.45)
+            filters.append(
+                f"[{idx}:a]adelay={start_ms}|{start_ms},volume={gain},aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[v{idx}]"
+            )
+            labels.append(f"[v{idx}]")
+            idx += 1
 
-    # Музыка chiptune: синус 440 Гц, 60 сек, громкость 0.35
-    music_path = os.path.join(out_dir, "music.mp3")
-    cmd_music = [
-        FFMPEG, "-y", "-loglevel", "error",
-        "-f", "lavfi", "-i", "sine=frequency=440:duration=60",
-        "-af", "volume=0.35",
-        music_path
-    ]
-    subprocess.run(cmd_music, check=True)
-    audio_inputs.extend(["-i", os.path.abspath(music_path)])
-    music_idx = len(frame_list) + 1
-    filter_parts.append(f"[{music_idx}:a]")
-
-    # Объединяем аудио: голоса + музыка
-    n_audio = len(filter_parts)
-    filter_str = "".join(filter_parts) + f"amix=inputs={n_audio}:duration=longest:normalize=0[out]"
+    filters.append("[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[mus]")
+    labels.append("[mus]")
+    filters.append("".join(labels) + f"amix=inputs={len(labels)}:duration=longest:normalize=0,alimiter=limit=0.95[aout]")
 
     out_mp4 = os.path.join(out_dir, "клип.mp4")
-    cmd2 = [
-        FFMPEG, "-y",
-        "-i", os.path.abspath(tmp_video),
-    ] + audio_inputs + [
-        "-filter_complex", filter_str,
-        "-map", "0:v", "-map", "[out]",
-        "-c:v", "copy",
-        "-c:a", "aac", "-ar", "48000", "-ac", "2",
-        "-shortest", os.path.abspath(out_mp4)
-    ]
-    print("Добавляю аудио...")
-    subprocess.run(cmd2, check=True)
+    subprocess.run([
+        FFMPEG, "-y", *inputs,
+        "-filter_complex", ";".join(filters),
+        "-map", "0:v", "-map", "[aout]",
+        "-c:v", "copy", "-c:a", "aac", "-ar", "48000", "-ac", "2",
+        "-t", str(total), "-movflags", "+faststart", os.path.abspath(out_mp4)
+    ], check=True)
 
-    # Убираем временные
     os.remove(tmp_video)
     os.remove(music_path)
-
-    # Информация
     print(f"\nГотово: {out_mp4}")
     print(f"Размер: {os.path.getsize(out_mp4) / 1024 / 1024:.1f} МБ")
+
 
 if __name__ == "__main__":
     main()
