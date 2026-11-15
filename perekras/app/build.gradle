@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.perekras.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.perekras.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // подпись — своя, из CI (см. ../.github/workflows/perekras-apk.yml)
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Никаких внешних библиотек: только то, что есть в системе,
+    // поэтому сборка не зависит от сторонних репозиториев.
+}
