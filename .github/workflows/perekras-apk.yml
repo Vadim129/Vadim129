@@ -48,6 +48,7 @@ jobs:
           echo "APK_NAME=perekras-$(date -u +%Y%m%d)-${GITHUB_RUN_NUMBER}.apk" >> "$GITHUB_ENV"
 
       - name: Сборка APK
+        id: build
         working-directory: perekras
         env:
           STORE_FILE: ${{ runner.temp }}/release.jks
@@ -56,16 +57,33 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           SIGN_READY: ${{ steps.signing.outputs.ready }}
         run: |
-          set -e
+          set +e
           if [ "$SIGN_READY" = "true" ]; then
-            gradle assembleRelease --no-daemon \
+            gradle assembleRelease --no-daemon --stacktrace --console=plain \
               -Pandroid.injected.signing.store.file="$STORE_FILE" \
               -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
               -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
-              -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+              -Pandroid.injected.signing.key.password="$KEY_PASSWORD" 2>&1 | tee /tmp/build.log
           else
-            gradle assembleRelease --no-daemon
+            gradle assembleRelease --no-daemon --stacktrace --console=plain 2>&1 | tee /tmp/build.log
           fi
+          code=${PIPESTATUS[0]}
+          # первые строки ошибки вешаем аннотациями — они видны через API
+          grep -m 12 -E "^e: |error: |FAILURE:|What went wrong|> Task .* FAILED|Execution failed" /tmp/build.log \
+            | sed 's/::/:/g' | while IFS= read -r line; do echo "::error::$line"; done
+          exit $code
+
+      - name: Сохранить лог сборки в ветку (если упало)
+        if: failure()
+        run: |
+          set +e
+          mkdir -p /tmp/ci && cd /tmp/ci && git init -q . \
+            && git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            && git fetch -q --depth=1 origin perekras-ci 2>/dev/null && git checkout -q -B perekras-ci FETCH_HEAD
+          tail -c 60000 /tmp/build.log > /tmp/ci/build.log 2>/dev/null
+          cd /tmp/ci && git add -f build.log \
+            && git -c user.name=ci -c user.email=ci@local commit -qm "лог сборки ${GITHUB_RUN_NUMBER}" \
+            && git push -q -f origin perekras-ci
 
       - name: Забрать и переименовать APK
         run: |
