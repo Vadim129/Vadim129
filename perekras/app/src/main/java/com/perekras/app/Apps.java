@@ -14,6 +14,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
+import android.app.PendingIntent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,8 @@ public final class Apps {
     public static final String EXTRA_PACKAGE = "pkg";
     public static final String EXTRA_ACTIVITY = "act";
     public static final String EXTRA_LABEL = "label";
+    public static final String ACTION_PIN = "com.perekras.app.PINNED";
+    public static final String EXTRA_KEY = "key";
 
     private static final String PREFS = "desk";
     private static final String KEY_KEYS = "picked";
@@ -86,16 +89,13 @@ public final class Apps {
         prefs(c).edit().putString(KEY_KEYS, sb.toString()).apply();
     }
 
-    /** Сколько ещё ярлыков получится закрепить (у приложения их лимит). */
-    public static int freeSlots(Context c) {
+    public static boolean canPin(Context c) {
         ShortcutManager sm = c.getSystemService(ShortcutManager.class);
-        int max = sm == null ? 0 : sm.getMaxShortcutCountPerActivity();
-        return Math.max(0, max - picked(c).size());
-    }
-
-    public static int maxSlots(Context c) {
-        ShortcutManager sm = c.getSystemService(ShortcutManager.class);
-        return sm == null ? 0 : sm.getMaxShortcutCountPerActivity();
+        try {
+            return sm != null && sm.isRequestPinShortcutSupported();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /** Какая своя картинка поставлена приложению (пусто — общая). */
@@ -164,19 +164,32 @@ public final class Apps {
 
     // ---------------------------------------------------------------- ярлыки
 
-    public static boolean pin(Context c, String pkg, String act, Bitmap icon, String label) {
+    /**
+     * Просит рабочий стол добавить ярлык. Лаунчер покажет «Добавить на главный
+     * экран?» — это единственный штатный способ положить значок на стол,
+     * не будучи лаунчером. После подтверждения {@link PinReceiver} запомнит
+     * приложение в списке перекрашенных.
+     */
+    public static boolean requestPin(Context c, String pkg, String act, Bitmap icon, String label) {
         ShortcutManager sm = c.getSystemService(ShortcutManager.class);
         if (sm == null) return false;
-        List<String> have = picked(c);
-        if (have.size() >= sm.getMaxShortcutCountPerActivity()) return false;
         try {
-            sm.pinShortcuts(Collections.singletonList(shortcut(c, pkg, act, icon, label)),
-                    Collections.singletonList(launcherIntent(c)));
-            addPicked(c, key(pkg, act));
-            return true;
+            if (!sm.isRequestPinShortcutSupported()) return false;
+            String k = key(pkg, act);
+            return sm.requestPinShortcut(shortcut(c, pkg, act, icon, label), callback(c, k));
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    private static android.content.IntentSender callback(Context c, String key) {
+        Intent i = new Intent(c, PinReceiver.class)
+                .setAction(ACTION_PIN)
+                .putExtra(EXTRA_KEY, key);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        flags |= PendingIntent.FLAG_IMMUTABLE;
+        PendingIntent pi = PendingIntent.getBroadcast(c, key.hashCode(), i, flags);
+        return pi.getIntentSender();
     }
 
     /** Куда вернуться после запуска приложения по ярлыку. */
@@ -226,13 +239,13 @@ public final class Apps {
                 .build();
     }
 
-    public static boolean pinFallback(Context c, Bitmap icon, String label) {
+    public static boolean requestPinFallback(Context c, Bitmap icon, String label) {
         ShortcutManager sm = c.getSystemService(ShortcutManager.class);
         if (sm == null) return false;
         try {
-            sm.pinShortcuts(Collections.singletonList(fallback(c, icon, label)),
-                    Collections.singletonList(launcherIntent(c)));
-            return true;
+            if (!sm.isRequestPinShortcutSupported()) return false;
+            ShortcutInfo info = fallback(c, icon, label);
+            return sm.requestPinShortcut(info, callback(c, info.getId()));
         } catch (Throwable t) {
             return false;
         }
@@ -244,7 +257,7 @@ public final class Apps {
      * один ярлык-маркер. Иначе человек видит предупреждение на экране.
      */
     public static void applyTheme(Context c, Bitmap icon, String label) {
-        pinFallback(c, icon, label);
+        requestPinFallback(c, icon, label);
         hideDynamic(c);
     }
 

@@ -127,7 +127,8 @@ public class AppsActivity extends Activity {
 
     private void updateCounter() {
         counter.setText("Отмечено: " + marked.size()
-                + " · доступно ярлыков: " + Apps.freeSlots(this)
+                + (Apps.canPin(this) ? " · ярлыки добавляются с подтверждением"
+                                     : " · этот рабочий стол не умеет ярлыки")
                 + (all.isEmpty() ? " · список приложений пуст — нужно разрешение" : ""));
     }
 
@@ -154,7 +155,7 @@ public class AppsActivity extends Activity {
                 art = Styler.make(this, Apps.iconOf(this, pkg, act, size), k, form, pal);
             }
             String label = labelOf(pkg, act);
-            if (Apps.pin(this, pkg, act, art, label)) {
+            if (Apps.requestPin(this, pkg, act, art, label)) {
                 ok++;
                 if (customIcon != null) {
                     Apps.rememberIcon(this, k, customIcon);
@@ -163,8 +164,8 @@ public class AppsActivity extends Activity {
                 noRoom++;
             }
         }
-        String msg = "Готово: " + ok;
-        if (noRoom > 0) msg += ", не влезло: " + noRoom + " (лимит ярлыков)";
+        String msg = "Запрос отправлен: " + ok;
+        if (noRoom > 0) msg += ", не поддержано: " + noRoom;
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         Apps.notifyHome(this);
         finish();

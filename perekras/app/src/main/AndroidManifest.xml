@@ -37,6 +37,15 @@
             android:exported="false"
             android:label="@string/editor_title" />
 
+        <!-- Узнаём, когда рабочий стол добавил наш ярлык -->
+        <receiver
+            android:name=".PinReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.perekras.app.PINNED" />
+            </intent-filter>
+        </receiver>
+
         <!--
             Запасной вариант: собственный «рабочий стол» со стилизованными иконками.
             Если выбрать его домашним экраном вместо штатного лаунчера, значки всех

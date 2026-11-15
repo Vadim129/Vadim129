@@ -57,7 +57,8 @@ public class MainActivity extends Activity {
         String json = Styler.styleJson(this);
 
         root.addView(title("Перекрас"));
-        root.addView(hint("Одно оформление — все значки на рабочем столе. Без рута."));
+        root.addView(hint("Одно оформление — все значки на рабочем столе. Без рута. "
+                + "Готовый значок ставится ярлыком: рабочий стол спросит подтверждение."));
 
         root.addView(label("Форма значка"));
         form = new Spinner(this);
@@ -166,8 +167,10 @@ public class MainActivity extends Activity {
     private void refreshInfo() {
         int n = Apps.picked(this).size();
         StringBuilder sb = new StringBuilder();
-        sb.append("Перекрашено приложений: ").append(n)
-                .append(" из ").append(Apps.maxSlots(this)).append('\n');
+        sb.append("Перекрашено приложений: ").append(n).append('\n');
+        if (!Apps.canPin(this)) {
+            sb.append("Этот рабочий стол не умеет добавлять ярлыки — пользуйся панелью ниже.\n");
+        }
         sb.append(Apps.isDefaultHome(this)
                 ? "Панель уже выбрана домашним экраном."
                 : "Домашний экран — штатный лаунчер (значки меняются по одному).");
@@ -187,11 +190,12 @@ public class MainActivity extends Activity {
             String pkg = pa[0];
             String act = pa[1];
             Bitmap icon = Styler.make(this, Apps.iconOf(this, pkg, act, iconSize()), k, f, p);
-            if (Apps.pin(this, pkg, act, icon, labelOf(pkg, act))) ok++;
+            if (Apps.requestPin(this, pkg, act, icon, labelOf(pkg, act))) ok++;
         }
         Toast.makeText(this, ok == 0
                 ? "Пока нечего перекрашивать — добавь приложения"
-                : "Готово: " + ok + " значков обновлено", Toast.LENGTH_SHORT).show();
+                : "Запрос отправлен: подтверди добавление " + ok + " ярлыков на рабочем столе",
+                Toast.LENGTH_LONG).show();
         Apps.notifyHome(this);
         refreshInfo();
     }
