@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Перекрас</string>
     <string name="home_title">Перекрас — рабочий стол</string>
+    <string name="editor_title">Перекрас — оформление</string>
 </resources>
