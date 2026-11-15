@@ -173,7 +173,6 @@ public final class Apps {
             sm.pinShortcuts(Collections.singletonList(shortcut(c, pkg, act, icon, label)),
                     Collections.singletonList(launcherIntent(c)));
             addPicked(c, key(pkg, act));
-            rememberIcon(c, key(pkg, act), "");
             return true;
         } catch (Throwable t) {
             return false;
@@ -233,23 +232,10 @@ public final class Apps {
         try {
             sm.pinShortcuts(Collections.singletonList(fallback(c, icon, label)),
                     Collections.singletonList(launcherIntent(c)));
-            pinMarker(c);
             return true;
         } catch (Throwable t) {
             return false;
         }
-    }
-
-    // ---------------------------------------------------------- тема целиком
-
-    private static final String KEY_THEME_PINNED = "theme_pinned";
-
-    public static boolean themePinned(Context c) {
-        return prefs(c).getBoolean(KEY_THEME_PINNED, false);
-    }
-
-    public static void pinMarker(Context c) {
-        prefs(c).edit().putBoolean(KEY_THEME_PINNED, true).apply();
     }
 
     /**
@@ -315,10 +301,9 @@ public final class Apps {
         List<Row> out = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         Intent main = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
-        int flags = queryKind(c) == 0 ? 0 : PackageManager.MATCH_DISABLED_COMPONENTS & 0;
         List<ResolveInfo> ris;
         try {
-            ris = pm.queryIntentActivities(main, flags);
+            ris = pm.queryIntentActivities(main, 0);
         } catch (Throwable t) {
             ris = Collections.emptyList();
         }

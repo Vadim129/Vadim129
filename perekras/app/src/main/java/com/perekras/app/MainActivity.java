@@ -3,6 +3,7 @@ package com.perekras.app;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
+import android.graphics.Bitmap;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -39,8 +40,8 @@ public class MainActivity extends Activity {
     private Spinner palette;
     private Spinner walls;
     private TextView info;
-    private int pendingIcon = -1;
-    private int pendingWall = -1;
+    private String pendingIcon;
+    private String pendingWall;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -251,14 +252,14 @@ public class MainActivity extends Activity {
         if (res != RESULT_OK || data == null || data.getData() == null) return;
         if (req == REQ_ICON) {
             pendingIcon = Media.storeImage(this, data.getData());
-            if (pendingIcon > 0) {
+            if (pendingIcon != null) {
                 Toast.makeText(this, "Значок сохранён — выбери приложение", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(this, AppsActivity.class)
                         .putExtra(AppsActivity.EXTRA_ICON_ID, pendingIcon));
             }
         } else if (req == REQ_WALL) {
             pendingWall = Media.storeImage(this, data.getData());
-            if (pendingWall > 0) {
+            if (pendingWall != null) {
                 Toast.makeText(this, "Обои сохранены — применяю", Toast.LENGTH_SHORT).show();
                 applyAll();
             }
