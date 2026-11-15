@@ -99,6 +99,26 @@ jobs:
           AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
           "$AAPT" dump badging "$RUNNER_TEMP/$APK_NAME" | head -12
 
+      - name: Выложить APK в ветку perekras-apk
+        run: |
+          set -e
+          rm -rf /tmp/store && git clone -q --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git /tmp/store || true
+          cd /tmp/store
+          git checkout -q --orphan perekras-apk 2>/dev/null || git checkout -q -B perekras-apk
+          git rm -rq --cached . || true
+          find . -maxdepth 1 -type f -delete
+          cp "$RUNNER_TEMP/$APK_NAME" .
+          cat > README.md <<'TXT'
+          # Перекрас — готовый APK
+
+          Файл `APK_NAME` собран автоматически (Actions → perekras-apk).
+          Установка: скачать, открыть на телефоне, разрешить установку из этого источника.
+          TXT
+          sed -i "s/APK_NAME/$APK_NAME/" README.md
+          git add -A
+          git -c user.name=ci -c user.email=ci@local commit -qm "APK $APK_NAME"
+          git push -q -f origin perekras-apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: perekras-release-apk
