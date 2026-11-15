@@ -107,10 +107,6 @@ public class FloatingHome extends Activity {
                 reload();
             }
         };
-
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        root.setLayoutParams(lp);
     }
 
     @Override
