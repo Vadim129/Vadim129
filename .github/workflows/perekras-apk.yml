@@ -1,0 +1,103 @@
+# Сборка APK «Перекраса» — приложения, которое даёт приложениям свои значки.
+# Запуск: Actions → perekras-apk → Run workflow (или пуш в perekras/).
+#
+# Подпись: если в секретах есть PEREX_KEYSTORE_B64 (keystore в base64) вместе
+# с KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD — APK подписывается вашим
+# ключом. Иначе используется отладочная подпись (для телефона её хватает).
+#
+# Результат: 1) артефакт запуска perekras-release-apk, 2) GitHub Release
+# с тегом perekras-<номер запуска>.
+
+name: perekras-apk
+
+on:
+  push:
+    paths:
+      - 'perekras/**'
+      - '.github/workflows/perekras-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Подготовить ключ подписи
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.PEREX_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "APK_NAME=perekras-$(date -u +%Y%m%d)-${GITHUB_RUN_NUMBER}.apk" >> "$GITHUB_ENV"
+
+      - name: Сборка APK
+        working-directory: perekras
+        env:
+          STORE_FILE: ${{ runner.temp }}/release.jks
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          SIGN_READY: ${{ steps.signing.outputs.ready }}
+        run: |
+          set -e
+          if [ "$SIGN_READY" = "true" ]; then
+            gradle assembleRelease --no-daemon \
+              -Pandroid.injected.signing.store.file="$STORE_FILE" \
+              -Pandroid.injected.signing.store.password="$STORE_PASSWORD" \
+              -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+              -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          else
+            gradle assembleRelease --no-daemon
+          fi
+
+      - name: Забрать и переименовать APK
+        run: |
+          set -e
+          APK=$(find perekras/app/build/outputs/apk/release -name '*.apk' | head -1)
+          test -n "$APK"
+          cp "$APK" "$RUNNER_TEMP/$APK_NAME"
+          ls -la "$RUNNER_TEMP/$APK_NAME"
+
+      - name: Проверить APK
+        run: |
+          set -e
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
+          "$AAPT" dump badging "$RUNNER_TEMP/$APK_NAME" | head -12
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perekras-release-apk
+          path: ${{ runner.temp }}/perekras-*.apk
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIGN_READY: ${{ steps.signing.outputs.ready }}
+        run: |
+          set -e
+          TAG="perekras-${GITHUB_RUN_NUMBER}"
+          NOTE="APK приложения «Перекрас»: свои значки для приложений."
+          if [ "$SIGN_READY" = "true" ]; then
+            NOTE="$NOTE Подпись: ваш ключ."
+          else
+            NOTE="$NOTE Подпись: отладочная."
+          fi
+          gh release create "$TAG" "$RUNNER_TEMP/$APK_NAME" \
+            --title "Перекрас $TAG" --notes "$NOTE"
