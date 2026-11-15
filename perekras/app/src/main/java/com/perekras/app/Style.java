@@ -30,7 +30,15 @@ public final class Style {
             {0xFF3C1A5B, 0xFFFF9EFF},
     };
 
+    /** Имя файла своих обоев (лежит в files/images), пусто — обои из наборов. */
+    public static final String KEY_OWN_WALL = "own_wall";
+
     private Style() {
+    }
+
+    /** Оформление целиком в виде строки: форма, палитра, обои. */
+    public static String jsonOf(int form, int palette, String wallpaper) {
+        return toJson(form, palette, wallpaper).toString();
     }
 
     public static int paletteCount() {

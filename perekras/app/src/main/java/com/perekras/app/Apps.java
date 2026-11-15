@@ -230,7 +230,7 @@ public final class Apps {
      * ставим ярлык на своего «тихого» помощника — тема всё равно применится.
      */
     public static ShortcutInfo fallback(Context c, Bitmap icon, String label) {
-        Intent i = new Intent(c, EmptyActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent i = new Intent(c, FloatingHome.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         return new ShortcutInfo.Builder(c, "theme_" + System.currentTimeMillis())
                 .setShortLabel(label(label, "Перекрас"))
                 .setLongLabel(label(label, "Перекрас"))

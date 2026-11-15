@@ -39,6 +39,7 @@ public class FloatingHome extends Activity {
     private HomeAdapter adapter;
     private BroadcastReceiver receiver;
     private int iconPx;
+    private final java.util.HashMap<String, Bitmap> memo = new java.util.HashMap<>();
 
     @Override
     protected void onCreate(Bundle b) {
@@ -134,6 +135,7 @@ public class FloatingHome extends Activity {
     }
 
     private void reload() {
+        memo.clear();
         rows.clear();
         String json = Styler.styleJson(this);
         int form = Style.form(json);
@@ -210,11 +212,13 @@ public class FloatingHome extends Activity {
 
             ImageView iv = new ImageView(FloatingHome.this);
             iv.setLayoutParams(new LinearLayout.LayoutParams(iconPx, iconPx));
-            Bitmap b = Apps.styled(FloatingHome.this, r.pkg, r.act,
-                    Math.max(1, Math.round(192f * getResources().getDisplayMetrics().density / 3f)));
-            int form = Style.form(Styler.styleJson(FloatingHome.this));
-            Bitmap shown = Styler.masked(FloatingHome.this, b,
-                    "home__" + r.pkg + "__" + r.act, form);
+            String memoKey = r.pkg + "/" + r.act + "/" + iconPx;
+            Bitmap shown = memo.get(memoKey);
+            if (shown == null) {
+                Bitmap b = Apps.styled(FloatingHome.this, r.pkg, r.act, iconPx);
+                shown = Styler.masked(b, Style.form(Styler.styleJson(FloatingHome.this)));
+                memo.put(memoKey, shown);
+            }
             iv.setImageBitmap(shown);
             box.addView(iv);
 

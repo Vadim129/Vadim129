@@ -139,7 +139,7 @@ public class AppsActivity extends Activity {
         }
         int form = Style.form(Styler.styleJson(this));
         int pal = Style.palette(Styler.styleJson(this));
-        int size = Math.round(192 * getResources().getDisplayMetrics().density / 3f);
+        int size = iconSize();
         int ok = 0;
         int noRoom = 0;
         for (String k : new ArrayList<>(marked)) {
@@ -175,6 +175,11 @@ public class AppsActivity extends Activity {
         String k = Apps.key(pkg, act);
         for (Apps.Row r : all) if (r.key().equals(k)) return r.label;
         return pkg;
+    }
+
+    private int iconSize() {
+        int px = Math.round(108 * getResources().getDisplayMetrics().density);
+        return Math.min(512, Math.max(108, px));
     }
 
     private int dp(int v) {

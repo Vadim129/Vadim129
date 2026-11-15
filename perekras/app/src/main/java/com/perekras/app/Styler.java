@@ -103,8 +103,8 @@ public final class Styler {
         return out;
     }
 
-    /** Значок «как есть», но приведённый к форме маски. */
-    public static Bitmap masked(Context c, Bitmap art, String key, int form) {
+    /** Значок «как есть», но приведённый к форме маски (без записи на диск). */
+    public static Bitmap masked(Bitmap art, int form) {
         int size = Math.max(art == null ? 8 : Math.max(art.getWidth(), art.getHeight()), 8);
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(out);
@@ -112,7 +112,6 @@ public final class Styler {
         p.setFilterBitmap(true);
         p.setShader(new BitmapShader(art, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
         drawForm(cv, form, size, p);
-        save(out, file(c, key));
         return out;
     }
 
@@ -166,9 +165,11 @@ public final class Styler {
         }
     }
 
-    /** Обои из assets/walls; null, если обои не выбраны или файла нет. */
+    /** Обои: картинка из files/images (своя) или из assets/walls; null — нет обоев. */
     public static Bitmap wallpaper(Context c, String name) {
         if (name == null || name.isEmpty()) return null;
+        Bitmap own = Media.load(c, name);
+        if (own != null) return own;
         if (!Pattern.matches("[A-Za-z0-9_.-]+", name)) return null;
         AssetManager am = c.getAssets();
         InputStream in = null;

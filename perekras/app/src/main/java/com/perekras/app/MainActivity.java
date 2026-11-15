@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
             "", "wall_dots.png", "wall_waves.png", "wall_dark.png"
     };
     private static final String[] WALL_TITLES = {
-            "Без обоев (однотонный фон)", "Точки", "Волны", "Тёмные градиенты"
+            "Без обоев (однотонный фон)", "Точки", "Волны", "Тёмные градиенты", "Своя картинка"
     };
 
     private Spinner form;
@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
     private void applyAll() {
         int f = form.getSelectedItemPosition();
         int p = palette.getSelectedItemPosition();
-        String w = WALLS[Math.max(0, walls.getSelectedItemPosition())];
+        String w = wallpaperChoice();
         Styler.saveStyle(this, f, p, w);
         Apps.hideDynamic(this);
         int ok = 0;
@@ -209,7 +209,7 @@ public class MainActivity extends Activity {
     private void applyFullTheme() {
         int f = form.getSelectedItemPosition();
         int p = palette.getSelectedItemPosition();
-        String w = WALLS[Math.max(0, walls.getSelectedItemPosition())];
+        String w = wallpaperChoice();
         Styler.saveStyle(this, f, p, w);
         Apps.hideDynamic(this);
         Bitmap marker = Styler.make(this, appsIcon(), "theme_marker", f, p);
@@ -264,6 +264,7 @@ public class MainActivity extends Activity {
         } else if (req == REQ_WALL) {
             pendingWall = Media.storeImage(this, data.getData());
             if (pendingWall != null) {
+                Styler.prefs(this).edit().putString(Style.KEY_OWN_WALL, pendingWall).apply();
                 Toast.makeText(this, "Обои сохранены — применяю", Toast.LENGTH_SHORT).show();
                 applyAll();
             }
@@ -278,8 +279,20 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Размер картинки ярлыка: как у адаптивной иконки (108dp), но не больше 512px. */
+    /** Что сейчас выбрано в списке обоев, с учётом своей картинки. */
+    private String wallpaperChoice() {
+        int i = Math.max(0, walls.getSelectedItemPosition());
+        if (i >= WALLS.length - 1) {
+            String own = Styler.prefs(this).getString(Style.KEY_OWN_WALL, "");
+            return own == null ? "" : own;
+        }
+        return WALLS[i];
+    }
+
     private int iconSize() {
-        return Math.round(192 * getResources().getDisplayMetrics().density / 3f);
+        int px = Math.round(108 * getResources().getDisplayMetrics().density);
+        return Math.min(512, Math.max(108, px));
     }
 
     private String labelOf(String pkg, String act) {
