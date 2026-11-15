@@ -1,0 +1,67 @@
+# Сборка APK «Чернильного клипа» на каждый пуш в master.
+# Готовый файл: 1) ветка release-apk (inkclip-debug.apk), 2) GitHub Release.
+name: build-apk
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+      - run: npm run build:www
+      - run: npx cap sync android
+
+      - name: Сборка debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Проверка APK
+        run: ls -la android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: APK в ветку release-apk
+        env:
+          SHA_SHORT: ${{ github.sha }}
+        run: |
+          set -e
+          cp android/app/build/outputs/apk/debug/app-debug.apk /tmp/inkclip-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin release-apk:refs/remotes/origin/release-apk || true
+          if git show-ref --verify -q refs/remotes/origin/release-apk; then
+            git checkout release-apk
+          else
+            git checkout --orphan release-apk
+            git rm --cached -r -q . || true
+            git clean -fdq
+          fi
+          printf '# InkClip — готовый APK\n\nФайл `inkclip-debug.apk` собирается автоматически (см. Actions → build-apk).\nСтавится на телефон напрямую, подпись отладочная.\n' > README.md
+          cp /tmp/inkclip-debug.apk inkclip-debug.apk
+          git add -f inkclip-debug.apk README.md
+          git commit -q -m "APK от $(date -u +%Y-%m-%d) (master ${SHA_SHORT:0:7})" || echo "без изменений"
+          git push -q origin release-apk
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v0.6.${{ github.run_number }}"
+          gh release create "$TAG" /tmp/inkclip-debug.apk \
+            --title "InkClip $TAG" \
+            --notes "Debug-APK приложения «Чернильный клип» (сцены сёрфера, Node-рендер). Ставится напрямую на телефон. Без модели Whisper — распознавание слов недоступно, остальное работает."
