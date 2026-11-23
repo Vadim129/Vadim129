@@ -1,0 +1,59 @@
+name: Experimental APK prompt suppression
+on:
+  push:
+    branches: [arena/a8eed22a-vadim129]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and patch the supplied APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download apk-analysis --repo "$GITHUB_REPOSITORY" --pattern '1.0.6.apk' --dir "$RUNNER_TEMP"
+          python3 -m pip install --disable-pip-version-check androguard
+          python3 .github/scripts/patch-captcha-display.py "$RUNNER_TEMP/1.0.6.apk" "$RUNNER_TEMP/unsigned"
+      - name: Align and sign test packages
+        run: |
+          set -euo pipefail
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -x "$TOOLS/zipalign" && test -x "$TOOLS/apksigner"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/experimental.jks" -storepass temporary -keypass temporary -alias test -keyalg RSA -keysize 2048 -validity 3650 -dname 'CN=Experimental APK' -noprompt
+          mkdir -p "$RUNNER_TEMP/signed"
+          for abi in arm64-v8a armeabi-v7a; do
+            "$TOOLS/zipalign" -f -p 4 "$RUNNER_TEMP/unsigned/no-captcha-prompt-$abi-unsigned.apk" "$RUNNER_TEMP/aligned-$abi.apk"
+            "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/experimental.jks" --ks-key-alias test --ks-pass pass:temporary --key-pass pass:temporary --out "$RUNNER_TEMP/signed/no-captcha-prompt-$abi.apk" "$RUNNER_TEMP/aligned-$abi.apk"
+            "$TOOLS/apksigner" verify --verbose "$RUNNER_TEMP/signed/no-captcha-prompt-$abi.apk"
+            "$TOOLS/zipalign" -c -p 4 "$RUNNER_TEMP/signed/no-captcha-prompt-$abi.apk"
+          done
+      - name: Transfer test packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          out = {}
+          for path in sorted((pathlib.Path(os.environ['RUNNER_TEMP']) / 'signed').glob('*.apk')):
+              parts = []
+              with path.open('rb') as f:
+                  while data := f.read(19000000):
+                      payload = json.dumps({'content': base64.b64encode(data).decode(), 'encoding': 'base64'})
+                      res = subprocess.run(['gh', 'api', '--method', 'POST', f'/repos/{repo}/git/blobs', '--input', '-'], input=payload, text=True, capture_output=True, check=True)
+                      parts.append(json.loads(res.stdout)['sha'])
+              with path.open('rb') as f:
+                  digest = hashlib.file_digest(f, 'sha256').hexdigest()
+              out[path.name] = {'parts': parts, 'size': path.stat().st_size, 'sha256': digest}
+              print(path.name, path.stat().st_size, flush=True)
+          assert len(out) == 2
+          res = subprocess.run(['gh', 'api', '--method', 'POST', f'/repos/{repo}/git/blobs', '-f', 'content='+json.dumps(out)], text=True, capture_output=True, check=True)
+          sha = json.loads(res.stdout)['sha']
+          subprocess.run(['gh', 'api', '--method', 'POST', f"/repos/{repo}/statuses/{os.environ['GITHUB_SHA']}", '-f', 'state=success', '-f', 'context=apk-prompt-experiment', '-f', 'description='+sha], check=True)
+          PY
