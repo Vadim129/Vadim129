@@ -1,0 +1,61 @@
+name: Rename experimental APK
+on:
+  push:
+    branches: [arena/a8eed22a-vadim129]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch experimental APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          def get(sha):
+              return base64.b64decode(json.loads(subprocess.check_output(['gh', 'api', f'/repos/{repo}/git/blobs/{sha}']))['content'])
+          info = json.loads(get('f73cc368b6fff0856b7d48fba2f0c1ef42413b3c'))['no-captcha-prompt-arm64-v8a.apk']
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'input.apk'
+          digest = hashlib.sha256()
+          with path.open('wb') as f:
+              for sha in info['parts']:
+                  b=get(sha); f.write(b); digest.update(b)
+          assert digest.hexdigest() == info['sha256']
+          PY
+      - name: Rename, align and sign
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check androguard
+          python3 .github/scripts/rename-experimental-apk.py "$RUNNER_TEMP/input.apk" "$RUNNER_TEMP/unsigned.apk"
+          TOOLS=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          keytool -genkeypair -keystore "$RUNNER_TEMP/temporary.jks" -storepass temporary -keypass temporary -alias test -keyalg RSA -keysize 2048 -validity 3650 -dname 'CN=Experimental APK' -noprompt
+          "$TOOLS/zipalign" -P 16 -f 4 "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" sign --ks "$RUNNER_TEMP/temporary.jks" --ks-key-alias test --ks-pass pass:temporary --key-pass pass:temporary --out "$RUNNER_TEMP/result.apk" "$RUNNER_TEMP/aligned.apk"
+          "$TOOLS/apksigner" verify --verbose "$RUNNER_TEMP/result.apk"
+          "$TOOLS/zipalign" -c -P 16 4 "$RUNNER_TEMP/result.apk"
+      - name: Transfer renamed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']; path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'result.apk'; parts=[]
+          with path.open('rb') as f:
+              while data := f.read(19000000):
+                  p=json.dumps({'content':base64.b64encode(data).decode(),'encoding':'base64'})
+                  r=subprocess.run(['gh','api','--method','POST',f'/repos/{repo}/git/blobs','--input','-'],input=p,text=True,capture_output=True,check=True)
+                  parts.append(json.loads(r.stdout)['sha'])
+          with path.open('rb') as f: digest=hashlib.file_digest(f,'sha256').hexdigest()
+          manifest=json.dumps({'parts':parts,'size':path.stat().st_size,'sha256':digest})
+          r=subprocess.run(['gh','api','--method','POST',f'/repos/{repo}/git/blobs','-f','content='+manifest],text=True,capture_output=True,check=True)
+          sha=json.loads(r.stdout)['sha']
+          subprocess.run(['gh','api','--method','POST',f"/repos/{repo}/statuses/{os.environ['GITHUB_SHA']}",'-f','state=success','-f','context=rename-apk-experiment','-f','description='+sha],check=True)
+          PY
